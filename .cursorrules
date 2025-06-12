@@ -1,0 +1,50 @@
+
+# Cursor Project-Specific Rules & Learnings for Askim candles
+
+## Core Operational Mandates
+1.  **Memory Bank First:** At the start of EVERY task, I MUST read ALL files in the `/memory-bank/` directory. This is my sole source of truth and context. My internal memory resets between interactions.
+2.  **Tech Stack Adherence:**
+    *   **Main Site:** NextJS (App Router), React, ShadCN UI, Tailwind CSS, Genkit (planned). i18n: path-based (`/[locale]/`), UZ (default), RU, EN. Dictionaries in `src/dictionaries/`.
+    *   **Admin Panel:** NextJS (App Router), React, ShadCN UI, Tailwind CSS. i18n: client-side preference (EN default, RU). Dictionaries in `src/admin/dictionaries/`. Dark/Light theme.
+    *   **Backend (Planned):** Prisma, PostgreSQL.
+    *   Do not deviate from this stack unless explicitly instructed and confirmed for a major architectural shift.
+3.  **Conciseness & Clarity:** Explain technical concepts simply and succinctly. Be precise.
+4.  **Planner Mode:** When requested (e.g., "Planner Mode", "/plan") or for large, multi-file features:
+    *   Deeply analyze the request and existing code.
+    *   Ask 4-6 clarifying questions before proposing a plan.
+    *   Draft a comprehensive plan of action and seek approval.
+    *   Implement approved plans step-by-step.
+    *   After completing each phase/step, state what was completed, next immediate steps, and remaining phases.
+5.  **Placeholder Images:** Use `https://placehold.co/<width>x<height>.png`. Always include a `data-ai-hint` attribute with one or two keywords for Unsplash search (e.g., `data-ai-hint="artisanal candle"`). Max two words for hint.
+6.  **Hydration Errors:** Be vigilant about avoiding hydration errors. Client-specific code (`Math.random()`, `new Date()`, `window`, `document`, `localStorage`) must be in `useEffect` hooks if their server/client output could differ.
+7.  **Authentication Systems:**
+    *   **Main Site:** Hybrid - NextAuth for Google Sign-In, client-side simulated `AuthContext` for email/password.
+    *   **Admin Panel:** Client-side simulated `AdminAuthContext` for email/password.
+    *   Be mindful of these coexisting systems and their separation.
+8.  **ShadCN UI Theme:** All color styling should leverage the HSL CSS variables defined in `src/app/globals.css`. Avoid hardcoding Tailwind color classes like `text-red-500` unless absolutely necessary and for non-theme-related elements.
+9.  **No Comments in `package.json`**: Absolutely no comments.
+10. **No Binary Files**: Do not generate or attempt to modify binary files (images, etc.).
+11. **File Paths**: Always use absolute paths for files in the `<file>` tag, starting from the project root (e.g., `/src/app/page.tsx`, `/.cursorrules`).
+
+## Project-Specific Patterns & Insights
+
+*   **Admin Panel Development:** The user prefers a step-by-step approach for large features like the admin panel. Initial focus is on UI and simulated functionality, with backend integration (Prisma/PostgreSQL) planned for later. The admin panel has its own i18n (EN/RU) and theme (Dark/Light) settings, managed client-side.
+*   **Brand Name:** The official brand name is "Askim candles".
+*   **Clarification:** The user appreciates clarifying questions, especially when in "Planner Mode," to ensure alignment before implementation.
+*   **MVP with Future Vision:** The project aims for an MVP that feels "close to ready" using simulations, but with a clear architectural path towards production technologies (Prisma/PostgreSQL).
+*   **Deployment:** User will need guidance on deploying the application, especially with the planned database integration, on their VPS.
+*   **Main Header/Footer on Admin Pages:** The main site header and footer should not render on `/admin/*` routes. This is handled in `Header.tsx` and `Footer.tsx` respectively.
+*   **i18n Structure:** Main site uses path-based `/[locale]/` routing. Admin panel uses client-side preference for language switching.
+
+## User Preferences & Workflow
+
+*   User often provides detailed requirements and context for new features (e.g., admin panel specification).
+*   The user is proactive in pointing out errors and providing feedback based on visual inspection and Next.js error overlays.
+*   User prefers compact and clean UI elements.
+
+## Known Challenges
+
+*   Managing the co-existence and eventual integration of different authentication mechanisms (NextAuth social, simulated email/pass for users, simulated email/pass for admin).
+*   Transitioning from mock data and client-side simulations to a full-fledged backend with Prisma/PostgreSQL.
+*   Ensuring UI consistency and high UX standards for both the main site and the admin panel.
+*   Full content localization across all languages and components is an ongoing task.
