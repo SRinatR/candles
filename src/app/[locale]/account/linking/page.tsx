@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,6 @@ interface LinkedAccount {
   email?: string; 
 }
 
-
 export default function AccountLinkingPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -45,7 +43,13 @@ export default function AccountLinkingPage() {
   const dictionary = getLinkingDictionary(locale);
 
   const linkedAccounts: LinkedAccount[] = [
-    { provider: "google", name: dictionary.google, icon: Chrome, linked: session?.user?.email ? true : false, email: session?.user?.email || undefined },
+    { 
+      provider: "google", 
+      name: dictionary.google, 
+      icon: Chrome, 
+      linked: session?.user?.email ? true : false, 
+      email: session?.user?.email || undefined 
+    },
     { provider: "telegram", name: dictionary.telegram, icon: Send, linked: false },
     { provider: "yandex", name: dictionary.yandex, icon: Globe, linked: false },
   ];
@@ -98,7 +102,9 @@ export default function AccountLinkingPage() {
                 </div>
                 {account.linked ? (
                   <div className="flex items-center space-x-2">
-                     <span className="text-sm text-green-600 flex items-center"><CheckCircle className="h-4 w-4 mr-1"/> {dictionary.linkedStatus}</span>
+                     <span className="text-sm text-green-600 flex items-center">
+                       <CheckCircle className="h-4 w-4 mr-1"/> {dictionary.linkedStatus}
+                     </span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -119,7 +125,7 @@ export default function AccountLinkingPage() {
                   </Button>
                 )}
               </div>
-               {account.provider === "google" && account.linked && linkedAccounts.filter(acc => acc.linked).length <=1 && (
+               {account.provider === "google" && account.linked && linkedAccounts.filter(acc => acc.linked).length <= 1 && (
                  <p className="text-xs text-muted-foreground mt-1 pl-1 flex items-center">
                     <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" /> {dictionary.primarySignInMethodNote}
                  </p>

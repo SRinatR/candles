@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useParams } from "next/navigation";
 import type { Locale } from '@/lib/i1n-config';
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import enMessages from '@/dictionaries/en.json';
 import ruMessages from '@/dictionaries/ru.json';
@@ -43,8 +44,7 @@ const getAddressesPageDictionary = (locale: Locale) => {
   return dict.accountAddressesPage;
 };
 
-
-// TODO: Translate Zod messages properly
+// Address validation schema
 const addressSchema = z.object({
   id: z.string().optional(), 
   street: z.string().min(1, { message: "Street address is required." }),
@@ -52,96 +52,245 @@ const addressSchema = z.object({
   state: z.string().min(1, { message: "State/Province is required." }),
   zipCode: z.string().min(1, { message: "ZIP/Postal code is required." }),
   country: z.string().min(1, { message: "Country is required." }),
-  isDefault: z.boolean().optional(),
+  isDefault: z.boolean().default(false),
 });
 
-type AddressFormValues = z.infer<typeof addressSchema>;
+type AddressFormData = z.infer<typeof addressSchema>;
 
-const mockAddresses: Address[] = [
-  { id: 'addr1', street: '123 Main St', city: 'Anytown', state: 'CA', zipCode: '90210', country: 'USA', isDefault: true },
-  { id: 'addr2', street: '456 Oak Ave', city: 'Otherville', state: 'NY', zipCode: '10001', country: 'USA', isDefault: false },
-];
-
-
-export default function AddressesPage() {
+export default function AccountAddressesPage() {
+  const { toast } = useToast();
   const params = useParams();
   const locale = params.locale as Locale || 'uz';
   const dictionary = getAddressesPageDictionary(locale);
 
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const { toast } = useToast();
+  // Mock addresses data - в реальном приложении будет загружаться из API
+  const [addresses, setAddresses] = useState<Address[]>([
+    {
+      id: "1",
+      street: "123 Main Street",
+      city: "Tashkent",
+      state: "Tashkent Region",
+      zipCode: "100000",
+      country: "Uzbekistan",
+      isDefault: true,
+    },
+  ]);
 
-  const form = useForm<AddressFormValues>({
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+
+  const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
-    defaultValues: { street: '', city: '', state: '', zipCode: '', country: 'USA', isDefault: false },
+    defaultValues: {
+      street: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "Uzbekistan",
+      isDefault: false,
+    },
   });
 
   const handleAddNew = () => {
+    setIsEditing(false);
     setEditingAddress(null);
-    form.reset({ street: '', city: '', state: '', zipCode: '', country: 'USA', isDefault: false });
-    setIsFormOpen(true);
+    setIsFormVisible(true);
+    form.reset({
+      street: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "Uzbekistan",
+      isDefault: false,
+    });
   };
 
   const handleEdit = (address: Address) => {
+    setIsEditing(true);
     setEditingAddress(address);
+    setIsFormVisible(true);
     form.reset(address);
-    setIsFormOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsFormVisible(false);
+    setIsEditing(false);
+    setEditingAddress(null);
+    form.reset();
+  };
+
+  const handleSetDefault = (addressId: string) => {
+    setAddresses(prevAddresses =>
+      prevAddresses.map(addr => ({
+        ...addr,
+        isDefault: addr.id === addressId
+      }))
+    );
+    toast({
+      title: dictionary.defaultAddressSetToast,
+      description: dictionary.defaultAddressDescToast,
+    });
   };
 
   const handleDelete = (addressId: string) => {
-    setAddresses(prev => prev.filter(addr => addr.id !== addressId));
-    toast({ title: dictionary.addressDeletedToast, description: dictionary.addressDeletedDescToast });
-  };
-  
-  const handleSetDefault = (addressId: string) => {
-     setAddresses(prev => prev.map(addr => ({...addr, isDefault: addr.id === addressId })));
-     toast({ title: dictionary.defaultAddressSetToast, description: dictionary.defaultAddressDescToast });
+    setAddresses(prevAddresses =>
+      prevAddresses.filter(addr => addr.id !== addressId)
+    );
+    toast({
+      title: dictionary.addressDeletedToast,
+      description: dictionary.addressDeletedDescToast,
+    });
   };
 
-
-  function onSubmit(data: AddressFormValues) {
-    if (editingAddress) {
-      setAddresses(prev => prev.map(addr => addr.id === editingAddress.id ? { ...editingAddress, ...data } : addr));
-      toast({ title: dictionary.addressUpdatedToast, description: dictionary.addressUpdatedDescToast });
+  const onSubmit = (data: AddressFormData) => {
+    if (isEditing && editingAddress) {
+      // Edit existing address
+      setAddresses(prevAddresses =>
+        prevAddresses.map(addr =>
+          addr.id === editingAddress.id ? { ...addr, ...data } : addr
+        )
+      );
+      toast({
+        title: dictionary.addressUpdatedToast,
+        description: dictionary.addressUpdatedDescToast,
+      });
     } else {
-      const newAddress = { ...data, id: `addr${Date.now()}` };
-      setAddresses(prev => [...prev, newAddress]);
-      toast({ title: dictionary.addressAddedToast, description: dictionary.addressAddedDescToast });
+      // Add new address
+      const newAddress: Address = {
+        ...data,
+        id: Math.random().toString(36).substr(2, 9),
+      };
+      
+      // If this is the first address or set as default, make it default
+      if (addresses.length === 0 || data.isDefault) {
+        setAddresses(prevAddresses =>
+          prevAddresses.map(addr => ({ ...addr, isDefault: false }))
+        );
+        newAddress.isDefault = true;
+      }
+      
+      setAddresses(prevAddresses => [...prevAddresses, newAddress]);
+      toast({
+        title: dictionary.addressAddedToast,
+        description: dictionary.addressAddedDescToast,
+      });
     }
-    setIsFormOpen(false);
-    form.reset();
-  }
+    
+    handleCancel();
+  };
 
-  if (isFormOpen) {
+  if (isFormVisible) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">{editingAddress ? dictionary.editAddressTitle : dictionary.addAddressTitle}</CardTitle>
+          <CardTitle>
+            {isEditing ? dictionary.editAddressTitle : dictionary.addAddressTitle}
+          </CardTitle>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
-              <FormField name="street" control={form.control} render={({ field }) => ( <FormItem><FormLabel>{dictionary.streetAddressLabel}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField name="city" control={form.control} render={({ field }) => ( <FormItem><FormLabel>{dictionary.cityLabel}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField name="state" control={form.control} render={({ field }) => ( <FormItem><FormLabel>{dictionary.stateProvinceLabel}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField name="zipCode" control={form.control} render={({ field }) => ( <FormItem><FormLabel>{dictionary.zipPostalCodeLabel}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField name="country" control={form.control} render={({ field }) => ( <FormItem><FormLabel>{dictionary.countryLabel}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              </div>
-              <FormField control={form.control} name="isDefault" render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                    <FormControl><Input type="checkbox" checked={field.value} onChange={field.onChange} className="h-4 w-4" /></FormControl>
-                    <div className="space-y-1 leading-none"><FormLabel>{dictionary.setDefaultAddressLabel}</FormLabel></div>
+              <FormField
+                control={form.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{dictionary.streetAddressLabel}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
-                )}/>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dictionary.cityLabel}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dictionary.stateProvinceLabel}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dictionary.zipPostalCodeLabel}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dictionary.countryLabel}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="isDefault"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>{dictionary.setDefaultAddressLabel}</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </CardContent>
+            
             <CardFooter className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>{dictionary.cancelButton}</Button>
-              <Button type="submit" className="bg-accent text-accent-foreground hover:bg-accent/90">{editingAddress ? dictionary.saveChangesButton : dictionary.addAddressFormButton}</Button>
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                {dictionary.cancelButton}
+              </Button>
+              <Button type="submit">
+                {isEditing ? dictionary.saveChangesButton : dictionary.addAddressFormButton}
+              </Button>
             </CardFooter>
           </form>
         </Form>
@@ -153,38 +302,91 @@ export default function AddressesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-            <h2 className="text-2xl font-semibold">{dictionary.manageAddressesTitle}</h2>
-            <p className="text-muted-foreground">{dictionary.manageAddressesDesc}</p>
+          <h2 className="text-2xl font-semibold">{dictionary.manageAddressesTitle}</h2>
+          <p className="text-muted-foreground">{dictionary.manageAddressesDesc}</p>
         </div>
         <Button onClick={handleAddNew} className="bg-accent text-accent-foreground hover:bg-accent/90">
           <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.addNewAddressButton}
         </Button>
       </div>
+      
       {addresses.length === 0 ? (
-        <Card><CardContent className="p-6 text-center text-muted-foreground">{dictionary.noAddressesYet}</CardContent></Card>
+        <Card className="shadow-lg">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Home className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-semibold mb-2">{dictionary.noAddressesYet}</p>
+            <Button onClick={handleAddNew} className="mt-4">
+              <PlusCircle className="mr-2 h-4 w-4" /> {dictionary.addNewAddressButton}
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="space-y-4">
-          {addresses.map(address => (
-            <Card key={address.id} className="shadow-md">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  <div>
-                    <p className="font-semibold">{address.street}</p>
-                    <p className="text-sm text-muted-foreground">{address.city}, {address.state} {address.zipCode}</p>
-                    <p className="text-sm text-muted-foreground">{address.country}</p>
-                    {address.isDefault && <span className="text-xs font-medium text-primary mt-1 inline-flex items-center"><Home className="h-3 w-3 mr-1" /> {dictionary.defaultBadge}</span>}
+        <div className="grid gap-4">
+          {addresses.map((address) => (
+            <Card key={address.id} className="shadow-lg">
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <p className="font-medium">{address.street}</p>
+                      {address.isDefault && (
+                        <Badge variant="secondary">{dictionary.defaultBadge}</Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">
+                      {address.city}, {address.state} {address.zipCode}
+                    </p>
+                    <p className="text-muted-foreground">{address.country}</p>
                   </div>
-                  <div className="flex space-x-2 mt-3 sm:mt-0 shrink-0">
+                  
+                  <div className="flex space-x-2">
                     {!address.isDefault && (
-                       <Button variant="outline" size="sm" onClick={() => handleSetDefault(address.id)}>{dictionary.setDefaultButton}</Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDefault(address.id)}
+                      >
+                        {dictionary.setDefaultButton}
+                      </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(address)} aria-label={dictionary.editButtonLabel}><Edit className="h-4 w-4" /></Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(address)}
+                      aria-label={dictionary.editButtonLabel}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    
                     <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" aria-label={dictionary.deleteButtonLabel}><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>{dictionary.confirmDeleteTitle}</AlertDialogTitle><AlertDialogDescription>{dictionary.confirmDeleteDesc}</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>{dictionary.cancelButton}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(address.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{dictionary.deleteConfirmButton}</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive hover:bg-destructive/10"
+                          aria-label={dictionary.deleteButtonLabel}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{dictionary.confirmDeleteTitle}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {dictionary.confirmDeleteDesc}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{dictionary.cancelButton}</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(address.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {dictionary.deleteConfirmButton}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
                     </AlertDialog>
                   </div>
                 </div>

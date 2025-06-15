@@ -20,11 +20,11 @@ const nextConfig: NextConfig = {
   },
   // Добавляем output: 'standalone' для Docker
   output: 'standalone',
-  // Экспериментальные функции для лучшей производительности
-  experimental: {
-    // Оптимизация размера бандла
-    optimizeCss: true,
-  },
+  // Убираем экспериментальные функции, которые вызывают ошибки
+  // experimental: {
+  //   // Оптимизация размера бандла - временно отключено из-за ошибки critters
+  //   optimizeCss: true,
+  // },
 };
 
 export default nextConfig;
