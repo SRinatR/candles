@@ -60,7 +60,7 @@ type AddressFormData = z.infer<typeof addressSchema>;
 export default function AccountAddressesPage() {
   const { toast } = useToast();
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getAddressesPageDictionary(locale);
 
   // Mock addresses data - в реальном приложении будет загружаться из API
@@ -148,7 +148,8 @@ export default function AccountAddressesPage() {
       // Edit existing address
       setAddresses(prevAddresses =>
         prevAddresses.map(addr =>
-          addr.id === editingAddress.id ? { ...addr, ...data } : addr
+          addr.id === editingAddress.id ?
+            { ...data, id: editingAddress.id } : addr
         )
       );
       toast({
@@ -159,18 +160,9 @@ export default function AccountAddressesPage() {
       // Add new address
       const newAddress: Address = {
         ...data,
-        id: Math.random().toString(36).substr(2, 9),
+        id: Date.now().toString(), // Простая генерация ID
       };
-      
-      // If this is the first address or set as default, make it default
-      if (addresses.length === 0 || data.isDefault) {
-        setAddresses(prevAddresses =>
-          prevAddresses.map(addr => ({ ...addr, isDefault: false }))
-        );
-        newAddress.isDefault = true;
-      }
-      
-      setAddresses(prevAddresses => [...prevAddresses, newAddress]);
+      setAddresses(prev => [...prev, newAddress]);
       toast({
         title: dictionary.addressAddedToast,
         description: dictionary.addressAddedDescToast,
@@ -182,14 +174,14 @@ export default function AccountAddressesPage() {
 
   if (isFormVisible) {
     return (
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>
-            {isEditing ? dictionary.editAddressTitle : dictionary.addAddressTitle}
-          </CardTitle>
-        </CardHeader>
+      <Card className="max-w-2xl mx-auto shadow-lg">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardHeader>
+              <CardTitle className="text-xl">
+                {isEditing ? dictionary.editAddressTitle : dictionary.addAddressTitle}
+              </CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
@@ -277,15 +269,20 @@ export default function AccountAddressesPage() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>{dictionary.setDefaultAddressLabel}</FormLabel>
+                      <FormLabel className="text-sm font-normal">
+                        {dictionary.setDefaultAddressLabel}
+                      </FormLabel>
                     </div>
                   </FormItem>
                 )}
               />
             </CardContent>
-            
-            <CardFooter className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={handleCancel}>
+            <CardFooter className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel}
+              >
                 {dictionary.cancelButton}
               </Button>
               <Button type="submit">
@@ -338,33 +335,29 @@ export default function AccountAddressesPage() {
                     </p>
                     <p className="text-muted-foreground">{address.country}</p>
                   </div>
-                  
                   <div className="flex space-x-2">
                     {!address.isDefault && (
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         size="sm"
                         onClick={() => handleSetDefault(address.id)}
                       >
                         {dictionary.setDefaultButton}
                       </Button>
                     )}
-                    
-                    <Button
-                      variant="outline"
+                    <Button 
+                      variant="outline" 
                       size="sm"
                       onClick={() => handleEdit(address)}
                       aria-label={dictionary.editButtonLabel}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
+                        <Button 
+                          variant="outline" 
                           size="sm"
-                          className="text-destructive border-destructive hover:bg-destructive/10"
                           aria-label={dictionary.deleteButtonLabel}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -379,9 +372,8 @@ export default function AccountAddressesPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>{dictionary.cancelButton}</AlertDialogCancel>
-                          <AlertDialogAction
+                          <AlertDialogAction 
                             onClick={() => handleDelete(address.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             {dictionary.deleteConfirmButton}
                           </AlertDialogAction>

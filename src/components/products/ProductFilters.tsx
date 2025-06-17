@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -34,7 +33,7 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeParams = useParams();
-  const locale = routeParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale as Locale) || 'uz';
 
   const { minProductPrice, maxProductPrice } = useMemo(() => {
     if (!allProducts || allProducts.length === 0) {
@@ -236,7 +235,13 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                 <Checkbox
                   id={`cat-${category.slug}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                   checked={selectedCategories.includes(category.slug)}
-                  onCheckedChange={() => handleCheckboxChange(category.slug, selectedCategories, setSelectedCategories)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedCategories(prev => [...prev, category.slug]);
+                    } else {
+                      setSelectedCategories(prev => prev.filter(item => item !== category.slug));
+                    }
+                  }}
                 />
                 <Label htmlFor={`cat-${category.slug}-${onApplyFilters ? 'mobile' : 'desktop'}`} className="font-normal text-sm">{category.name}</Label>
               </div>
@@ -290,7 +295,13 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                   <Checkbox
                     id={`scent-${scent.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                     checked={selectedScents.includes(scent)}
-                    onCheckedChange={() => handleCheckboxChange(scent, selectedScents, setSelectedScents)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedScents(prev => [...prev, scent]);
+                      } else {
+                        setSelectedScents(prev => prev.filter(item => item !== scent));
+                      }
+                    }}
                   />
                   <Label htmlFor={`scent-${scent.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`} className="font-normal text-sm">{scent}</Label>
                 </div>
@@ -308,7 +319,13 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                   <Checkbox
                     id={`material-${material.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                     checked={selectedMaterials.includes(material)}
-                    onCheckedChange={() => handleCheckboxChange(material, selectedMaterials, setSelectedMaterials)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedMaterials(prev => [...prev, material]);
+                      } else {
+                        setSelectedMaterials(prev => prev.filter(item => item !== material));
+                      }
+                    }}
                   />
                   <Label htmlFor={`material-${material.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`} className="font-normal text-sm">{material}</Label>
                 </div>

@@ -1,7 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -20,11 +19,12 @@ const nextConfig: NextConfig = {
   },
   // Добавляем output: 'standalone' для Docker
   output: 'standalone',
-  // Убираем экспериментальные функции, которые вызывают ошибки
-  // experimental: {
-  //   // Оптимизация размера бандла - временно отключено из-за ошибки critters
-  //   optimizeCss: true,
-  // },
+  // Настройки для React 19
+  experimental: {
+    reactCompiler: false, // Отключаем компилятор React пока что
+  },
+  // Настройки для совместимости с React 19
+  transpilePackages: ['@radix-ui/react-checkbox', '@radix-ui/react-label'],
 };
 
 export default nextConfig;
