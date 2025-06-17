@@ -9,38 +9,210 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+package-lock.json
 
-# vercel
-.vercel
+# testing
+/coverage
+*.test.js
+*.test.ts
+*.test.tsx
 
-# typescript
+# next.js
+/.next/
+/out/
+.next
+
+# production
+/build
+/dist
+
+# environment variables (keep .env.example for Claude)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*
+!.env.example
+
+# database
+*.db
+*.sqlite
+*.sqlite3
+/prisma/dev.db
+/prisma/migrations/*
+!/prisma/migrations/migration_lock.toml
+
+# uploads and media (keep sample files for Claude)
+/public/uploads/*
+!/public/uploads/.gitkeep
+/public/products/*
+!/public/products/candle1.svg
+!/public/products/candle2.svg
+!/public/products/gypsum1.svg
+# Keep sample SVG files for reference
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
 *.tsbuildinfo
 next-env.d.ts
 
-.genkit/*
-.env*
+# Optional npm cache directory
+.npm
 
-# firebase
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.pem
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Vercel
+.vercel
+
+# Firebase
 firebase-debug.log
 firestore-debug.log
-.env
+.firebase
+.genkit/*
+
+# AI and ML
+*.model
+*.weights
+*.h5
+*.pkl
+*.joblib
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.swp
+*.swo
+*~
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Local development files (keep for Claude debugging)
+# .modified - keep for tracking changes
+# .trae/ - keep for IDE rules
+# memory_bank/ - keep for project documentation
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.code-workspace
+
+# Prisma (keep schema and migrations for Claude)
+prisma/dev.db*
+prisma/*.db
+prisma/*.db-journal
+# Keep: prisma/schema.prisma, prisma/seed.ts, prisma/migrations/

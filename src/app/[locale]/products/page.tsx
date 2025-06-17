@@ -65,10 +65,10 @@ const getCombinedDictionary = (locale: Locale) => {
       newestOption: "Newest Arrivals"
     },
     productCard: dict.productCard || {
-      addToCart: "Add to Cart (ProductsPage Fallback)",
-      addedToCartTitle: "Added to cart (ProductsPage Fallback)",
-      addedToCartDesc: "{productName} has been added (ProductsPage Fallback).",
-      outOfStock: "Out of Stock (ProductsPage Fallback)"
+      addToCart: "Add to Cart",
+      addedToCartTitle: "Added to cart",
+      addedToCartDesc: "{productName} has been added.",
+      outOfStock: "Out of Stock"
     },
      categories: dict.categories || {}
   };

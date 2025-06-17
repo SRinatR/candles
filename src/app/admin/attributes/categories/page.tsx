@@ -7,10 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, PlusCircle, Edit3, Upload, X } from "lucide-react";
+import { Trash2, PlusCircle, Edit3, Upload, X, Power, PowerOff, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mockCategories } from '@/lib/mock-data';
 import { mockProducts } from '@/lib/mock-data';
@@ -64,7 +75,7 @@ type AlertDialogStrings = {
 };
 
 export default function AdminManageCategoriesPage() {
-  const [allCategories, setAllCategories] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategorySlug, setNewCategorySlug] = useState('');
@@ -79,38 +90,48 @@ export default function AdminManageCategoriesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{id: string, isActive: boolean} | null>(null);
+  const [pendingEditCategory, setPendingEditCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const { toast } = useToast();
   const [dictionary, setDictionary] = useState<ManageCategoriesDict | null>(null);
   const [alertStrings, setAlertStrings] = useState<AlertDialogStrings | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/categories?includeTranslations=true');
+      const response = await fetch('/api/categories');
       if (response.ok) {
         const data = await response.json();
-        const categoryNames = data.categories?.map((cat: any) => cat.name) || [];
-        setAllCategories(categoryNames);
-        localStorage.setItem(LOCAL_STORAGE_KEY_CATEGORIES, JSON.stringify(categoryNames));
+        setAllCategories(data.categories || []);
+        localStorage.setItem('categories', JSON.stringify(data.categories || []));
       } else {
         // Fallback to localStorage if API fails
-        let storedCustomCategories = localStorage.getItem(LOCAL_STORAGE_KEY_CATEGORIES);
-        if (storedCustomCategories) {
-          setAllCategories(JSON.parse(storedCustomCategories));
+        const storedCategories = localStorage.getItem('categories');
+        if (storedCategories) {
+          setAllCategories(JSON.parse(storedCategories));
+        } else {
+          setAllCategories(mockCategories);
         }
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
-      // Fallback to localStorage if API fails
-      let storedCustomCategories = localStorage.getItem(LOCAL_STORAGE_KEY_CATEGORIES);
-      if (storedCustomCategories) {
-        setAllCategories(JSON.parse(storedCustomCategories));
+      console.error('Error fetching categories:', error);
+      // Fallback to localStorage
+      const storedCategories = localStorage.getItem('categories');
+      if (storedCategories) {
+        setAllCategories(JSON.parse(storedCategories));
+      } else {
+        setAllCategories(mockCategories);
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -137,19 +158,154 @@ export default function AdminManageCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const isAttributeInUse = useCallback((attributeName: string): boolean => {
-    return mockProducts.some(product => product.category === attributeName);
+  const checkIfCategoryInUse = useCallback((categoryName: string) => {
+    // Mock data check - replace with actual API call
+    const mockProducts = [
+      { id: 1, category: 'Ароматические свечи' },
+      { id: 2, category: 'Декоративные свечи' },
+      { id: 3, category: 'Ароматические свечи' },
+    ];
+    
+    return mockProducts.some(product => product.category === categoryName);
   }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const getCategoryProductCount = useCallback((categoryName: string) => {
+    // Mock data check - replace with actual API call
+    const mockProducts = [
+      { id: 1, category: 'Ароматические свечи' },
+      { id: 2, category: 'Декоративные свечи' },
+      { id: 3, category: 'Ароматические свечи' },
+    ];
+    
+    return mockProducts.filter(product => product.category === categoryName).length;
+  }, []);
+
+  const toggleCategoryStatus = async (categoryId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive: !currentStatus
+        }),
+      });
+
+      if (response.ok) {
+        const updatedCategory = await response.json();
+        setAllCategories(prev => 
+          prev.map(cat => 
+            cat.id === categoryId 
+              ? { ...cat, isActive: !currentStatus }
+              : cat
+          )
+        );
+        
+        // Update localStorage
+        const updatedCategories = allCategories.map(cat => 
+          cat.id === categoryId 
+            ? { ...cat, isActive: !currentStatus }
+            : cat
+        );
+        localStorage.setItem('categories', JSON.stringify(updatedCategories));
+        
+        toast({
+          title: "Статус обновлен",
+          description: `Категория ${!currentStatus ? 'активирована' : 'деактивирована'}.`,
+        });
+      } else {
+        throw new Error('Failed to update category status');
+      }
+    } catch (error) {
+      console.error('Error updating category status:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус категории.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resizeImage = (file: File, maxWidth: number = 800, maxHeight: number = 600, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        // Вычисляем новые размеры с сохранением пропорций
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Рисуем изображение с новыми размерами
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Конвертируем в base64
+        const resizedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(resizedDataUrl);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Проверяем размер файла (максимум 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Ошибка",
+          description: "Размер файла не должен превышать 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Проверяем тип файла
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Ошибка",
+          description: "Пожалуйста, выберите файл изображения.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      try {
+        setImageFile(file);
+        // Автоматически изменяем размер изображения
+        const resizedImage = await resizeImage(file);
+        setImagePreview(resizedImage);
+        setNewCategoryImage(resizedImage);
+        
+        toast({
+          title: "Успешно",
+          description: "Изображение загружено и оптимизировано.",
+        });
+      } catch (error) {
+        console.error('Error resizing image:', error);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось обработать изображение.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -166,11 +322,10 @@ export default function AdminManageCategoriesPage() {
   };
 
   const handleAddOrUpdateAttribute = async () => {
-    // Проверка заполненности переводов
-    const hasEmptyTranslations = newCategoryTranslations.some(t => !t.name.trim());
-    if (hasEmptyTranslations) {
+    if (!newCategoryName.trim()) {
       toast({
-        title: "Заполните названия на всех языках",
+        title: "Ошибка",
+        description: "Название категории не может быть пустым.",
         variant: "destructive",
       });
       return;
@@ -178,7 +333,33 @@ export default function AdminManageCategoriesPage() {
 
     if (!newCategorySlug.trim()) {
       toast({
-        title: "Заполните slug категории",
+        title: "Ошибка",
+        description: "Slug категории не может быть пустым.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Проверка на дублирование slug
+    const existingCategory = allCategories.find(cat => 
+      cat.slug === newCategorySlug && cat.id !== editingCategory?.id
+    );
+    
+    if (existingCategory) {
+      toast({
+        title: "Ошибка",
+        description: "Категория с таким slug уже существует.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Валидация переводов
+    const validTranslations = newCategoryTranslations.filter(t => t.name.trim() !== '');
+    if (validTranslations.length === 0) {
+      toast({
+        title: "Ошибка",
+        description: "Необходимо заполнить хотя бы один перевод.",
         variant: "destructive",
       });
       return;
@@ -191,120 +372,171 @@ export default function AdminManageCategoriesPage() {
         description: newCategoryDescription.trim() || undefined,
         image: newCategoryImage || undefined,
         isActive: newCategoryActive,
-        translations: newCategoryTranslations.filter(t => t.name.trim())
+        translations: validTranslations
       };
 
-      if (editingAttributeName) {
+      let response;
+      if (editingCategory) {
         // Обновление существующей категории
-        const response = await fetch(`/api/categories/${editingAttributeName}`, {
+        response = await fetch(`/api/categories/${editingCategory.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(categoryData),
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to update category');
-        }
-
-        const updatedCategory = await response.json();
-        const updatedCategories = allCategories.map(cat => 
-          cat === editingAttributeName ? updatedCategory.name : cat
-        );
-        setAllCategories(updatedCategories);
-        localStorage.setItem(LOCAL_STORAGE_KEY_CATEGORIES, JSON.stringify(updatedCategories));
-        
-        toast({
-          title: dictionary?.updateSuccessTitle || "Category Updated",
-        });
       } else {
         // Создание новой категории
-        const response = await fetch('/api/categories', {
+        response = await fetch('/api/categories', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(categoryData),
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to create category');
-        }
-
-        const newCategory = await response.json();
-        const updatedCategories = [...allCategories, newCategory.name];
-        setAllCategories(updatedCategories);
-        localStorage.setItem(LOCAL_STORAGE_KEY_CATEGORIES, JSON.stringify(updatedCategories));
-        
-        toast({
-          title: dictionary?.addSuccessTitle || "Category Added",
-        });
       }
 
-      // Сброс формы
-      setNewCategoryName("");
-      setNewCategorySlug("");
-      setNewCategoryDescription("");
-      setNewCategoryImage("");
-      setNewCategoryActive(true);
-      setNewCategoryTranslations([
-        { locale: 'ru', name: '', description: '' },
-        { locale: 'en', name: '', description: '' },
-        { locale: 'uz', name: '', description: '' }
-      ]);
-      removeImage();
-      setEditingAttributeName(null);
-      
-      // Refresh categories from API
-      fetchCategories();
+      if (response.ok) {
+        const result = await response.json();
+        
+        toast({
+          title: "Успех",
+          description: editingCategory 
+            ? "Категория успешно обновлена." 
+            : "Категория успешно создана.",
+        });
+
+        // Обновить список категорий
+        await fetchCategories();
+        
+        // Закрыть модальные окна и сбросить форму
+        handleCloseDialogs();
+        handleCancelEdit();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при сохранении категории');
+      }
     } catch (error) {
       console.error('Error saving category:', error);
-      
       toast({
-        title: "Ошибка при сохранении категории",
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось сохранить категорию.",
         variant: "destructive",
       });
     }
   };
   
-  const handleInitiateEdit = async (categoryName: string) => {
+  const handleInitiateEdit = async (category: Category) => {
     try {
-      // Найти категорию в API данных
-      const response = await fetch('/api/categories?includeTranslations=true');
+      const response = await fetch(`/api/categories/${category.id}`);
       if (response.ok) {
-        const categoriesData = await response.json();
-        const category = categoriesData.categories?.find((cat: Category) => cat.name === categoryName);
-        
-        if (category) {
+        const data = await response.json();
+        const categoryData = data.category;
+        if (categoryData) {
+          setNewCategoryName(categoryData.name);
+          setNewCategorySlug(categoryData.slug);
+          setNewCategoryDescription(categoryData.description || '');
+          setNewCategoryImage(categoryData.image || '');
+          setImagePreview(categoryData.image || '');
+          setNewCategoryActive(categoryData.isActive ?? true);
+          
+          // Set translations
+          if (categoryData.translations && categoryData.translations.length > 0) {
+            const locales: ('ru' | 'en' | 'uz')[] = ['ru', 'en', 'uz'];
+            const formattedTranslations = locales.map(locale => {
+              const existing = categoryData.translations.find((t: any) => t.locale === locale);
+              return existing || { locale, name: '', description: '' };
+            });
+            setNewCategoryTranslations(formattedTranslations);
+          } else {
+            // Fallback translations if none exist
+            setNewCategoryTranslations([
+              { locale: 'ru', name: categoryData.name || '', description: categoryData.description || '' },
+              { locale: 'en', name: '', description: '' },
+              { locale: 'uz', name: '', description: '' }
+            ]);
+          }
+          
+          setEditingCategory(category);
+          setEditingAttributeName(category.name);
+          setIsEditDialogOpen(true);
+        } else {
+          // Fallback if no category data
           setNewCategoryName(category.name);
-          setNewCategorySlug(category.slug);
+          setNewCategorySlug(category.slug || '');
           setNewCategoryDescription(category.description || '');
           setNewCategoryImage(category.image || '');
-          setNewCategoryActive(category.isActive);
-          
-          // Установить переводы или создать пустые
-          const translations = category.translations || [];
-          const locales: ('ru' | 'en' | 'uz')[] = ['ru', 'en', 'uz'];
-          const formattedTranslations = locales.map(locale => {
-            const existing = translations.find(t => t.locale === locale);
-            return existing || { locale, name: '', description: '' };
-          });
-          
-          setNewCategoryTranslations(formattedTranslations);
-          setEditingAttributeName(category.id);
-          
-          if (category.image) {
-            setImagePreview(category.image);
-          }
+          setImagePreview(category.image || '');
+          setNewCategoryActive(category.isActive ?? true);
+          setNewCategoryTranslations([
+            { locale: 'ru', name: category.name, description: category.description || '' },
+            { locale: 'en', name: '', description: '' },
+            { locale: 'uz', name: '', description: '' }
+          ]);
+          setEditingCategory(category);
+          setEditingAttributeName(category.name);
+          setIsEditDialogOpen(true);
         }
+      } else {
+        // Fallback if API call fails
+        setNewCategoryName(category.name);
+        setNewCategorySlug(category.slug || '');
+        setNewCategoryDescription(category.description || '');
+        setNewCategoryImage(category.image || '');
+        setImagePreview(category.image || '');
+        setNewCategoryActive(category.isActive ?? true);
+        setNewCategoryTranslations([
+          { locale: 'ru', name: category.name, description: category.description || '' },
+          { locale: 'en', name: '', description: '' },
+          { locale: 'uz', name: '', description: '' }
+        ]);
+        setEditingCategory(category);
+        setEditingAttributeName(category.name);
+        setIsEditDialogOpen(true);
       }
     } catch (error) {
-      console.error('Error loading category for edit:', error);
-      // Fallback к простому редактированию
-      setNewCategoryName(categoryName);
-      setEditingAttributeName(categoryName);
+      console.error('Error fetching category for edit:', error);
+      // Fallback if exception occurs
+      setNewCategoryName(category.name);
+      setNewCategorySlug(category.slug || '');
+      setNewCategoryDescription(category.description || '');
+      setNewCategoryImage(category.image || '');
+      setImagePreview(category.image || '');
+      setNewCategoryActive(category.isActive ?? true);
+      setNewCategoryTranslations([
+        { locale: 'ru', name: category.name, description: category.description || '' },
+        { locale: 'en', name: '', description: '' },
+        { locale: 'uz', name: '', description: '' }
+      ]);
+      setEditingCategory(category);
+      setEditingAttributeName(category.name);
+      setIsEditDialogOpen(true);
     }
+  };
+
+  const handleOpenAddDialog = () => {
+    // Reset form
+    setNewCategoryName('');
+    setNewCategorySlug('');
+    setNewCategoryDescription('');
+    setNewCategoryImage('');
+    setImagePreview('');
+    setNewCategoryActive(true);
+    setNewCategoryTranslations([
+      { locale: 'ru', name: '', description: '' },
+      { locale: 'en', name: '', description: '' },
+      { locale: 'uz', name: '', description: '' }
+    ]);
+    setEditingCategory(null);
+    setEditingAttributeName(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleCloseDialogs = () => {
+    setIsAddDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setEditingCategory(null);
+    setEditingAttributeName(null);
   };
 
   const handleCancelEdit = () => {
@@ -322,46 +554,40 @@ export default function AdminManageCategoriesPage() {
     setEditingAttributeName(null);
   };
 
-  const handleDeleteAttribute = async (attributeToDelete: string) => {
-    if (!dictionary) return;
-    
+  const handleDeleteAttribute = async (categoryName: string) => {
     try {
-      // Find the category ID from the API data
-      const response = await fetch('/api/categories');
-      if (response.ok) {
-        const categoriesData = await response.json();
-        const categoryToDelete = categoriesData.categories?.find((cat: any) => cat.name === attributeToDelete);
-        
-        if (categoryToDelete) {
-          // Delete category from database
-          const deleteResponse = await fetch(`/api/categories/${categoryToDelete.id}`, {
-            method: 'DELETE',
-          });
+      // Find the category by name
+      const categoryToDelete = allCategories.find(cat => cat.name === categoryName);
+      
+      if (categoryToDelete) {
+        // Delete category from database
+        const deleteResponse = await fetch(`/api/categories/${categoryToDelete.id}`, {
+          method: 'DELETE',
+        });
 
-          if (!deleteResponse.ok) {
-            const errorData = await deleteResponse.json();
-            throw new Error(errorData.error || 'Failed to delete category');
-          }
+        if (!deleteResponse.ok) {
+          const errorData = await deleteResponse.json();
+          throw new Error(errorData.error || 'Failed to delete category');
         }
+        
+        // Update local state and localStorage
+        const updatedCategories = allCategories.filter(cat => cat.id !== categoryToDelete.id);
+        setAllCategories(updatedCategories);
+        localStorage.setItem('categories', JSON.stringify(updatedCategories));
+        
+        toast({ 
+          title: "Категория удалена", 
+          description: `Категория "${categoryName}" была успешно удалена.`
+        });
+        
+        // Refresh categories from API
+        await fetchCategories();
       }
-      
-      // Update local state and localStorage
-      const updatedAttributes = allCategories.filter(attr => attr !== attributeToDelete);
-      setAllCategories(updatedAttributes);
-      localStorage.setItem(LOCAL_STORAGE_KEY_CATEGORIES, JSON.stringify(updatedAttributes));
-      
-      toast({ 
-        title: dictionary?.deleteSuccessTitle || "Category Deleted", 
-        description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', attributeToDelete) 
-      });
-      
-      // Refresh categories from API
-      fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({ 
-        title: "Error", 
-        description: error instanceof Error ? error.message : "Failed to delete category.", 
+        title: "Ошибка", 
+        description: error instanceof Error ? error.message : "Не удалось удалить категорию.", 
         variant: "destructive" 
       });
     }
@@ -373,61 +599,163 @@ export default function AdminManageCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">{dictionary.title}</h1>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>{editingAttributeName ? (dictionary.editExistingTitle || "Edit Category") : (dictionary.addNewTitle || "Add New Category")}</CardTitle>
-          <CardDescription>{editingAttributeName ? (dictionary.editExistingDescription || "Modify the category details below.") : (dictionary.addNewDescription || "Create a new category for your products.")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Основные поля */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">Основное название</Label>
-              <Input
-                id="categoryName"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Название категории"
-              />
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">{dictionary.title}</h1>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleOpenAddDialog}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Добавить категорию
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Добавить новую категорию</DialogTitle>
+              <DialogDescription>
+                Создайте новую категорию для ваших товаров.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Основные поля */}
+              <div className="space-y-2">
+                <Label htmlFor="categorySlug">Slug (URL)</Label>
+                <Input
+                  id="categorySlug"
+                  value={newCategorySlug}
+                  onChange={(e) => setNewCategorySlug(e.target.value)}
+                  placeholder="category-slug"
+                />
+              </div>
+
+              {/* Загрузка изображения */}
+              <div className="space-y-2">
+                <Label>Изображение категории</Label>
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="imageUpload"
+                  />
+                  <Label
+                    htmlFor="imageUpload"
+                    className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            removeImage();
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-500">Нажмите для загрузки изображения</p>
+                      </div>
+                    )}
+                  </Label>
+                </div>
+              </div>
+
+              {/* Переводы */}
+              <div className="space-y-4">
+                <Label>Переводы на языки</Label>
+                <Tabs defaultValue="ru" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="ru">Русский</TabsTrigger>
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="uz">O'zbek</TabsTrigger>
+                  </TabsList>
+                  
+                  {(['ru', 'en', 'uz'] as const).map((locale) => {
+                    const translation = newCategoryTranslations.find(t => t.locale === locale);
+                    return (
+                      <TabsContent key={locale} value={locale} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Название на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
+                          <Input
+                            value={translation?.name || ''}
+                            onChange={(e) => updateTranslation(locale, 'name', e.target.value)}
+                            placeholder={`Название категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Описание на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
+                          <Textarea
+                            value={translation?.description || ''}
+                            onChange={(e) => updateTranslation(locale, 'description', e.target.value)}
+                            placeholder={`Описание категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
+                            rows={3}
+                          />
+                        </div>
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
+              </div>
             </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseDialogs}>
+                Отмена
+              </Button>
+              <Button onClick={() => setIsSaveConfirmOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Добавить
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Модальное окно редактирования */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Редактировать категорию</DialogTitle>
+            <DialogDescription>
+              Измените данные категории.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Основные поля */}
             <div className="space-y-2">
-              <Label htmlFor="categorySlug">Slug (URL)</Label>
+              <Label htmlFor="editCategorySlug">Slug (URL)</Label>
               <Input
-                id="categorySlug"
+                id="editCategorySlug"
                 value={newCategorySlug}
                 onChange={(e) => setNewCategorySlug(e.target.value)}
                 placeholder="category-slug"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="categoryDescription">Описание</Label>
-            <Textarea
-              id="categoryDescription"
-              value={newCategoryDescription}
-              onChange={(e) => setNewCategoryDescription(e.target.value)}
-              placeholder="Описание категории"
-              rows={3}
-            />
-          </div>
-
-          {/* Загрузка изображения */}
-          <div className="space-y-2">
-            <Label>Изображение категории</Label>
-            <div className="flex items-center gap-4">
+            {/* Загрузка изображения */}
+            <div className="space-y-2">
+              <Label>Изображение категории</Label>
               <div className="flex-1">
                 <Input
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
-                  id="imageUpload"
+                  id="editImageUpload"
                 />
                 <Label
-                  htmlFor="imageUpload"
+                  htmlFor="editImageUpload"
                   className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
                 >
                   {imagePreview ? (
@@ -458,78 +786,56 @@ export default function AdminManageCategoriesPage() {
                   )}
                 </Label>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">Или введите URL</Label>
-                <Input
-                  id="imageUrl"
-                  value={newCategoryImage}
-                  onChange={(e) => setNewCategoryImage(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
+            </div>
+
+            {/* Переводы */}
+            <div className="space-y-4">
+              <Label>Переводы на языки</Label>
+              <Tabs defaultValue="ru" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="ru">Русский</TabsTrigger>
+                  <TabsTrigger value="en">English</TabsTrigger>
+                  <TabsTrigger value="uz">O'zbek</TabsTrigger>
+                </TabsList>
+                
+                {(['ru', 'en', 'uz'] as const).map((locale) => {
+                  const translation = newCategoryTranslations.find(t => t.locale === locale);
+                  return (
+                    <TabsContent key={locale} value={locale} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Название на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
+                        <Input
+                          value={translation?.name || ''}
+                          onChange={(e) => updateTranslation(locale, 'name', e.target.value)}
+                          placeholder={`Название категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Описание на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
+                        <Textarea
+                          value={translation?.description || ''}
+                          onChange={(e) => updateTranslation(locale, 'description', e.target.value)}
+                          placeholder={`Описание категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
+                          rows={3}
+                        />
+                      </div>
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
             </div>
           </div>
-
-          {/* Переводы */}
-          <div className="space-y-4">
-            <Label>Переводы на языки</Label>
-            <Tabs defaultValue="ru" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="ru">Русский</TabsTrigger>
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="uz">O'zbek</TabsTrigger>
-              </TabsList>
-              
-              {(['ru', 'en', 'uz'] as const).map((locale) => {
-                const translation = newCategoryTranslations.find(t => t.locale === locale);
-                return (
-                  <TabsContent key={locale} value={locale} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Название на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
-                      <Input
-                        value={translation?.name || ''}
-                        onChange={(e) => updateTranslation(locale, 'name', e.target.value)}
-                        placeholder={`Название категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Описание на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
-                      <Textarea
-                        value={translation?.description || ''}
-                        onChange={(e) => updateTranslation(locale, 'description', e.target.value)}
-                        placeholder={`Описание категории на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
-                        rows={3}
-                      />
-                    </div>
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          </div>
-
-          {/* Статус активности */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="categoryActive"
-              checked={newCategoryActive}
-              onCheckedChange={setNewCategoryActive}
-            />
-            <Label htmlFor="categoryActive">Активная категория</Label>
-          </div>
-
-          {/* Кнопки действий */}
-          <div className="flex gap-2">
-            <Button onClick={handleAddOrUpdateAttribute}>
-              {editingAttributeName 
-                ? <><Edit3 className="mr-2 h-4 w-4" /> {alertStrings.updateButton || "Update"}</> 
-                : <><PlusCircle className="mr-2 h-4 w-4" /> {dictionary.addButton || "Add"}</>}
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDialogs}>
+              Отмена
             </Button>
-            {editingAttributeName && (
-              <Button variant="outline" onClick={handleCancelEdit}>{alertStrings.cancelButton || "Cancel"}</Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <Button onClick={() => setIsSaveConfirmOpen(true)}>
+              <Edit3 className="mr-2 h-4 w-4" />
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -540,46 +846,182 @@ export default function AdminManageCategoriesPage() {
           {allCategories.length === 0 ? (
             <p className="text-muted-foreground text-sm">{dictionary.noCustomYet || "No categories added yet."}</p>
           ) : (
-            <ul className="space-y-2">
-              {allCategories.map(attr => (
-                <li key={attr} className="flex items-center justify-between p-3 border rounded-md text-sm hover:bg-muted/50 transition-colors">
-                  <span>{attr}</span>
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={() => handleInitiateEdit(attr)} className="h-7 px-2 py-1 text-xs">
-                      <Edit3 className="mr-1 h-3 w-3" /> {dictionary.editButton || "Edit"}
+            <div className="space-y-2">
+              {allCategories.map(category => (
+                <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    {category.image && (
+                      <img 
+                        src={category.image} 
+                        alt={category.name}
+                        className="w-12 h-12 object-cover rounded-md"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-medium">{category.name}</h3>
+                        <Badge variant={category.isActive ? "default" : "secondary"}>
+                          {category.isActive ? "Активна" : "Неактивна"}
+                        </Badge>
+                      </div>
+                      {category.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Slug: {category.slug}</p>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          Товаров: {getCategoryProductCount(category.name)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPendingStatusChange({id: category.id, isActive: category.isActive});
+                        setIsStatusConfirmOpen(true);
+                      }}
+                      className={category.isActive ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                    >
+                      {category.isActive ? (
+                        <><EyeOff className="h-4 w-4" /></>
+                      ) : (
+                        <><Eye className="h-4 w-4" /></>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setPendingEditCategory(category);
+                        setIsEditConfirmOpen(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit3 className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive h-7 px-2 py-1 text-xs">
-                          <Trash2 className="mr-1 h-3 w-3" /> {dictionary.deleteButton || "Delete"}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>{alertStrings.confirmDeleteTitle}</AlertDialogTitle>
+                          <AlertDialogTitle>Подтвердите удаление</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {isAttributeInUse(attr) 
-                              ? alertStrings.confirmDeleteCategoryInUse.replace('{attributeName}', attr)
-                              : alertStrings.confirmDeleteGeneral.replace('{name}', attr)
+                            {checkIfCategoryInUse(category.name) 
+                              ? `Категория "${category.name}" используется в товарах. Удаление может повлиять на отображение товаров.`
+                              : `Вы уверены, что хотите удалить категорию "${category.name}"? Это действие нельзя отменить.`
                             }
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>{alertStrings.cancelButton}</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteAttribute(attr)} className="bg-destructive hover:bg-destructive/90">{alertStrings.deleteConfirmButton}</AlertDialogAction>
-                        </AlertDialogFooter>
+                             <AlertDialogCancel>Отмена</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => handleDeleteAttribute(category.name)}
+                               className="bg-red-600 hover:bg-red-700"
+                               disabled={checkIfCategoryInUse(category.name)}
+                             >
+                               Удалить
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </CardContent>
       </Card>
-       <p className="text-sm text-muted-foreground text-center">
-        {dictionary.note}
-      </p>
+
+      {/* Модальное окно подтверждения изменения статуса */}
+      <AlertDialog open={isStatusConfirmOpen} onOpenChange={setIsStatusConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Подтвердите изменение статуса</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingStatusChange?.isActive 
+                ? `Вы уверены, что хотите деактивировать категорию? Она станет недоступной для пользователей.`
+                : `Вы уверены, что хотите активировать категорию? Она станет доступной для пользователей.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPendingStatusChange(null);
+              setIsStatusConfirmOpen(false);
+            }}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingStatusChange) {
+                toggleCategoryStatus(pendingStatusChange.id, pendingStatusChange.isActive);
+                setPendingStatusChange(null);
+              }
+              setIsStatusConfirmOpen(false);
+            }}>
+              {pendingStatusChange?.isActive ? 'Деактивировать' : 'Активировать'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Модальное окно подтверждения редактирования */}
+      <AlertDialog open={isEditConfirmOpen} onOpenChange={setIsEditConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Подтвердите редактирование</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы хотите отредактировать категорию "{pendingEditCategory?.name}"? Откроется форма редактирования.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPendingEditCategory(null);
+              setIsEditConfirmOpen(false);
+            }}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingEditCategory) {
+                handleInitiateEdit(pendingEditCategory);
+                setPendingEditCategory(null);
+              }
+              setIsEditConfirmOpen(false);
+            }}>
+              Редактировать
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Модальное окно подтверждения сохранения */}
+      <AlertDialog open={isSaveConfirmOpen} onOpenChange={setIsSaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Подтвердите сохранение</AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingCategory 
+                ? `Вы уверены, что хотите сохранить изменения в категории "${editingCategory.name}"?`
+                : 'Вы уверены, что хотите создать новую категорию с указанными данными?'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsSaveConfirmOpen(false)}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              handleAddOrUpdateAttribute();
+              setIsSaveConfirmOpen(false);
+            }}>
+              {editingCategory ? 'Сохранить изменения' : 'Создать категорию'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

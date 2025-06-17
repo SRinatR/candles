@@ -21,15 +21,18 @@ import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { i18nAdmin } from '@/admin/lib/i18n-config-admin';
 import { getAdminDictionary } from '@/admin/lib/getAdminDictionary';
 import type enAdminMessages from '@/admin/dictionaries/en.json';
+import { useSearchParams } from 'next/navigation';
 
 type AdminProductsPageDict = typeof enAdminMessages.adminProductsPage;
 
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDrafts, setShowDrafts] = useState(false);
   const { currentAdminUser } = useAdminAuth();
   const [adminLocale, setAdminLocale] = useState<AdminLocale>('en');
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
@@ -86,6 +89,14 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
+  // Handle URL parameter for draft mode
+  useEffect(() => {
+    const draftParam = searchParams.get('draft');
+    if (draftParam === 'true') {
+      setShowDrafts(true);
+    }
+  }, [searchParams]);
+
   // Отслеживание изменений языка в localStorage
   useEffect(() => {
     const handleStorageChange = () => {
@@ -123,13 +134,21 @@ export default function AdminProductsPage() {
         const nameInAdminLocale = product.name[adminLocale] || product.name.en || '';
         const category = product.category || '';
         const sku = product.sku || '';
-        return (
+        const isDraft = (product as any).isDraft || false;
+        
+        // Фильтр по типу (черновик или обычный товар)
+        const typeMatch = showDrafts ? isDraft : !isDraft;
+        
+        // Фильтр по поисковому запросу
+        const searchMatch = searchTerm === '' || (
             nameInAdminLocale.toLowerCase().includes(searchTerm.toLowerCase()) ||
             category.toLowerCase().includes(searchTerm.toLowerCase()) ||
             sku.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        
+        return typeMatch && searchMatch;
     });
-  }, [products, searchTerm, adminLocale, dict]);
+  }, [products, searchTerm, showDrafts, adminLocale, dict]);
 
   const handleDeleteProduct = async (productId: string, productNameObj: Product['name']) => {
     if (!dict) return;
@@ -243,15 +262,27 @@ export default function AdminProductsPage() {
           <CardDescription>
             {dict.listDescription.replace('{count}', String(filteredProducts.length)).replace('{total}', String(products.length))}
           </CardDescription>
-           <div className="relative mt-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder={dict.searchPlaceholder}
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
+           <div className="flex flex-col sm:flex-row gap-4 mt-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={dict.searchPlaceholder}
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-drafts"
+                checked={showDrafts}
+                onCheckedChange={setShowDrafts}
+              />
+              <label htmlFor="show-drafts" className="text-sm font-medium cursor-pointer">
+                {showDrafts ? "Черновики" : "Товары"}
+              </label>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredProducts.length > 0 ? (
@@ -264,6 +295,7 @@ export default function AdminProductsPage() {
                     <TableHead className="px-2">{dict.skuHeader}</TableHead>
                     <TableHead className="px-2">{dict.nameHeader.replace('{locale}', adminLocale.toUpperCase())}</TableHead>
                     <TableHead className="px-2">{dict.categoryHeader}</TableHead>
+                    <TableHead className="text-center px-2">Тип</TableHead>
                     <TableHead className="text-right px-2">{dict.priceHeader}</TableHead>
                     <TableHead className="text-right px-2">{dict.costPriceHeader}</TableHead>
                     <TableHead className="text-center px-2">{dict.stockHeader}</TableHead>
@@ -281,7 +313,7 @@ export default function AdminProductsPage() {
                         <div className="flex justify-center">
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-200 group cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50">
                             <Image
-                              src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : "https://placehold.co/100x100.png?text=No+Image")}
+                              src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : '')}
                               alt={product.name[adminLocale] || product.name.en || 'Product Image'}
                               width={48}
                               height={48}
@@ -296,7 +328,7 @@ export default function AdminProductsPage() {
                               <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-2xl shadow-2xl backdrop-blur-sm p-6 max-w-sm">
                                 <div className="relative overflow-hidden rounded-xl bg-white shadow-inner">
                                   <Image
-                                    src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : "https://placehold.co/100x100.png?text=No+Image")}
+                                    src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : '')}
                                     alt={product.name[adminLocale] || product.name.en || 'Product Image Preview'}
                                     width={320}
                                     height={320}
@@ -344,6 +376,11 @@ export default function AdminProductsPage() {
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
                           {product.category}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-center align-middle px-2 py-3">
+                        <Badge variant={(product as any).isDraft ? "outline" : "secondary"} className="text-xs px-2">
+                          {(product as any).isDraft ? "Черновик" : "Товар"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right align-middle px-2 py-3">
                         <span className="font-semibold text-green-600">{product.price.toLocaleString('en-US')}</span>

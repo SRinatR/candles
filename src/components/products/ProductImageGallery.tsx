@@ -17,11 +17,7 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!images || images.length === 0) {
-    return (
-      <Card className="aspect-square w-full flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">No image available</p>
-      </Card>
-    );
+    return null;
   }
 
   return (

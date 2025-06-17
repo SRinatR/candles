@@ -59,10 +59,10 @@ const getProductDetailPageDictionaryBundle = (locale: Locale) => {
       relatedProductsTitle: "You Might Also Like"
     },
     productCard: dict.productCard || { 
-      addToCart: "Add to Cart (Detail Page Fallback)",
-      addedToCartTitle: "Added to cart (Detail Page Fallback)",
-      addedToCartDesc: "{productName} has been added (Detail Page Fallback).",
-      outOfStock: "Out of Stock (Detail Page Fallback)"
+      addToCart: "Add to Cart",
+      addedToCartTitle: "Added to cart",
+      addedToCartDesc: "{productName} has been added.",
+      outOfStock: "Out of Stock"
     },
      categories: dict.categories || {}
   };

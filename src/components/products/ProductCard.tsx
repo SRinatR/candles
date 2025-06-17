@@ -19,10 +19,10 @@ export interface ProductCardDictionary {
 }
 
 const defaultProductCardDictionary: ProductCardDictionary = {
-  addToCart: "Add to Cart (Default Fallback)",
-  addedToCartTitle: "Added to cart (Default Fallback)",
-  addedToCartDesc: "{productName} has been added (Default Fallback).",
-  outOfStock: "Out of Stock (Default Fallback)"
+  addToCart: "Add to Cart",
+  addedToCartTitle: "Added to cart",
+  addedToCartDesc: "{productName} has been added.",
+  outOfStock: "Out of Stock"
 };
 
 interface ProductCardProps {
@@ -58,7 +58,7 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
         <CardHeader className="p-0">
           <div className="overflow-hidden relative">
             <Image
-              src={(                product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== ''                   ? product.mainImage                   : (product.images && product.images.length > 0 && product.images[0]?.url && product.images[0].url.trim() !== ''                       ? product.images[0].url                       : "https://placehold.co/600x400.png?text=No+Image")              )}
+              src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : '')}
               alt={productName}
               width={400}
               height={400}

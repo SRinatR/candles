@@ -16,7 +16,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, FileText } from "lucide-react";
 import { ImageUploadArea } from '@/components/admin/ImageUploadArea';
 import React, { useEffect, useState, useCallback } from "react"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +48,30 @@ const productSchema = z.object({
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
   isActive: z.boolean().default(true),
+  isDraft: z.boolean().default(false),
+});
+
+// Более мягкая схема для черновиков
+const draftProductSchema = z.object({
+  name_en: z.string().optional(),
+  name_ru: z.string().optional(),
+  name_uz: z.string().optional(),
+  description_en: z.string().optional(),
+  description_ru: z.string().optional(),
+  description_uz: z.string().optional(),
+  sku: z.string().optional(),
+  price: z.coerce.number().int().positive().optional(),
+  costPrice: z.coerce.number().int().nonnegative().optional(),
+  category: z.string().optional(),
+  stock: z.coerce.number().int().nonnegative().optional(),
+  images: z.array(z.string()).optional(),
+  mainImageId: z.string().optional(), 
+  scent: z.string().optional(),
+  material: z.string().optional(),
+  dimensions: z.string().optional(),
+  burningTime: z.string().optional(),
+  isActive: z.boolean().default(true),
+  isDraft: z.boolean().default(true),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -169,6 +193,81 @@ export default function NewProductPage() {
     if (data.stock === undefined || data.stock < 0) errors.push("Valid stock quantity");
     
     return errors;
+  };
+
+  const onSubmitDraft = async (data: ProductFormValues) => {
+    console.log('onSubmitDraft called with data:', data);
+    
+    try {
+      // Для черновика используем менее строгую валидацию
+      const draftData = {
+        ...data,
+        isDraft: true
+      };
+      
+      // Валидируем с помощью draftProductSchema
+      const validatedData = draftProductSchema.parse(draftData);
+      
+      // Подготовка данных для API
+      const translations = [
+        { locale: 'en' as const, name: validatedData.name_en || '', description: validatedData.description_en || '' },
+        { locale: 'ru' as const, name: validatedData.name_ru || '', description: validatedData.description_ru || '' },
+        { locale: 'uz' as const, name: validatedData.name_uz || '', description: validatedData.description_uz || '' }
+      ];
+
+      const productData = {
+        sku: validatedData.sku || Math.floor(Math.random() * 99999 + 1).toString(),
+        price: validatedData.price ? Number(validatedData.price) : 0,
+        costPrice: validatedData.costPrice ? Number(validatedData.costPrice) : undefined,
+        dimensions: validatedData.dimensions || undefined,
+        burningTime: validatedData.burningTime || undefined,
+        stock: validatedData.stock ? Number(validatedData.stock) : 0,
+        isActive: false, // Черновики всегда неактивны
+        isDraft: true,
+        categoryId: validatedData.category || null,
+        materialId: validatedData.material || undefined,
+        scentId: validatedData.scent || undefined,
+        translations,
+        images: validatedData.images && validatedData.images.length > 0 ? validatedData.images.map((url, index) => ({
+          url,
+          isMain: url === validatedData.mainImageId,
+          order: index
+        })) : []
+      };
+
+      console.log('Sending draft product data:', productData);
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при сохранении черновика');
+      }
+
+      const createdProduct = await response.json();
+      console.log('Draft saved successfully:', createdProduct);
+      
+      toast({
+        title: "Черновик сохранен",
+        description: "Товар сохранен как черновик. Вы можете продолжить редактирование позже.",
+      });
+      
+      // Перенаправляем на страницу редактирования
+      router.push(`/admin/products/edit/${createdProduct.id}`);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось сохранить черновик",
+        variant: "destructive"
+      });
+    }
   };
 
   const onSubmit = async (data: ProductFormValues) => {
@@ -505,7 +604,16 @@ export default function NewProductPage() {
               </Card>
             </div>
           </div>
-          <CardFooter className="mt-6 flex justify-end">
+          <CardFooter className="mt-6 flex justify-end gap-3">
+            <Button 
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={handleSubmit(onSubmitDraft)}
+            >
+              <FileText className="mr-2 h-4 w-4" /> 
+              Сохранить как черновик
+            </Button>
             <Button 
               type="submit" 
               disabled={isSubmitting}

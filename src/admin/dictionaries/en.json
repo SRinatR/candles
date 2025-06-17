@@ -3,6 +3,8 @@
   "adminLayout": {
     "dashboard": "Dashboard",
     "products": "Products",
+    "allProducts": "All Products",
+    "drafts": "Drafts",
     "articles": "Articles",
     "attributes": "Attributes",
     "categories": "Categories",
@@ -115,7 +117,7 @@
     "updateSuccess": "\"{oldName}\" has been updated to \"{newName}\".",
     "deleteSuccessTitle": "Category Deleted",
     "deleteSuccess": "\"{name}\" has been deleted.",
-    "note": "Note: Category data is managed via browser localStorage. Product associations are checked against mock data.",
+
     "confirmDeleteTitle": "Confirm Deletion",
     "confirmDeleteCategoryInUse": "The category '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this category and may need to be updated manually. Are you sure you want to delete it?",
     "confirmDeleteGeneral": "Are you sure you want to delete the category \"{name}\"?",
@@ -146,7 +148,7 @@
     "updateSuccess": "\"{oldName}\" has been updated to \"{newName}\".",
     "deleteSuccessTitle": "Material Deleted",
     "deleteSuccess": "\"{name}\" has been deleted.",
-    "note": "Note: Material data is managed via browser localStorage. Product associations checked against mock data.",
+
     "confirmDeleteTitle": "Confirm Deletion",
     "confirmDeleteMaterialInUse": "The material '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this material and may need to be updated manually. Are you sure you want to delete it?",
     "confirmDeleteGeneral": "Are you sure you want to delete the material \"{name}\"?",
@@ -177,7 +179,6 @@
     "updateSuccess": "\"{oldName}\" has been updated to \"{newName}\".",
     "deleteSuccessTitle": "Scent Deleted",
     "deleteSuccess": "\"{name}\" has been deleted.",
-    "note": "Note: Scent data is managed via browser localStorage. Product associations checked against mock data.",
     "confirmDeleteTitle": "Confirm Deletion",
     "confirmDeleteScentInUse": "The scent '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this scent and may need to be updated manually. Are you sure you want to delete it?",
     "confirmDeleteGeneral": "Are you sure you want to delete the scent \"{name}\"?",

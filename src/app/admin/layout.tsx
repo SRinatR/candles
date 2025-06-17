@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import {
   LayoutDashboard, Package, FileText as ArticlesIcon, Tags, ShoppingCart, Users as ClientsIcon, Megaphone, FileOutput, Landmark, Percent,
   FileText as ContentIcon, Settings, LogOut, Menu, ShieldCheck, UserCog as UserManagementIcon,
-  PanelLeftOpen, PanelRightOpen, X, Sun, Moon, Globe as GlobeIcon, History, Users as SessionsIcon, ChevronDown
+  PanelLeftOpen, PanelRightOpen, X, Sun, Moon, Globe as GlobeIcon, History, Users as SessionsIcon, ChevronDown, FileText
 } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
 import { cn } from '@/lib/utils';
@@ -40,7 +40,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/admin/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, managerOrAdmin: true },
-  { href: '/admin/products', labelKey: 'products', icon: Package, managerOrAdmin: true },
+  {
+    href: '#!', labelKey: 'products', icon: Package, managerOrAdmin: true, isAccordion: true,
+    subItems: [
+      { href: '/admin/products', labelKey: 'allProducts', icon: Package, managerOrAdmin: true },
+      { href: '/admin/products?draft=true', labelKey: 'drafts', icon: FileText, managerOrAdmin: true },
+    ]
+  },
   { href: '/admin/articles', labelKey: 'articles', icon: ArticlesIcon, managerOrAdmin: true },
   {
     href: '#!', labelKey: 'attributes', icon: Tags, adminOnly: true, isAccordion: true,

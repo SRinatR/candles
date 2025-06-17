@@ -3,6 +3,8 @@
   "adminLayout": {
     "dashboard": "Главная панель",
     "products": "Товары",
+    "allProducts": "Все товары",
+    "drafts": "Черновики",
     "articles": "Статьи",
     "attributes": "Атрибуты",
     "categories": "Категории",
