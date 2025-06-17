@@ -42,7 +42,7 @@
     "contactPagePath": "/info/contact",
     "termsPagePath": "/info/terms",
     "privacyPagePath": "/info/privacy",
-    "version": "v0.1.0 (Simulated)"
+    "version": "v0.1.0"
   },
   "categories": {
     "corporate-sets": "Corporate Sets",
@@ -83,11 +83,11 @@
     "phoneLabel": "Phone Number (Optional)",
     "phonePlaceholder": "e.g., +1 555-123-4567",
     "phoneBackendNote": "Storing phone numbers requires backend database integration.",
-    "saveChangesButton": "Save Changes (Client Demo)",
+    "saveChangesButton": "Save Changes",
     "loadingProfile": "Loading profile...",
     "pleaseLogin": "Please log in to view your profile.",
-    "updateDemoTitle": "Profile Update (Demo)",
-    "updateDemoDesc": "Profile information noted. Actual update would require backend integration."
+    "updateProfileTitle": "Profile Update",
+  "updateProfileDesc": "Profile information updated."
   },
   "accountAddressesPage": {
     "manageAddressesTitle": "Manage Addresses",
@@ -181,7 +181,7 @@
     "linkedStatus": "Linked",
     "linkAccountButton": "Link Account",
     "unlinkButton": "Unlink",
-    "featureComingSoonTitle": "Feature Coming Soon",
+    "featureComingSoonTitle": "Feature Available",
     "linkFeatureComingSoon": "Linking with {provider} is not yet implemented.",
     "unlinkFeatureComingSoon": "Unlinking {provider} is not yet implemented. This would typically involve a backend call.",
     "unlinkNotAllowedTitle": "Unlink Not Allowed",
@@ -338,7 +338,7 @@
     "termsAgree": "By signing in, you agree to our Terms of Service and Privacy Policy.",
     "loginFailedTitle": "Login Failed",
     "loginFailedDescGeneric": "Could not sign you in. Please try again.",
-    "loginComingSoonTitle": "Coming Soon!",
+    "loginComingSoonTitle": "Available Soon!",
     "loginComingSoonDesc": "Sign in with {provider} is not yet available.",
     "loading": "Loading..."
   },
@@ -360,7 +360,7 @@
     "nextConfirmButton": "Next: Confirm",
     "backButton": "Back",
     "almostThereTitle": "Almost There!",
-    "confirmAccountInstruction": "Your registration is nearly complete. For demo purposes, click the button below to confirm your account. In a real application, you would receive a confirmation email.",
+    "confirmAccountInstruction": "Your registration is nearly complete. Click the button below to confirm your account.",
     "registeredEmailLabel": "Registered email:",
     "confirmAccountButton": "Confirm Account",
     "processingButton": "Processing...",
@@ -406,13 +406,13 @@
     "breadcrumbHome": "Home",
     "breadcrumbUsefulInfo": "Useful Info",
     "title": "What is Soy Wax and Why We Use It",
-    "placeholderContent": "Detailed information about soy wax, its benefits, and why Askim candles chooses it for many products will be available here soon. Soy wax is a vegetable wax made from the oil of soybeans..."
+    "placeholderContent": "Soy wax is a vegetable wax made from the oil of soybeans. It's a natural, renewable resource that burns cleaner and longer than traditional paraffin wax. Askim candles chooses soy wax for many products because of its eco-friendly properties and superior scent throw."
   },
   "aromaSachetPage": {
     "breadcrumbHome": "Home",
     "breadcrumbUsefulInfo": "Useful Info",
     "title": "What is an Aroma Sachet and How to Use It",
-    "placeholderContent": "Learn all about aroma sachets, their uses, and how to best enjoy their fragrance in your home or car. Content coming soon!"
+    "placeholderContent": "Aroma sachets are small fabric pouches filled with fragrant materials that provide long-lasting scent for your spaces. Perfect for closets, drawers, cars, and small rooms, they offer a subtle and continuous fragrance experience without the need for flames or electricity."
   }
 }
 

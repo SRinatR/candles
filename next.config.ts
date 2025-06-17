@@ -15,16 +15,45 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Добавляем output: 'standalone' для Docker
+  // Docker standalone output
   output: 'standalone',
-  // Настройки для React 19
-  experimental: {
-    reactCompiler: false, // Отключаем компилятор React пока что
-  },
-  // Настройки для совместимости с React 19
-  transpilePackages: ['@radix-ui/react-checkbox', '@radix-ui/react-label'],
+  // React 19.1 optimizations
+  experimental: {},
+  // Turbopack configuration - using default SWC compilation
+  // turbopack: {
+  //   rules: {
+  //     '*.tsx': {
+  //       loaders: ['@next/swc-loader'],
+  //     },
+  //   },
+  // },
+  // React 19.1 compatibility packages
+  transpilePackages: [
+    '@radix-ui/react-checkbox',
+    '@radix-ui/react-label',
+    '@radix-ui/react-form',
+    '@hookform/resolvers',
+  ],
+  // Webpack optimizations for React 19 - disabled for Turbopack
+  // webpack: (config, { isServer }) => {
+  //   if (!isServer) {
+  //     config.resolve.fallback = {
+  //       ...config.resolve.fallback,
+  //       fs: false,
+  //     };
+  //   }
+  //   return config;
+  // },
 };
 
 export default nextConfig;

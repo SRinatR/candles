@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,7 +18,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import { ImageUploadArea } from '@/components/admin/ImageUploadArea';
-import React, { useEffect, useState } from "react"; 
+import React, { useEffect, useState, useCallback } from "react"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Locale } from "@/lib/types";
 import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
@@ -39,7 +41,7 @@ const productSchema = z.object({
   costPrice: z.coerce.number().int().nonnegative({ message: "Cost price must be a non-negative integer (in UZS)." }).optional(),
   category: z.string().min(1, { message: "Please select a category." }),
   stock: z.coerce.number().int().nonnegative({ message: "Stock must be a non-negative integer." }),
-  images: z.array(z.string().url({message: "Each image must be a valid URL (Data URL in this case)."})).min(1, { message: "At least one image is required." }),
+  images: z.array(z.string().min(1, {message: "Each image must be a valid path or URL."})).min(1, { message: "At least one image is required." }),
   mainImageId: z.string().optional(), 
   scent: z.string().optional(),
   material: z.string().optional(),
@@ -59,11 +61,15 @@ export default function NewProductPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableMaterials, setAvailableMaterials] = useState<string[]>([]);
-  const [availableScents, setAvailableScents] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<{id: string, name: string}[]>([]);
+  const [availableMaterials, setAvailableMaterials] = useState<{id: string, name: string}[]>([]);
+  const [availableScents, setAvailableScents] = useState<{id: string, name: string}[]>([]);
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdProductName, setCreatedProductName] = useState<string>('');
 
   useEffect(() => {
     setIsClient(true);
@@ -76,16 +82,39 @@ export default function NewProductPage() {
     }
     loadDictionary();
 
-    if (typeof window !== 'undefined') {
-      const storedCustomCategories = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOM_CATEGORIES);
-      setAvailableCategories(storedCustomCategories ? JSON.parse(storedCustomCategories) : []);
-      
-      const storedCustomMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOM_MATERIALS);
-      setAvailableMaterials(storedCustomMaterials ? JSON.parse(storedCustomMaterials) : []);
+    // Load categories, materials, and scents from API
+    async function loadData() {
+      try {
+        const [categoriesRes, materialsRes, scentsRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/materials'),
+          fetch('/api/scents')
+        ]);
 
-      const storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOM_SCENTS);
-      setAvailableScents(storedCustomScents ? JSON.parse(storedCustomScents) : []);
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setAvailableCategories(categoriesData.categories || []);
+        }
+
+        if (materialsRes.ok) {
+          const materialsData = await materialsRes.json();
+          setAvailableMaterials(materialsData.materials || []);
+        }
+
+        if (scentsRes.ok) {
+          const scentsData = await scentsRes.json();
+          setAvailableScents(scentsData.scents || []);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to empty arrays if API fails
+         console.error('Failed to load data from API, using empty arrays');
+         setAvailableCategories([]);
+         setAvailableMaterials([]);
+         setAvailableScents([]);
+      }
     }
+    loadData();
   }, []);
 
 
@@ -109,33 +138,129 @@ export default function NewProductPage() {
     },
   });
 
-  const { register, handleSubmit, control, formState, setValue, watch } = formMethods;
+  const { register, handleSubmit, control, formState, setValue, watch, getValues } = formMethods;
   const { errors, isSubmitting } = formState; 
 
-  const onSubmit = (data: ProductFormValues) => {
-    const newProductData = {
-      id: `prod-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: { en: data.name_en, ru: data.name_ru, uz: data.name_uz },
-      description: { en: data.description_en, ru: data.description_ru, uz: data.description_uz },
-      sku: data.sku,
-      price: data.price,
-      costPrice: data.costPrice,
-      category: data.category,
-      stock: data.stock,
-      images: data.images,
-      mainImage: data.mainImageId, 
-      scent: data.scent,
-      material: data.material,
-      dimensions: data.dimensions,
-      burningTime: data.burningTime,
-      isActive: data.isActive,
-    };
-    console.log("New Product Data (Simulated):", newProductData);
-    toast({
-      title: dict?.addSuccessTitle || "Product Added (Simulated)",
-      description: `${dict?.addSuccessDescPrefix || ""}${data.name_en}${dict?.addSuccessDescSuffix || " has been 'added'."}`,
-    });
-    router.push("/admin/products");
+  const handleImagesChange = useCallback((imageUrls: string[], mainImageUrl?: string) => {
+    console.log('Setting images:', imageUrls);
+    setValue("images", imageUrls, { shouldValidate: true });
+    
+    // Устанавливаем mainImageId только если он валидный
+    if (mainImageUrl && typeof mainImageUrl === 'string') {
+      setValue("mainImageId", mainImageUrl, { shouldValidate: true });
+    } else if (imageUrls.length > 0) {
+      // Если mainImageId не указан, используем первое изображение
+      setValue("mainImageId", imageUrls[0], { shouldValidate: true });
+    }
+  }, [setValue]);
+
+  const validateRequiredFields = (data: ProductFormValues): string[] => {
+    const errors: string[] = [];
+    
+    if (!data.name_en?.trim()) errors.push("English product name");
+    if (!data.name_ru?.trim()) errors.push("Russian product name");
+    if (!data.name_uz?.trim()) errors.push("Uzbek product name");
+    if (!data.description_en?.trim()) errors.push("English description");
+    if (!data.description_ru?.trim()) errors.push("Russian description");
+    if (!data.description_uz?.trim()) errors.push("Uzbek description");
+    if (!data.price || data.price <= 0) errors.push("Valid price");
+    if (!data.category) errors.push("Category selection");
+    if (!data.images || data.images.length === 0) errors.push("At least one product image");
+    if (data.stock === undefined || data.stock < 0) errors.push("Valid stock quantity");
+    
+    return errors;
+  };
+
+  const onSubmit = async (data: ProductFormValues) => {
+    console.log('onSubmit called with data:', data);
+    
+    // Проверка обязательных полей
+    const missingFields = validateRequiredFields(data);
+    console.log('Missing fields:', missingFields);
+    
+    if (missingFields.length > 0) {
+      console.log('Setting validation modal to true');
+      setValidationErrors(missingFields);
+      setShowValidationModal(true);
+      return;
+    }
+
+    try {
+      // Подготовка данных для API - все три языка обязательны
+      const translations = [
+        { locale: 'en' as const, name: data.name_en, description: data.description_en },
+        { locale: 'ru' as const, name: data.name_ru, description: data.description_ru },
+        { locale: 'uz' as const, name: data.name_uz, description: data.description_uz }
+      ];
+
+      // Проверяем, что все переводы заполнены
+      const missingTranslations = translations.filter(t => !t.name || !t.name.trim() || !t.description || !t.description.trim());
+      if (missingTranslations.length > 0) {
+        const missingLanguages = missingTranslations.map(t => {
+          switch(t.locale) {
+            case 'en': return 'английском';
+            case 'ru': return 'русском';
+            case 'uz': return 'узбекском';
+            default: return t.locale;
+          }
+        }).join(', ');
+        
+        toast({
+          title: "Ошибка валидации",
+          description: `Необходимо заполнить название и описание на ${missingLanguages} языке(ах)`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const productData = {
+        sku: data.sku || Math.floor(Math.random() * 99999 + 1).toString(),
+        price: Number(data.price),
+        costPrice: data.costPrice ? Number(data.costPrice) : undefined,
+        dimensions: data.dimensions || undefined,
+        burningTime: data.burningTime || undefined,
+        stock: Number(data.stock),
+        isActive: data.isActive,
+        categoryId: data.category,
+        materialId: data.material || undefined,
+        scentId: data.scent || undefined,
+        translations,
+        images: data.images.length > 0 ? data.images.map((url, index) => ({
+          url,
+          isMain: url === data.mainImageId,
+          order: index
+        })) : undefined
+      };
+
+      console.log('Sending product data:', productData);
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при создании продукта');
+      }
+
+      const createdProduct = await response.json();
+      console.log('Product created successfully:', createdProduct);
+      
+      // Показываем модальное окно успеха
+      setCreatedProductName(data.name_en || data.name_ru || data.name_uz || 'Product');
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create product",
+        variant: "destructive"
+      });
+    }
   };
   
   if (!isClient || !dict) {
@@ -157,7 +282,26 @@ export default function NewProductPage() {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(
+          onSubmit, 
+          (errors) => {
+            console.log('Form validation errors:', errors);
+            
+            // Собираем ошибки валидации из Zod схемы
+            const errorMessages: string[] = [];
+            
+            Object.entries(errors).forEach(([field, error]) => {
+              if (error?.message) {
+                errorMessages.push(error.message);
+              }
+            });
+            
+            if (errorMessages.length > 0) {
+              setValidationErrors(errorMessages);
+              setShowValidationModal(true);
+            }
+          }
+        )}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <Card>
@@ -251,7 +395,7 @@ export default function NewProductPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {availableCategories.map(cat => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -273,7 +417,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableScents.map(scent => (
-                                    <SelectItem key={scent} value={scent}>{scent}</SelectItem>
+                                    <SelectItem key={scent.id} value={scent.id}>{scent.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>
@@ -293,7 +437,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableMaterials.map(material => (
-                                    <SelectItem key={material} value={material}>{material}</SelectItem>
+                                    <SelectItem key={material.id} value={material.id}>{material.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>
@@ -350,10 +494,7 @@ export default function NewProductPage() {
                       <ImageUploadArea
                         initialImageUrls={field.value} 
                         initialMainImageUrl={watch("mainImageId")} 
-                        onImagesChange={(newImageUrls, newMainImageUrl) => {
-                           setValue("images", newImageUrls, { shouldValidate: true });
-                           setValue("mainImageId", newMainImageUrl, { shouldValidate: true });
-                        }}
+                        onImagesChange={handleImagesChange}
                         maxFiles={5}
                       />
                     )}
@@ -365,7 +506,10 @@ export default function NewProductPage() {
             </div>
           </div>
           <CardFooter className="mt-6 flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+            >
               <Save className="mr-2 h-4 w-4" /> 
               {isSubmitting ? dict.savingButton : dict.saveButton}
             </Button>
@@ -375,6 +519,63 @@ export default function NewProductPage() {
             {dict.simulationNote}
           </p>
       </div>
+
+      {/* Модальное окно валидации */}
+      <Dialog open={showValidationModal} onOpenChange={setShowValidationModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Missing Required Fields
+            </DialogTitle>
+            <DialogDescription>
+              Please fill in the following required fields before adding the product:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-muted-foreground">{error}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowValidationModal(false)}>
+              OK
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Модальное окно успеха */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <Save className="h-5 w-5" />
+              Product Added Successfully
+            </DialogTitle>
+            <DialogDescription>
+              The product "{createdProductName}" has been added to your catalog.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowSuccessModal(false);
+              // Сброс формы для добавления нового товара
+              formMethods.reset();
+            }}>
+              Add Another Product
+            </Button>
+            <Button onClick={() => {
+              setShowSuccessModal(false);
+              router.push("/admin/products");
+            }}>
+              Go to Products
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </FormProvider>
   );
 }

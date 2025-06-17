@@ -1,10 +1,11 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
-import { mockProducts } from "@/lib/mock-data"; 
+// import { mockProducts } from "@/lib/mock-data"; 
 import type { Product, Locale } from "@/lib/types";
 import { ImageUploadArea } from '@/components/admin/ImageUploadArea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,6 +48,7 @@ const productSchema = z.object({
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
   isActive: z.boolean().default(true),
+  isDraft: z.boolean().default(false),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -55,11 +57,11 @@ const LOCAL_STORAGE_KEY_CUSTOM_CATEGORIES = "askimAdminCustomCategories";
 const LOCAL_STORAGE_KEY_CUSTOM_MATERIALS = "askimAdminCustomMaterials";
 const LOCAL_STORAGE_KEY_CUSTOM_SCENTS = "askimAdminCustomScents";
 
-export default function EditProductPage() {
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { toast } = useToast();
   const router = useRouter();
-  const params = useParams();
-  const productId = params.id as string;
+  const routeParams = use(params);
+  const productId = routeParams.id as string;
 
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -67,6 +69,8 @@ export default function EditProductPage() {
   const [availableScents, setAvailableScents] = useState<string[]>([]);
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
 
   const formMethods = useForm<ProductFormValues>({
@@ -87,38 +91,60 @@ export default function EditProductPage() {
     }
     loadDictionary();
 
-    const foundProduct = mockProducts.find(p => p.id === productId);
-    if (foundProduct) {
-      setProductToEdit(foundProduct);
-      reset({
-        name_en: foundProduct.name.en || "",
-        name_ru: foundProduct.name.ru || "",
-        name_uz: foundProduct.name.uz || "",
-        description_en: foundProduct.description.en || "",
-        description_ru: foundProduct.description.ru || "",
-        description_uz: foundProduct.description.uz || "",
-        sku: foundProduct.sku || "",
-        price: foundProduct.price,
-        costPrice: foundProduct.costPrice,
-        category: foundProduct.category, 
-        stock: foundProduct.stock,
-        images: foundProduct.images || [],
-        mainImageId: foundProduct.mainImage, 
-        scent: foundProduct.scent || "",
-        material: foundProduct.material || "",
-        dimensions: foundProduct.dimensions || "",
-        burningTime: foundProduct.burningTime || "",
-        isActive: foundProduct.isActive === undefined ? true : foundProduct.isActive,
-      });
-    } else {
-      toast({ title: "Error", description: "Product not found.", variant: "destructive" });
-      router.push("/admin/products");
-    }
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productRes, categoriesRes] = await Promise.all([
+          fetch(`/api/products/${productId}?includeTranslations=true`),
+          fetch('/api/categories')
+        ]);
+        
+        if (productRes.ok && categoriesRes.ok) {
+          const foundProduct = await productRes.json();
+          const categoriesData = await categoriesRes.json();
+          
+          setProductToEdit(foundProduct);
+          setAvailableCategories(categoriesData.categories?.map((c: any) => c.name) || []);
+          
+          reset({
+            name_en: foundProduct.name.en || "",
+            name_ru: foundProduct.name.ru || "",
+            name_uz: foundProduct.name.uz || "",
+            description_en: foundProduct.description.en || "",
+            description_ru: foundProduct.description.ru || "",
+            description_uz: foundProduct.description.uz || "",
+            sku: foundProduct.sku || "",
+            price: foundProduct.price,
+            costPrice: foundProduct.costPrice,
+            category: foundProduct.category, 
+            stock: foundProduct.stock,
+            images: foundProduct.images || [],
+            mainImageId: foundProduct.mainImage, 
+            scent: foundProduct.scent || "",
+            material: foundProduct.material || "",
+            dimensions: foundProduct.dimensions || "",
+            burningTime: foundProduct.burningTime || "",
+            isActive: foundProduct.isActive === undefined ? true : foundProduct.isActive,
+            isDraft: foundProduct.isDraft === undefined ? false : foundProduct.isDraft,
+          });
+        } else {
+          setError('Failed to load product data');
+          toast({ title: "Error", description: "Product not found.", variant: "destructive" });
+          router.push("/admin/products");
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        setError('Failed to load product data');
+        toast({ title: "Error", description: "Failed to load product data.", variant: "destructive" });
+        router.push("/admin/products");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
 
     if (typeof window !== 'undefined') {
-      const storedCustomCategories = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOM_CATEGORIES);
-      setAvailableCategories(storedCustomCategories ? JSON.parse(storedCustomCategories) : []);
-      
       const storedCustomMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOM_MATERIALS);
       setAvailableMaterials(storedCustomMaterials ? JSON.parse(storedCustomMaterials) : []);
 
@@ -147,6 +173,7 @@ export default function EditProductPage() {
       dimensions: data.dimensions,
       burningTime: data.burningTime,
       isActive: data.isActive,
+      isDraft: data.isDraft,
     };
     console.log("Updated Product Data (Simulated):", updatedProductData);
     toast({
@@ -156,8 +183,16 @@ export default function EditProductPage() {
     router.push("/admin/products");
   };
 
-  if (!isClient || !dict || !productToEdit) {
-    return <div>Loading product data...</div>;
+  if (!isClient || !dict) {
+    return <AdminFormSkeleton title="Edit Product" />;
+  }
+  
+  if (loading) {
+    return <AdminFormSkeleton title="Edit Product" />;
+  }
+  
+  if (error || !productToEdit) {
+    return <div>Product not found</div>;
   }
 
   return (
@@ -329,24 +364,45 @@ export default function EditProductPage() {
                             {errors.burningTime && <p className="text-sm text-destructive">{errors.burningTime.message}</p>}
                         </div>
                     </div>
-                    <div className="space-y-2 pt-2">
-                      <Label htmlFor="isActive" className="flex items-center">
-                        {dict.statusLabel}
-                        <Controller
-                          name="isActive"
-                          control={control}
-                          render={({ field }) => (
-                            <Switch
-                              id="isActive"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              className="ml-3"
-                            />
-                          )}
-                        />
-                        <span className="ml-2 text-sm text-muted-foreground">({watch("isActive") ? dict.statusActive : dict.statusInactive})</span>
-                      </Label>
-                       {errors.isActive && <p className="text-sm text-destructive">{errors.isActive.message}</p>}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="isActive" className="flex items-center">
+                          {dict.statusLabel}
+                          <Controller
+                            name="isActive"
+                            control={control}
+                            render={({ field }) => (
+                              <Switch
+                                id="isActive"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="ml-3"
+                              />
+                            )}
+                          />
+                          <span className="ml-2 text-sm text-muted-foreground">({watch("isActive") ? dict.statusActive : dict.statusInactive})</span>
+                        </Label>
+                         {errors.isActive && <p className="text-sm text-destructive">{errors.isActive.message}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="isDraft" className="flex items-center">
+                          Draft Mode
+                          <Controller
+                            name="isDraft"
+                            control={control}
+                            render={({ field }) => (
+                              <Switch
+                                id="isDraft"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="ml-3"
+                              />
+                            )}
+                          />
+                          <span className="ml-2 text-sm text-muted-foreground">({watch("isDraft") ? "Draft" : "Published"})</span>
+                        </Label>
+                         {errors.isDraft && <p className="text-sm text-destructive">{errors.isDraft.message}</p>}
+                      </div>
                     </div>
                 </CardContent>
                 </Card>
@@ -361,16 +417,22 @@ export default function EditProductPage() {
                          <Controller
                             name="images" 
                             control={control}
-                            render={({ field }) => (
-                            <ImageUploadArea
-                                initialImageUrls={field.value} 
-                                initialMainImageUrl={watch("mainImageId")} 
-                                onImagesChange={(newImageUrls, newMainImageUrl) => {
-                                    setValue("images", newImageUrls, { shouldValidate: true });
-                                    setValue("mainImageId", newMainImageUrl, {shouldValidate: true}); 
-                                }}
-                                maxFiles={5}
-                            />
+                            render={({ field: imagesField }) => (
+                                <Controller
+                                    name="mainImageId"
+                                    control={control}
+                                    render={({ field: mainImageField }) => (
+                                        <ImageUploadArea
+                                            initialImageUrls={imagesField.value} 
+                                            initialMainImageUrl={mainImageField.value} 
+                                            onImagesChange={(newImageUrls, newMainImageUrl) => {
+                                                setValue("images", newImageUrls, { shouldValidate: true });
+                                                setValue("mainImageId", newMainImageUrl, {shouldValidate: true}); 
+                                            }}
+                                            maxFiles={5}
+                                        />
+                                    )}
+                                />
                             )}
                         />
                         {errors.images && <p className="text-sm text-destructive mt-2">{errors.images.message}</p>}

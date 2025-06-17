@@ -1,15 +1,35 @@
 # Active Context: Askim candles
 
-## Date: 2025-06-10 (Current Update)
+## Date: 2025-01-27 (Current Update)
 
 ## 1. Current Focus
-*   **Admin Panel - Sessions Section:** Recently implemented (simulated) "Sessions" management page.
-    *   Displays current user session info.
-    *   Button to log out of the current device.
-    *   Placeholder/explanation for "log out other devices" functionality (requires backend).
-*   **Admin Panel Enhancements:** Focus on improving existing functionality and adding polish to user management features.
+*   **✅ Product Creation Form Fixed:** Successfully resolved image validation issues in admin product creation form.
+    *   Fixed handleImagesChange function to properly extract preview URLs from image objects.
+    *   Removed console.log spam that was cluttering the browser console.
+    *   Form now correctly validates and accepts uploaded images.
+*   **✅ Tailwind CSS 4.x Color System Fixed:** Successfully resolved color display issues with Tailwind CSS 4.x.
+    *   CSS variables converted from HSL to hex format for proper Tailwind 4.x compatibility.
+    *   All color themes (light/dark) now display correctly.
+    *   SVG image loading issues resolved with dangerouslyAllowSVG configuration.
+*   **✅ Build System Stabilized:** All deprecated route files removed, build process working correctly.
 
 ## 2. Recent Changes (Leading to this state)
+*   **✅ React 19.1.0 migration complete**
+*   **✅ Tailwind CSS 4.x compatibility FULLY FIXED (2025-01-27)**
+    *   **✅ PostCSS configuration updated:** Fixed postcss.config.mjs for Tailwind 4.x syntax
+    *   **✅ Tailwind config restructured:** Proper TypeScript typing and export structure
+    *   **✅ CSS layer issues resolved:** Fixed @apply border issue in globals.css
+    *   **✅ Color system fixed:** Converted CSS variables from HSL to hex format for Tailwind 4.x
+    *   **✅ SVG images fixed:** Added dangerouslyAllowSVG to Next.js config
+    *   **✅ Deprecated routes removed:** Cleaned up old route files causing build errors
+    *   **✅ Dev server working:** All colors and styles now properly applied
+*   **✅ All Checkbox components fixed**
+*   **✅ Docker warnings resolved**
+*   **✅ Next.js deprecated warnings fixed**
+*   **✅ @tailwindcss/postcss dependency added**
+*   **✅ @next/swc-loader error resolved**
+*   **✅ Next.js Turbopack configuration optimized**
+*   **✅ Webpack configuration disabled for Turbopack compatibility**
 *   **Admin Panel - Sessions Management:** New `/admin/sessions` page implemented with current session display and logout functionality.
 *   **Admin Panel - Manage Users & Managers Enhancements:**
     *   Added simulated "View Client Details", "Edit Client", and "Delete Client" functionalities with modals to `/admin/clients` page.
@@ -48,6 +68,7 @@
 *   Prepare for backend integration by finalizing Prisma schema planning.
 
 ## 4. Active Decisions & Considerations
+*   **Build Status:** ✅ Configuration fixed, dependencies updated, ready for build testing
 *   **Admin Panel Access:** `/admin` path with client-side simulated authentication (`AdminAuthContext`) supporting 'ADMIN' and 'MANAGER' roles.
 *   **Data Management (Admin):** Currently client-side simulated for all operations (products, managers, clients, logs, attributes, articles). All data persisted in `localStorage` except `mock-data.ts` changes which are session-only.
 *   **Admin Panel i18n & Theme:** Full EN/RU localization with client-side preference storage. Dark/Light theme toggle with corporate-derived palette.

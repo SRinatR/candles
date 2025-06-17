@@ -4,13 +4,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AdminFormSkeleton, AdminLoginSkeleton } from "@/components/admin/AdminTableSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Label } from "@/components/ui/label"; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
 import React, { useState, useEffect } from "react";
-import { Mail, KeyRound, ShieldAlert, Eye, EyeOff } from "lucide-react";
+import { Mail, KeyRound, ShieldAlert, Eye, EyeOff, Smartphone, Monitor } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import type { AdminLocale } from "@/admin/lib/i18n-config-admin";
 import { i18nAdmin } from "@/admin/lib/i18n-config-admin";
@@ -23,13 +25,16 @@ export default function AdminLoginPage() {
   const { login, isLoading, currentAdminUser } = useAdminAuth();
   const router = useRouter();
   const { toast } = useToast(); // Keep for other potential toasts, though login errors are now from context
+  const isMobile = useIsMobile();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [dict, setDict] = useState<AdminLoginDictionary | null>(null);
+  const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
+    setIsClient(true);
     async function loadDictionary() {
       const storedLocale = localStorage.getItem('admin-lang') as AdminLocale | null;
       const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
@@ -54,8 +59,57 @@ export default function AdminLoginPage() {
     await login(email, password); // login function in AdminAuthContext handles its own toasts & redirect
   };
   
-  if (isLoading || currentAdminUser || !dict) {
-    return <div className="flex min-h-screen items-center justify-center bg-muted"><p>{dict?.loading || "Loading admin panel..."}</p></div>;
+  if (isLoading || currentAdminUser || !dict || !isClient) {
+    return <AdminLoginSkeleton />;
+  }
+
+  // Show mobile warning for mobile devices
+  if (isClient && isMobile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4 text-foreground">
+        <Card className="w-full max-w-md shadow-xl bg-card text-card-foreground">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <Smartphone className="h-16 w-16 text-amber-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              Мобильное устройство обнаружено
+            </CardTitle>
+            <CardDescription className="text-base">
+              Для лучшего опыта и полной функциональности, пожалуйста, войдите в админ-панель с компьютера или ноутбука.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-center p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <Monitor className="h-8 w-8 text-amber-600 dark:text-amber-400 mr-3" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium">Рекомендуется использовать:</p>
+                <p>• Компьютер или ноутбук</p>
+                <p>• Экран шириной от 768px</p>
+              </div>
+            </div>
+            <div className="text-center space-y-3">
+              <Button 
+                onClick={() => router.push('/')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Перейти на главную страницу
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Если вы все же хотите продолжить с мобильного устройства, 
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="text-primary hover:underline ml-1"
+                >
+                  нажмите здесь
+                </button>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -116,7 +170,14 @@ export default function AdminLoginPage() {
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? dict.signingInButton : dict.signInButton}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {dict.signingInButton}
+                </>
+              ) : (
+                dict.signInButton
+              )}
             </Button>
           </form>
         </CardContent>

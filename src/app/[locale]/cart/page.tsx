@@ -120,12 +120,13 @@ export default function CartPage() {
             const itemName = item.name[locale] || item.name.en || "Item";
             return (
             <Card key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4 shadow-sm">
-              <div className="relative w-full sm:w-24 h-32 sm:h-24 aspect-square rounded-md overflow-hidden shrink-0 border">
+              <div className="relative w-full sm:w-24 rounded-md overflow-hidden shrink-0 border">
                 <Image 
-                    src={item.mainImage || (item.images && item.images.length > 0 ? item.images[0] : "https://placehold.co/100x100.png?text=No+Image")}
+                    src={item.mainImage || (item.images && item.images.length > 0 ? item.images[0]?.url : "https://placehold.co/100x100.png?text=No+Image")}
                     alt={itemName} 
-                    fill 
-                    className="object-cover" 
+                    width={96}
+                    height={96}
+                    className="object-cover w-full h-auto" 
                     data-ai-hint="cart item" 
                     sizes="(max-width: 640px) 100vw, 96px" 
                 />

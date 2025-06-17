@@ -1,102 +1,148 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* src/app/globals.css - Обновленная версия для Tailwind CSS 4.x */
 
+@import "tailwindcss";
+
+/* Конфигурация темы через @theme директиву (новый синтаксис Tailwind 4.x) */
+@theme {
+  /* Основные цвета */
+  --color-background: #ffd2da; /* Light Pink */
+  --color-foreground: #162044; /* Dark Navy/Blue */
+  
+  /* Приглушенные цвета */
+  --color-muted: #ffe8ec; /* Lighter Pink */
+  --color-muted-foreground: #4a5568; /* Medium Navy */
+  
+  /* Popover цвета */
+  --color-popover: #ffffff; /* White */
+  --color-popover-foreground: #162044; /* Dark Navy/Blue */
+  
+  /* Card цвета */
+  --color-card: #ffffff; /* White */
+  --color-card-foreground: #162044; /* Dark Navy/Blue */
+  
+  /* Границы и поля ввода */
+  --color-border: #f8b2c4; /* Slightly darker Light Pink */
+  --color-input: #ffffff; /* White (border will be --border) */
+  
+  /* Основные акцентные цвета */
+  --color-primary: #f37e92; /* Pink */
+  --color-primary-foreground: #0f1419; /* Darkest Navy */
+  
+  /* Вторичные цвета */
+  --color-secondary: #b2c9ed; /* Light Blue */
+  --color-secondary-foreground: #162044; /* Dark Navy/Blue */
+  
+  /* Accent цвета */
+  --color-accent: #b2c9ed; /* Light Blue */
+  --color-accent-foreground: #162044; /* Dark Navy/Blue */
+  
+  /* Деструктивные цвета */
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+  
+  /* Ring цвет для focus состояний */
+  --color-ring: #f37e92; /* Pink */
+  
+  /* Sidebar конфигурация (сохранена полностью) */
+  --color-sidebar-background: var(--color-background);
+  --color-sidebar-foreground: var(--color-foreground);
+  --color-sidebar-primary: var(--color-primary);
+  --color-sidebar-primary-foreground: var(--color-primary-foreground);
+  --color-sidebar-accent: var(--color-accent);
+  --color-sidebar-accent-foreground: var(--color-accent-foreground);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-ring: var(--color-ring);
+  
+  /* Chart цвета */
+  --color-chart-1: 348 80% 65%; /* Based on Primary Pink */
+  --color-chart-2: 216 55% 75%; /* Based on Secondary Light Blue */
+  --color-chart-3: 230 40% 30%; /* Based on Foreground Dark Navy */
+  --color-chart-4: 348 70% 80%; /* Lighter Pink */
+  --color-chart-5: 216 50% 65%; /* Darker Light Blue */
+  
+  /* Border radius */
+  --radius: 0.5rem;
+  
+  /* Анимации */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+/* Dark theme конфигурация (сохранена ваша корпоративная тема) */
+.dark {
+  /* Corporate-derived dark theme, with adjusted accent for hover */
+  --color-background: #0c1220; /* Dark Navy/Blue base */
+  --color-foreground: #ffeef1; /* Light Pink variant for text */
+  
+  --color-muted: #1a2332; /* Darker Navy, slightly lighter than background */
+  --color-muted-foreground: #8fa3d3; /* Muted Light Blue */
+  
+  --color-popover: #080e18; /* Even Darker Navy for popovers */
+  --color-popover-foreground: #ffeef1; /* Light Pink variant for text */
+  
+  --color-card: #151e2e; /* Slightly lighter Navy than background for cards */
+  --color-card-foreground: #ffeef1; /* Light Pink variant for text */
+  
+  --color-border: #2a3441; /* Dark Navy border, slightly lighter than cards */
+  --color-input: #1f2937; /* Dark Navy input background */
+  
+  --color-primary: #f37e92; /* Pink */
+  --color-primary-foreground: #0a0d11; /* Very Dark Navy for text on Pink buttons */
+  
+  --color-secondary: #3d5a80; /* Darker muted Light Blue - USED FOR ACTIVE SIDEBAR ITEM BG */
+  --color-secondary-foreground: #e1eaff; /* Very Light Blue for text on dark secondary - USED FOR ACTIVE SIDEBAR ITEM TEXT */
+  
+  /* Adjusted accent for better hover in dark navy sidebar */
+  --color-accent: #1a2332; /* Slightly Lighter Navy (same as muted for subtle hover) */
+  --color-accent-foreground: #f8fafc; /* Almost White/Very Light Gray text on hover */
+  
+  --color-destructive: #dc2626; /* Adjusted destructive to be more visible on dark navy */
+  --color-destructive-foreground: #fafafa;
+  
+  --color-ring: #f37e92; /* Pink for focus rings */
+  
+  --color-chart-1: #f06292;
+  --color-chart-2: #90caf9;
+  --color-chart-3: #ffcdd2; /* Lighter Pink for contrast */
+  --color-chart-4: #f8bbd9;
+  --color-chart-5: #7986cb;
+}
+
+/* Keyframes для анимаций (сохранены ваши аккордеон анимации) */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Базовые стили */
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  @apply bg-background text-foreground;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex-grow: 1;
 }
 
 @layer base {
-  :root {
-    --background: 347 100% 91%; /* Light Pink (#FFD2DA) */
-    --foreground: 230 49% 18%; /* Dark Navy/Blue (#162044) */
-
-    --muted: 347 100% 95%; /* Lighter Pink */
-    --muted-foreground: 230 49% 40%; /* Medium Navy */
-
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 230 49% 18%; /* Dark Navy/Blue */
-
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 230 49% 18%; /* Dark Navy/Blue */
-
-    --border: 347 100% 85%; /* Slightly darker Light Pink */
-    --input: 0 0% 100%; /* White (border will be --border) */
-
-    --primary: 348 84% 72%; /* Pink (#F37E92) */
-    --primary-foreground: 230 49% 10%; /* Darkest Navy */
-
-    --secondary: 216 61% 81%; /* Light Blue (#B2C9ED) */
-    --secondary-foreground: 230 49% 18%; /* Dark Navy/Blue */
-
-    --accent: 216 61% 81%; /* Light Blue (#B2C9ED) */
-    --accent-foreground: 230 49% 18%; /* Dark Navy/Blue */
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --ring: 348 84% 72%; /* Pink (#F37E92) */
-
-    --radius: 0.5rem;
-
-    --chart-1: 348 80% 65%; /* Based on Primary Pink */
-    --chart-2: 216 55% 75%; /* Based on Secondary Light Blue */
-    --chart-3: 230 40% 30%; /* Based on Foreground Dark Navy */
-    --chart-4: 348 70% 80%; /* Lighter Pink */
-    --chart-5: 216 50% 65%; /* Darker Light Blue */
-  }
-
-  .dark {
-    /* Corporate-derived dark theme, with adjusted accent for hover */
-    --background: 230 49% 10%; /* Dark Navy/Blue base (#162044) */
-    --foreground: 347 100% 93%; /* Light Pink variant for text */
-
-    --muted: 230 49% 15%; /* Darker Navy, slightly lighter than background */
-    --muted-foreground: 216 61% 65%; /* Muted Light Blue */
-
-    --popover: 230 49% 8%; /* Even Darker Navy for popovers */
-    --popover-foreground: 347 100% 93%; /* Light Pink variant for text */
-
-    --card: 230 49% 13%; /* Slightly lighter Navy than background for cards */
-    --card-foreground: 347 100% 93%; /* Light Pink variant for text */
-
-    --border: 230 49% 20%; /* Dark Navy border, slightly lighter than cards */
-    --input: 230 49% 18%; /* Dark Navy input background */
-
-    --primary: 348 84% 72%; /* Pink (#F37E92) */
-    --primary-foreground: 230 49% 5%; /* Very Dark Navy for text on Pink buttons */
-
-    --secondary: 216 61% 30%; /* Darker muted Light Blue - USED FOR ACTIVE SIDEBAR ITEM BG */
-    --secondary-foreground: 216 61% 90%; /* Very Light Blue for text on dark secondary - USED FOR ACTIVE SIDEBAR ITEM TEXT */
-
-    /* Adjusted accent for better hover in dark navy sidebar */
-    --accent: 230 49% 15%; /* Slightly Lighter Navy (same as muted for subtle hover) */
-    --accent-foreground: 210 20% 98%; /* Almost White/Very Light Gray text on hover */
-    
-    --destructive: 0 70% 50%; /* Adjusted destructive to be more visible on dark navy */
-    --destructive-foreground: 0 0% 98%;
-
-    --ring: 348 84% 72%; /* Pink (#F37E92) for focus rings */
-    
-    --chart-1: 348 80% 65%;
-    --chart-2: 216 55% 75%;
-    --chart-3: 347 100% 85%; /* Lighter Pink for contrast */
-    --chart-4: 348 70% 80%;
-    --chart-5: 216 50% 65%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
+  /* Base styles for consistent styling */
   body {
     @apply bg-background text-foreground;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  main {
-    flex-grow: 1;
   }
 }

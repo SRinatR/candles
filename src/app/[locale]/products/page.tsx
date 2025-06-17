@@ -1,9 +1,10 @@
 "use client";
 import { ProductList } from '@/components/products/ProductList';
+import { ProductListSkeleton } from '@/components/products/ProductCardSkeleton';
 import { ProductFilters } from '@/components/products/ProductFilters';
 import { ProductSort } from '@/components/products/ProductSort';
-import { mockProducts, mockCategories } from '@/lib/mock-data';
-import type { Product } from '@/lib/types';
+// import { mockProducts, mockCategories } from '@/lib/mock-data';
+import type { Product, Category } from '@/lib/types';
 import { useSearchParams, useParams } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Slash, SlidersHorizontal, X } from 'lucide-react';
@@ -98,7 +99,36 @@ export default function ProductsPage() {
   const sortDictionary = combinedDict.productSort;
   const productCardDictionaryForList = combinedDict.productCard as ProductCardDictionary;
 
-  const allActiveProducts = useMemo(() => mockProducts.filter(p => p.isActive), []);
+  const [allActiveProducts, setAllActiveProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Загрузка данных с API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch('/api/products?isActive=true&locale=' + locale),
+          fetch('/api/categories')
+        ]);
+        
+        if (productsRes.ok && categoriesRes.ok) {
+          const productsData = await productsRes.json();
+          const categoriesData = await categoriesRes.json();
+          
+          setAllActiveProducts(productsData.products || []);
+          setCategories(categoriesData.categories || []);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [locale]);
 
   const { minProductPrice, maxProductPrice } = useMemo(() => {
     if (!allActiveProducts || allActiveProducts.length === 0) {
@@ -139,7 +169,7 @@ export default function ProductsPage() {
       const matchesCategory = categoriesParams.length > 0
         ? categoriesParams.some(selectedCatSlug => {
             const productCategoryNameTrimmedLower = product.category?.trim().toLowerCase();
-            const productCategoryObject = mockCategories.find(
+            const productCategoryObject = categories.find(
               cat => cat.name?.trim().toLowerCase() === productCategoryNameTrimmedLower
             );
             return productCategoryObject ? productCategoryObject.slug === selectedCatSlug : false;
@@ -208,6 +238,60 @@ export default function ProductsPage() {
   }
 
 
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        {/* Breadcrumb Skeleton */}
+        <div className="flex items-center space-x-2">
+          <div className="h-4 bg-muted animate-pulse rounded w-16"></div>
+          <div className="h-4 bg-muted animate-pulse rounded w-4"></div>
+          <div className="h-4 bg-muted animate-pulse rounded w-20"></div>
+        </div>
+
+        {/* Header Skeleton */}
+        <div className="flex flex-col items-center justify-between gap-4 border-b border-border/60 pb-6 sm:flex-row">
+          <div className="space-y-2">
+            <div className="h-8 bg-muted animate-pulse rounded w-48"></div>
+            <div className="h-4 bg-muted animate-pulse rounded w-32"></div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-9 bg-muted animate-pulse rounded w-24 lg:hidden"></div>
+            <div className="h-9 bg-muted animate-pulse rounded w-32"></div>
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+          {/* Filters Skeleton */}
+          <div className="hidden lg:block lg:w-72">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="h-6 bg-muted animate-pulse rounded w-20"></div>
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-4 bg-muted animate-pulse rounded w-full"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-6 bg-muted animate-pulse rounded w-16"></div>
+                <div className="space-y-2">
+                  <div className="h-10 bg-muted animate-pulse rounded w-full"></div>
+                  <div className="h-10 bg-muted animate-pulse rounded w-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Products Grid Skeleton */}
+          <div className="flex-1">
+            <ProductListSkeleton count={12} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <Breadcrumb>
@@ -248,7 +332,7 @@ export default function ProductsPage() {
                 <ScrollArea className="flex-1 overflow-y-auto p-1"> 
                   <ProductFilters
                     dictionary={filtersDictionary}
-                    categoriesData={mockCategories.map(cat => ({...cat, name: combinedDict.categories[cat.slug as keyof typeof combinedDict.categories] || cat.name}))}
+                    categoriesData={categories.map(cat => ({...cat, name: combinedDict.categories[cat.slug as keyof typeof combinedDict.categories] || cat.name}))}
                     allProducts={allActiveProducts} 
                     onApplyFilters={() => setIsMobileFiltersOpen(false)} 
                   />
@@ -264,7 +348,7 @@ export default function ProductsPage() {
         <div className="hidden lg:block lg:w-72 lg:sticky lg:top-24 self-start"> 
           <ProductFilters
             dictionary={filtersDictionary}
-            categoriesData={mockCategories.map(cat => ({...cat, name: combinedDict.categories[cat.slug as keyof typeof combinedDict.categories] || cat.name}))}
+            categoriesData={categories.map(cat => ({...cat, name: combinedDict.categories[cat.slug as keyof typeof combinedDict.categories] || cat.name}))}
             allProducts={allActiveProducts} 
           />
         </div>

@@ -1,9 +1,12 @@
 
 "use client";
 
-import { mockProducts, mockCategories } from '@/lib/mock-data';
+// import { mockProducts, mockCategories } from '@/lib/mock-data';
 import { notFound, useParams } from 'next/navigation';
 import { ProductImageGallery } from '@/components/products/ProductImageGallery';
+import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
+import { AddToCartButton } from '@/components/products/AddToCartButton';
+import { ProductList } from '@/components/products/ProductList';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Zap, ShieldCheck, Package, Clock, Tag, Palette, Droplets, Ruler, Info } from 'lucide-react';
@@ -15,6 +18,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Slash } from 'lucide-react';
 import type { Locale } from '@/lib/i1n-config';
 import { ProductCard, type ProductCardDictionary } from '@/components/products/ProductCard';
+import { useState, useEffect, use } from 'react';
 
 
 import enMessages from '@/dictionaries/en.json';
@@ -64,7 +68,8 @@ const getProductDetailPageDictionaryBundle = (locale: Locale) => {
   };
 };
 
-export default function ProductDetailPage({ params: routeParams }: { params: { id: string; locale: Locale } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string; locale: Locale }> }) {
+  const routeParams = use(params);
   const clientParams = useParams();
   const locale = routeParams.locale || clientParams.locale as Locale || 'uz';
   
@@ -73,17 +78,59 @@ export default function ProductDetailPage({ params: routeParams }: { params: { i
   const productCardDict = dictionaryBundle.productCard as ProductCardDictionary;
   const categoriesDict = dictionaryBundle.categories as CategoriesStrings;
 
-
-  const product = mockProducts.find(p => p.id === routeParams.id);
+  const [product, setProduct] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  if (!product) {
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const productRes = await fetch(`/api/products/${routeParams.id}?locale=${locale}`);
+        
+        if (productRes.ok) {
+          const productData = await productRes.json();
+          setProduct(productData);
+          
+          // Fetch related products
+          try {
+            const relatedRes = await fetch(`/api/products?category=${productData.category?.slug || productData.category?.name}&exclude=${productData.id}&limit=3&locale=${locale}`);
+            if (relatedRes.ok) {
+              const relatedData = await relatedRes.json();
+              setRelatedProducts(relatedData.products || []);
+            }
+          } catch (relatedError) {
+            console.error('Error loading related products:', relatedError);
+          }
+        } else if (productRes.status === 404) {
+          setError('Product not found');
+        } else {
+          setError('Failed to load product');
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        setError('Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProduct();
+  }, [routeParams.id, locale]);
+
+  if (loading) {
+    return <ProductDetailSkeleton />;
+  }
+
+  if (error || !product) {
     notFound();
   }
 
-  const productName = product.name[locale] || product.name.en;
-  const productDescription = product.description[locale] || product.description.en;
+  const productName = product.translations?.[locale]?.name || product.translations?.en?.name || 'Product Name';
+  const productDescription = product.translations?.[locale]?.description || product.translations?.en?.description || 'Product Description';
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -93,9 +140,9 @@ export default function ProductDetailPage({ params: routeParams }: { params: { i
     });
   };
 
-  const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id && p.isActive).slice(0,3);
-  const productCategorySlug = product.category.toLowerCase().replace(/\s+/g, '-'); // This might need adjustment if category is stored as slug
-  const productCategoryName = categoriesDict[productCategorySlug as keyof typeof categoriesDict] || product.category;
+  // Related products are now loaded via API in useEffect
+  const productCategorySlug = product.category?.slug || product.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
+  const productCategoryName = categoriesDict[productCategorySlug as keyof typeof categoriesDict] || product.category?.name || 'Unknown Category';
 
 
   return (
@@ -117,7 +164,7 @@ export default function ProductDetailPage({ params: routeParams }: { params: { i
       </Breadcrumb>
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
-        <ProductImageGallery images={product.images} altText={productName} />
+        <ProductImageGallery images={product.images?.map(img => img.url) || []} altText={productName} />
 
         <div className="space-y-6">
           <div className="space-y-2">
@@ -141,8 +188,8 @@ export default function ProductDetailPage({ params: routeParams }: { params: { i
           <div className="space-y-3 text-sm">
             {product.sku && <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.skuLabel}</strong> <span className="ml-1">{product.sku}</span></p>}
             {product.category && <p className="flex items-center"><Tag className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.categoryLabel}</strong> <Link href={`/${locale}/products?category=${productCategorySlug}`} className="text-primary hover:underline ml-1">{productCategoryName}</Link></p>}
-            {product.scent && <p className="flex items-center"><Droplets className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.scentLabel}</strong> <span className="ml-1">{product.scent}</span></p>}
-            {product.material && <p className="flex items-center"><Palette className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.materialLabel}</strong> <span className="ml-1">{product.material}</span></p>}
+            {product.scent && <p className="flex items-center"><Droplets className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.scentLabel}</strong> <span className="ml-1">{product.scent?.name || product.scent}</span></p>}
+            {product.material && <p className="flex items-center"><Palette className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.materialLabel}</strong> <span className="ml-1">{product.material?.name || product.material}</span></p>}
             {product.dimensions && <p className="flex items-center"><Ruler className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.dimensionsLabel}</strong> <span className="ml-1">{product.dimensions}</span></p>}
             {product.burningTime && <p className="flex items-center"><Clock className="mr-2 h-4 w-4 text-muted-foreground"/> <strong className="font-medium">{dictionary.burningTimeLabel}</strong> <span className="ml-1">{product.burningTime}</span></p>}
             
@@ -150,7 +197,7 @@ export default function ProductDetailPage({ params: routeParams }: { params: { i
                 <div className="pt-2">
                     <h4 className="font-medium mb-1">{dictionary.attributesLabel}</h4>
                     <ul className="list-disc list-inside space-y-1 pl-1">
-                        {product.attributes.map(attr => (
+                        {product.attributes.map((attr: { key: string; value: string }) => (
                         <li key={attr.key}><strong className="font-normal">{attr.key}:</strong> {attr.value}</li>
                         ))}
                     </ul>

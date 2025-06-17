@@ -21,6 +21,8 @@ import { i18nAdmin, type AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { getAdminDictionary } from '@/admin/lib/getAdminDictionary';
 import type enAdminMessages from '@/admin/dictionaries/en.json';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AdminDashboardSkeleton } from "@/components/admin/AdminTableSkeleton";
+import { getAppVersion, getLastUpdated } from '@/lib/version';
 import '../globals.css'; // Ensure global styles are applied
 
 type AdminDictionary = typeof enAdminMessages;
@@ -135,7 +137,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   if (!isClient || isLoadingAuth) {
     // Allow login page to render even if dictionary or auth is loading
     if (pathname === '/admin/login') return <>{children}</>;
-    return <div className="flex h-screen items-center justify-center bg-muted"><p>{dictionary?.loading || "Loading Admin Panel..."}</p></div>;
+    return <AdminDashboardSkeleton />;
   }
   
   if (isClient && isMobile && pathname !== '/admin/login') {
@@ -161,12 +163,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   }
   
   if (!currentAdminUser) { // Should be caught by useEffect above, but as a fallback
-      return <div className="flex h-screen items-center justify-center bg-muted"><p>Redirecting to login...</p></div>;
+      return <AdminDashboardSkeleton />;
   }
 
   // If dictionary is still null after client has mounted and not loading auth, it's an error state or initial load
   if (!dictionary) {
-      return <div className="flex h-screen items-center justify-center bg-muted"><p>Loading translations...</p></div>;
+      return <AdminDashboardSkeleton />;
   }
 
   const filteredNavItems = navItems.filter(item => {
@@ -455,7 +457,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                 {children}
             </main>
             <footer className="border-t mt-auto bg-background/50 text-muted-foreground text-xs text-center p-3 shrink-0">
-                Askim candles Admin Panel v0.1.0 (Simulated) - Last Updated: {new Date().toLocaleDateString()} (Simulated)
+                Askim Candles Admin Panel v{getAppVersion()} - Last Updated: {getLastUpdated()}
             </footer>
         </div>
       </div>

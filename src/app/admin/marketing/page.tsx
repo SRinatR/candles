@@ -63,7 +63,7 @@ export default function AdminMarketingPage() {
           <p className="text-muted-foreground">Tools for SEO, email newsletters, and promotion management will appear here.</p>
           <div className="mt-4 p-8 border-2 border-dashed border-border rounded-md text-center text-muted-foreground">
             <Users className="mx-auto h-12 w-12 mb-4" />
-            <h3 className="text-lg font-semibold">Marketing Campaign Data (Coming Soon)</h3>
+            <h3 className="text-lg font-semibold">Marketing Campaign Data</h3>
             <p className="text-sm">
               Detailed list of campaigns, performance metrics, and discount code management.
             </p>

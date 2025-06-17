@@ -2,6 +2,7 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
+import { getAppVersion } from '@/lib/version';
 import type { Locale } from '@/lib/i1n-config';
 import Link from 'next/link';
 
@@ -35,7 +36,7 @@ export function Footer({ locale, dictionary }: FooterProps) {
             <p>&copy; {currentYear} Askim candles. {dictionary.rightsReserved}</p>
             {/* Display version for all users. "Last Updated" is removed from main site footer. */}
             <p className="text-xs">
-              v0.1.0 (Simulated)
+              v{getAppVersion()}
             </p>
         </div>
         <div className="flex space-x-4">

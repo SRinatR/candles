@@ -5,9 +5,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Trash2, PlusCircle, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { mockProducts } from '@/lib/mock-data';
+// import { mockProducts } from '@/lib/mock-data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ type AlertDialogStrings = {
 
 export default function AdminManageScentsPage() {
   const [allScents, setAllScents] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newScentName, setNewScentName] = useState("");
   const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
   const { toast } = useToast();
@@ -69,18 +71,41 @@ export default function AdminManageScentsPage() {
     }
     loadDictionary();
 
-    let storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
-    if (!storedCustomScents) {
-      const initialMockScentNames = Array.from(new Set(mockProducts.map(p => p.scent).filter((s): s is string => !!s))).sort();
-      localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(initialMockScentNames));
-      setAllScents(initialMockScentNames);
-    } else {
-        setAllScents(JSON.parse(storedCustomScents));
-    }
+    const fetchScents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/scents');
+        if (response.ok) {
+          const data = await response.json();
+          const scentNames = data.scents?.map((scent: any) => scent.name) || [];
+          setAllScents(scentNames);
+          localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(scentNames));
+        } else {
+          // Fallback to localStorage if API fails
+          let storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
+          if (storedCustomScents) {
+            setAllScents(JSON.parse(storedCustomScents));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading scents:', error);
+        // Fallback to localStorage if API fails
+        let storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
+        if (storedCustomScents) {
+          setAllScents(JSON.parse(storedCustomScents));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchScents();
   }, []);
   
   const isAttributeInUse = useCallback((attributeName: string): boolean => {
-    return mockProducts.some(product => product.scent === attributeName);
+    // TODO: Replace with actual database query when implementing product-scent relationships
+    // return mockProducts.some(product => product.scent === attributeName);
+    return false; // Temporarily disabled since we're using Prisma now
   }, []);
 
   const handleAddOrUpdateAttribute = () => {
@@ -133,8 +158,8 @@ export default function AdminManageScentsPage() {
     toast({ title: dictionary?.deleteSuccessTitle || "Scent Deleted", description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', attributeToDelete) });
   };
   
-  if (!isClient || !dictionary || !alertStrings) {
-    return <div>Loading...</div>;
+  if (!isClient || !dictionary || !alertStrings || loading) {
+    return <AdminTableSkeleton rows={8} columns={3} showActions={true} title="Scents Management" />;
   }
 
   return (

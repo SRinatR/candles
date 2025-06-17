@@ -34,9 +34,9 @@ const initialSeedArticles: Omit<Article, 'id' | 'createdAt' | 'updatedAt'>[] = [
     slug: "what-is-aroma-sachet",
     title: { en: "What is an Aroma Sachet and How to Use It", ru: "Что такое аромасаше и как его использовать", uz: "Aromasashe nima va undan qanday foydalanish kerak" },
     content: { 
-      en: "Learn all about aroma sachets, their uses, and how to best enjoy their fragrance in your home or car. Content coming soon! Aroma sachets are small pouches filled with fragrant herbs or essential oils...",
-      ru: "Узнайте все об аромасаше, их применении и как лучше всего наслаждаться их ароматом дома или в машине. Контент скоро появится! Аромасаше — это небольшие мешочки, наполненные ароматными травами или эфирными маслами...",
-      uz: "Aromasashelar, ulardan foydalanish usullari va uyingizda yoki mashinangizda ularning hididan qanday qilib eng yaxshi bahramand bo'lish haqida hamma narsani bilib oling. Kontent tez orada! Aromasashelar xushbo'y o'tlar yoki efir moylari bilan to'ldirilgan kichik xaltachalardir..."
+      en: "Learn all about aroma sachets, their uses, and how to best enjoy their fragrance in your home or car. Aroma sachets are small pouches filled with fragrant herbs or essential oils...",
+      ru: "Узнайте все об аромасаше, их применении и как лучше всего наслаждаться их ароматом дома или в машине. Аромасаше — это небольшие мешочки, наполненные ароматными травами или эфирными маслами...",
+      uz: "Aromasashelar, ulardan foydalanish usullari va uyingizda yoki mashinangizda ularning hididan qanday qilib eng yaxshi bahramand bo'lish haqida hamma narsani bilib oling. Aromasashelar xushbo'y o'tlar yoki efir moylari bilan to'ldirilgan kichik xaltachalardir..."
     },
     isActive: true,
     useSharedImage: true,

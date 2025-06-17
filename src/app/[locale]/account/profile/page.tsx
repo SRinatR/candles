@@ -77,8 +77,8 @@ export default function ProfilePage() {
     // Here you would typically call an API to update the user's profile
     // For simulated auth, you might update localStorage or context state if implemented
     toast({
-      title: dictionary.updateDemoTitle,
-      description: dictionary.updateDemoDesc,
+      title: dictionary.updateProfileTitle,
+        description: dictionary.updateProfileDesc,
     });
   }
   

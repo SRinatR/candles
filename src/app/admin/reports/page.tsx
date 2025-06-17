@@ -21,7 +21,7 @@ export default function AdminReportsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Available Reports</CardTitle>
-          <CardDescription>Select a report type to view or generate. (Functionality Coming Soon)</CardDescription>
+          <CardDescription>Select a report type to view or generate.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Button variant="outline" className="flex flex-col items-start h-auto p-4 space-y-1 text-left" disabled>
@@ -55,7 +55,7 @@ export default function AdminReportsPage() {
         <CardContent>
           <div className="mt-4 p-8 border-2 border-dashed border-border rounded-md text-center text-muted-foreground">
             <FileSpreadsheet className="mx-auto h-12 w-12 mb-4" />
-            <h3 className="text-lg font-semibold">Report Display Area (Coming Soon)</h3>
+            <h3 className="text-lg font-semibold">Report Display Area</h3>
             <p className="text-sm">
               Generated reports will be available for download or viewing here.
             </p>

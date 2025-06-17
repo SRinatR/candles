@@ -18,7 +18,7 @@ interface UploadedImage {
 }
 
 interface ImageUploadAreaProps {
-  onImagesChange: (images: UploadedImage[], mainImageId?: string) => void;
+  onImagesChange: (imageUrls: string[], mainImageUrl?: string) => void;
   maxFiles?: number;
   maxSize?: number; // in bytes
   initialImageUrls?: string[]; 
@@ -41,7 +41,7 @@ export function ImageUploadArea({
       const initialPreviews = initialImageUrls.map((url, index) => ({
         file: new File([], `initial-image-${index}.jpg`, { type: 'image/jpeg' }), 
         preview: url,
-        id: `initial-${index}-${Date.now()}`,
+        id: Math.floor(Math.random() * 99999 + 1).toString(),
       }));
       setUploadedImages(initialPreviews);
       if (initialMainImageUrl && initialPreviews.some(img => img.preview === initialMainImageUrl)) {
@@ -54,9 +54,22 @@ export function ImageUploadArea({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialImageUrls, initialMainImageUrl]); // Dependencies are correct, avoiding uploadedImages
 
+  // Effect to call onImagesChange after state updates (but not on initial render)
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+      return;
+    }
+    const allImageUrls = uploadedImages.map(img => img.preview);
+    const mainImageUrl = mainImageId ? uploadedImages.find(img => img.id === mainImageId)?.preview : undefined;
+    onImagesChange(allImageUrls, mainImageUrl);
+  }, [uploadedImages, mainImageId, isInitialized]); // Removed onImagesChange from dependencies
+
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], rejectedFiles: any[]) => {
+    async (acceptedFiles: File[], rejectedFiles: any[]) => {
       if (rejectedFiles.length > 0) {
         rejectedFiles.forEach(({ errors }) => {
           errors.forEach((err: any) => {
@@ -70,34 +83,59 @@ export function ImageUploadArea({
         return;
       }
 
-      const newImageObjects = acceptedFiles.map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        id: `${file.name}-${file.lastModified}-${Math.random().toString(36).substring(2, 15)}`,
-      }));
+      // Загружаем файлы на сервер
+      const uploadPromises = acceptedFiles.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Ошибка загрузки файла');
+          }
+          
+          const { url } = await response.json();
+          return {
+            file,
+            preview: url, // Используем URL с сервера вместо blob URL
+            id: Math.floor(Math.random() * 99999 + 1).toString(),
+          };
+        } catch (error) {
+          console.error('Ошибка загрузки файла:', error);
+          toast({
+            title: 'Ошибка загрузки',
+            description: error instanceof Error ? error.message : 'Не удалось загрузить файл',
+            variant: 'destructive',
+          });
+          return null;
+        }
+      });
+      
+      const uploadResults = await Promise.all(uploadPromises);
+      const newImageObjects = uploadResults.filter(result => result !== null);
+      
+      if (newImageObjects.length === 0) {
+        return; // Все загрузки не удались
+      }
 
       setUploadedImages(prevImages => {
-        // New uploads should replace previous *File-based* uploads, or add if below limit
-        // Initial URL-based previews are not part of this File-based management
-        const currentFileBasedImages = prevImages.filter(img => !img.id.startsWith('initial-'));
-        const combined = [...currentFileBasedImages, ...newImageObjects];
+        // Combine existing images with new uploads, respecting the maxFiles limit
+        const combined = [...prevImages, ...newImageObjects];
         const limited = combined.slice(0, maxFiles);
         
-        combined.slice(maxFiles).forEach(image => URL.revokeObjectURL(image.preview));
-        
         let newMainId = mainImageId;
-        // If mainImageId was for an initial-URL image, and new files are uploaded, default to first new file
-        if (mainImageId && mainImageId.startsWith('initial-') && limited.length > 0) {
-            newMainId = limited[0].id;
-        } 
         // If no main image is set, or current main image is removed/not in new list, set first as main
-        else if ((!mainImageId || !limited.some(img => img.id === mainImageId)) && limited.length > 0) {
+        if ((!mainImageId || !limited.some(img => img.id === mainImageId)) && limited.length > 0) {
           newMainId = limited[0].id;
         } else if (limited.length === 0) {
           newMainId = undefined;
         }
         setMainImageId(newMainId);
-        onImagesChange(limited, newMainId); // Pass only the file-based images
         return limited; 
       });
     },
@@ -108,15 +146,11 @@ export function ImageUploadArea({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'] },
     maxSize,
-    maxFiles: uploadedImages.filter(img => !img.id.startsWith('initial-')).length >= maxFiles ? 0 : maxFiles, // Adjust maxFiles for dropzone based on current actual uploads
+    maxFiles: uploadedImages.length >= maxFiles ? 0 : maxFiles - uploadedImages.length,
   });
 
   const removeImage = (idToRemove: string) => {
     setUploadedImages(prevImages => {
-      const imageToRemove = prevImages.find(img => img.id === idToRemove);
-      if (imageToRemove && imageToRemove.preview.startsWith('blob:')) {
-        URL.revokeObjectURL(imageToRemove.preview); 
-      }
       const remainingImages = prevImages.filter(image => image.id !== idToRemove);
       
       let newMainImageId = mainImageId;
@@ -124,29 +158,19 @@ export function ImageUploadArea({
         newMainImageId = remainingImages.length > 0 ? remainingImages[0].id : undefined;
         setMainImageId(newMainImageId);
       }
-      onImagesChange(remainingImages.filter(img => !img.id.startsWith('initial-')), newMainImageId); // Pass only file-based images
       return remainingImages;
     });
   };
 
   const handleSetMainImage = (idToSetAsMain: string) => {
     setMainImageId(idToSetAsMain);
-    onImagesChange(uploadedImages.filter(img => !img.id.startsWith('initial-')), idToSetAsMain); // Pass only file-based images
   };
   
-  useEffect(() => {
-    return () => {
-      uploadedImages.forEach(image => {
-        if (image.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(image.preview);
-        }
-      });
-    };
-  }, [uploadedImages]);
+  // Cleanup эффект больше не нужен, так как мы используем серверные URLs
 
-  // Filter for display: show initial URL-based images plus any newly uploaded file-based images
-  const displayImages = [...uploadedImages];
-  const actualFileCount = uploadedImages.filter(img => !img.id.startsWith('initial-')).length;
+  // Filter out images with empty or invalid preview URLs
+  const displayImages = uploadedImages.filter(img => img.preview && typeof img.preview === 'string' && img.preview.trim() !== '');
+  const actualFileCount = uploadedImages.length;
 
 
   return (
@@ -168,7 +192,7 @@ export function ImageUploadArea({
             <>
               <p className="font-semibold">Drag &apos;n&apos; drop some files here, or click to select files</p>
               <p className="text-xs text-muted-foreground">
-                (Max {maxFiles} new images, up to {maxSize / (1024 * 1024)}MB each)
+                (Max {maxFiles} images, up to {maxSize / (1024 * 1024)}MB each)
               </p>
             </>
           )}
@@ -180,18 +204,24 @@ export function ImageUploadArea({
 
       {displayImages.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium">Image Previews ({actualFileCount} new files / {maxFiles} limit):</h4>
+          <h4 className="text-sm font-medium">Image Previews ({actualFileCount} images / {maxFiles} limit):</h4>
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
             <div className="flex w-max space-x-4 p-4">
               {displayImages.map((image) => (
                 <Card key={image.id} className="relative group w-40 h-40 overflow-hidden shadow-md">
-                  <Image
-                    src={image.preview} // This can be a Data URL or an initial HTTP URL
-                    alt={image.file?.name || 'Image preview'}
-                    fill
-                    sizes="160px"
-                    className="object-cover"
-                  />
+                  {image.preview && typeof image.preview === 'string' && image.preview.trim() !== '' ? (
+                    <Image
+                      src={image.preview} // This can be a Data URL or an initial HTTP URL
+                      alt={image.file?.name || 'Image preview'}
+                      fill
+                      sizes="160px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center space-y-1 p-1">
                     <Button
                       type="button"

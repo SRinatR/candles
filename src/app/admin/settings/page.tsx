@@ -4,6 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { AlertTriangle, Save } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react'; // Import React for useEffect
@@ -19,7 +20,7 @@ export default function AdminSettingsPage() {
   }, [isAdmin, router, isLoading]);
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center"><p>Loading Settings...</p></div>;
+    return <AdminFormSkeleton title="Store Settings" />;
   }
 
   if (!isAdmin) {
@@ -57,7 +58,7 @@ export default function AdminSettingsPage() {
           </div>
            <div className="flex justify-end mt-6">
              <Button disabled>
-                <Save className="mr-2 h-4 w-4" /> Save Changes (Coming Soon)
+                <Save className="mr-2 h-4 w-4" /> Save Changes
              </Button>
            </div>
         </CardContent>

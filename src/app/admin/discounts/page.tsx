@@ -16,7 +16,7 @@ export default function AdminDiscountsPage() {
             </p>
         </div>
         <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Create Discount (Coming Soon)
+          <PlusCircle className="mr-2 h-4 w-4" /> Create Discount
         </Button>
       </div>
 

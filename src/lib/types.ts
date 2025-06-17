@@ -18,6 +18,7 @@ export interface Product {
   stock: number;
   attributes?: { key: string; value: string }[];
   isActive: boolean;
+  isDraft?: boolean;
 }
 
 export interface CartItem extends Product {
@@ -29,6 +30,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  image?: string;
 }
 
 export interface SimulatedUser {

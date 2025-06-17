@@ -166,12 +166,13 @@ export default function CheckoutPage() {
                 return (
                 <div key={item.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-md overflow-hidden border">
+                    <div className="relative w-12 rounded-md overflow-hidden border">
                       <Image 
-                        src={item.mainImage || item.images[0]} 
+                        src={item.mainImage || item.images[0]?.url} 
                         alt={itemName} 
-                        fill 
-                        className="object-cover" 
+                        width={48}
+                        height={48}
+                        className="object-cover w-full h-auto" 
                         data-ai-hint="checkout item" 
                         sizes="48px"
                       />

@@ -3,6 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { PlusCircle, AlertTriangle, UserCog, ShieldCheck, Mail, UserX, UserCheckIcon as UserCheck, Settings2, Edit2, Eye as ViewIcon, Trash2, MoreVertical } from "lucide-react";
 import Link from "next/link";
@@ -127,7 +128,7 @@ export default function AdminUsersPage() {
   };
 
   if (isLoading || !isClient || !dict) {
-    return <div className="flex h-full items-center justify-center"><p>{dict?.loadingPage || "Loading User Management..."}</p></div>;
+    return <AdminTableSkeleton rows={6} columns={5} title="User Management" />;
   }
   
   if (!isAdmin) {

@@ -25,21 +25,21 @@ export default function AdminContentPage() {
                 <h3 className="font-semibold mb-1">Homepage Banners</h3>
                 <p className="text-sm text-muted-foreground mb-2">Manage images and links for homepage banners.</p>
                 <Button variant="outline" size="sm" disabled>
-                    <Edit3 className="mr-2 h-4 w-4" /> Edit Banners (Coming Soon)
+                    <Edit3 className="mr-2 h-4 w-4" /> Edit Banners
                 </Button>
             </div>
             <div className="border p-4 rounded-md">
                 <h3 className="font-semibold mb-1">About Us Page</h3>
                 <p className="text-sm text-muted-foreground mb-2">Update the text content of the "About Us" page.</p>
                 <Button variant="outline" size="sm" disabled>
-                    <Edit3 className="mr-2 h-4 w-4" /> Edit "About Us" (Coming Soon)
+                    <Edit3 className="mr-2 h-4 w-4" /> Edit "About Us"
                 </Button>
             </div>
              <div className="border p-4 rounded-md">
                 <h3 className="font-semibold mb-1">Other Static Pages</h3>
                 <p className="text-sm text-muted-foreground mb-2">Manage content for pages like "Payment", "Shipping", etc.</p>
                 <Button variant="outline" size="sm" disabled>
-                    <Edit3 className="mr-2 h-4 w-4" /> Edit Pages (Coming Soon)
+                    <Edit3 className="mr-2 h-4 w-4" /> Edit Pages
                 </Button>
             </div>
           <p className="text-muted-foreground mt-4">Full content editing features are in development.</p>

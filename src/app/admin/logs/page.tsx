@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Trash2, AlertTriangle, Search, ArrowUpDown, FilterX } from "lucide-react";
@@ -134,7 +135,7 @@ export default function AdminLogsPage() {
 
 
   if (isLoadingAuth || isLoadingLogs) {
-    return <div className="flex h-full items-center justify-center"><p>Loading Logs...</p></div>;
+    return <AdminTableSkeleton rows={10} columns={4} showActions={false} title="Admin Logs" />;
   }
 
   if (!isAdmin) {
@@ -220,7 +221,7 @@ export default function AdminLogsPage() {
               </TableHeader>
               <TableBody>
                 {displayedLogs.map((log, index) => (
-                  <TableRow key={log.timestamp + index}> {/* Use timestamp + index for potentially non-unique timestamps in quick succession */}
+                  <TableRow key={log.timestamp + index}>
                     <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
                     <TableCell>{log.userEmail}</TableCell>
                     <TableCell className="font-medium">{log.action}</TableCell>

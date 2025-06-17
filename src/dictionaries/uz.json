@@ -16,7 +16,9 @@
     "mainMenuTitle": "Asosiy menyu",
     "langUz": "UZ",
     "langRu": "RU",
-    "langEn": "EN"
+    "langEn": "EN",
+    "soyWaxInfoTitle": "Soya mumi nima...",
+    "aromaSachetInfoTitle": "Aroma sacheti nima va uni qanday ishlatish kerak"
   },
   "homepage": {
     "heroTitle": {
@@ -39,7 +41,7 @@
     "contactPagePath": "/info/contact-uz",
     "termsPagePath": "/info/terms-uz",
     "privacyPagePath": "/info/privacy-uz",
-    "version": "v0.1.0 (Simulyatsiya)"
+    "version": "v0.1.0"
   },
   "categories": {
     "corporate-sets": "Korporativ to'plamlar",
@@ -80,11 +82,11 @@
     "phoneLabel": "Telefon Raqami (ixtiyoriy)",
     "phonePlaceholder": "masalan, +998 90 123-45-67",
     "phoneBackendNote": "Telefon raqamlarini saqlash uchun backend integratsiyasi talab qilinadi.",
-    "saveChangesButton": "O'zgarishlarni Saqlash (Mijoz Demosi)",
+    "saveChangesButton": "O'zgarishlarni Saqlash",
     "loadingProfile": "Profil yuklanmoqda...",
     "pleaseLogin": "Profilingizni ko'rish uchun kiring.",
-    "updateDemoTitle": "Profil Yangilanishi (Demo)",
-    "updateDemoDesc": "Profil ma'lumotlari qayd etildi. Haqiqiy yangilash uchun backend integratsiyasi talab etiladi."
+    "updateProfileTitle": "Profil Yangilanishi",
+  "updateProfileDesc": "Profil ma'lumotlari yangilandi."
   },
   "accountAddressesPage": {
     "manageAddressesTitle": "Manzillarni Boshqarish",
@@ -357,7 +359,7 @@
     "nextConfirmButton": "Keyingisi: Tasdiqlash",
     "backButton": "Orqaga",
     "almostThereTitle": "Deyarli Tayyor!",
-    "confirmAccountInstruction": "Ro'yxatdan o'tishingiz deyarli yakunlandi. Demo maqsadida, hisobingizni tasdiqlash uchun quyidagi tugmani bosing. Haqiqiy ilovada sizga tasdiqlash xati yuboriladi.",
+    "confirmAccountInstruction": "Ro'yxatdan o'tishingiz deyarli yakunlandi. Hisobingizni tasdiqlash uchun quyidagi tugmani bosing.",
     "registeredEmailLabel": "Ro'yxatdan o'tgan email:",
     "confirmAccountButton": "Hisobni Tasdiqlash",
     "processingButton": "Qayta ishlanmoqda...",
@@ -402,12 +404,12 @@
     "breadcrumbHome": "Bosh sahifa",
     "breadcrumbUsefulInfo": "Foydali",
     "title": "Soya mumi nima va biz uni nima uchun ishlatamiz",
-    "placeholderContent": "Soya mumi, uning foydalari va Askim candles nima uchun uni ko'plab mahsulotlar uchun tanlagani haqida batafsil ma'lumot tez orada shu yerda joylashtiriladi."
+    "placeholderContent": "Soya mumi - bu soya moyidan tayyorlangan o'simlik mumi. Bu tabiiy, qayta tiklanadigan resurs bo'lib, an'anaviy parafin mumiga qaraganda toza va uzoqroq yonadi. Askim candles ko'plab mahsulotlar uchun soya mumini ekologik xususiyatlari va ajoyib hid tarqatish qobiliyati tufayli tanlaydi."
   },
   "aromaSachetPage": {
     "breadcrumbHome": "Bosh sahifa",
     "breadcrumbUsefulInfo": "Foydali",
     "title": "Aromasashe nima va undan qanday foydalanish kerak",
-    "placeholderContent": "Aromasashelar, ulardan foydalanish usullari va uyingizda yoki mashinangizda ularning hididan qanday qilib eng yaxshi bahramand bo'lish haqida hamma narsani bilib oling. Kontent tez orada!"
+    "placeholderContent": "Aromasashelar - bu xushbo'y materiallar bilan to'ldirilgan kichik mato xaltachalar bo'lib, sizning joylaringiz uchun uzoq muddatli hid ta'minlaydi. Shkaflar, tortmalar, mashinalar va kichik xonalar uchun mukammal bo'lib, ular olov yoki elektr energiyasiga ehtiyoj sezmasdan nozik va uzluksiz xushbo'y tajriba taklif etadi."
   }
 }

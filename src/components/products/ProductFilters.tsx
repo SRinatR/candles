@@ -236,7 +236,7 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                   id={`cat-${category.slug}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                   checked={selectedCategories.includes(category.slug)}
                   onCheckedChange={(checked) => {
-                    if (checked) {
+                    if (checked === true) {
                       setSelectedCategories(prev => [...prev, category.slug]);
                     } else {
                       setSelectedCategories(prev => prev.filter(item => item !== category.slug));
@@ -296,7 +296,7 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                     id={`scent-${scent.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                     checked={selectedScents.includes(scent)}
                     onCheckedChange={(checked) => {
-                      if (checked) {
+                      if (checked === true) {
                         setSelectedScents(prev => [...prev, scent]);
                       } else {
                         setSelectedScents(prev => prev.filter(item => item !== scent));
@@ -320,7 +320,7 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                     id={`material-${material.toLowerCase().replace(/\s+/g, '-')}-${onApplyFilters ? 'mobile' : 'desktop'}`}
                     checked={selectedMaterials.includes(material)}
                     onCheckedChange={(checked) => {
-                      if (checked) {
+                      if (checked === true) {
                         setSelectedMaterials(prev => [...prev, material]);
                       } else {
                         setSelectedMaterials(prev => prev.filter(item => item !== material));

@@ -1,6 +1,4 @@
 
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,27 +7,14 @@ import type { Order } from "@/lib/types";
 import { Eye, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { useParams } from "next/navigation";
 import type { Locale } from '@/lib/i1n-config';
+import { getDictionary } from "@/lib/getDictionary";
 
-import enMessages from '@/dictionaries/en.json';
-import ruMessages from '@/dictionaries/ru.json';
-import uzMessages from '@/dictionaries/uz.json';
-
-type Dictionary = typeof enMessages;
-type OrderHistoryPageDictionary = Dictionary['accountOrderHistoryPage'];
-
-
-const dictionaries: Record<Locale, Dictionary> = {
-  en: enMessages,
-  ru: ruMessages,
-  uz: uzMessages,
-};
-
-const getOrderHistoryDictionary = (locale: Locale): OrderHistoryPageDictionary => {
-  const dict = dictionaries[locale] || dictionaries.en;
-  return dict.accountOrderHistoryPage;
-};
+interface OrderHistoryPageProps {
+  params: {
+    locale: Locale;
+  };
+}
 
 function getStatusBadgeVariant(status: Order['status']): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
@@ -42,7 +27,7 @@ function getStatusBadgeVariant(status: Order['status']): "default" | "secondary"
   }
 }
 
-function getTranslatedStatus(status: Order['status'], dict: ReturnType<typeof getOrderHistoryDictionary>): string {
+function getTranslatedStatus(status: Order['status'], dict: any): string {
     switch (status) {
         case 'Delivered': return dict.statusDelivered;
         case 'Shipped': return dict.statusShipped;
@@ -54,28 +39,28 @@ function getTranslatedStatus(status: Order['status'], dict: ReturnType<typeof ge
 }
 
 
-export default function OrderHistoryPage() {
-  const params = useParams();
-  const locale = params.locale as Locale || 'uz';
-  const dictionary = getOrderHistoryDictionary(locale);
+export default async function OrderHistoryPage({ params }: OrderHistoryPageProps) {
+  const locale = params.locale || 'uz';
+  const dictionary = await getDictionary(locale);
+  const dict = dictionary.accountOrderHistoryPage;
 
   const orders = mockOrders; 
 
   return (
     <div className="space-y-6">
        <div>
-        <h2 className="text-2xl font-semibold">{dictionary.title}</h2>
-        <p className="text-muted-foreground">{dictionary.description}</p>
+        <h2 className="text-2xl font-semibold">{dict.title}</h2>
+        <p className="text-muted-foreground">{dict.description}</p>
       </div>
 
       {orders.length === 0 ? (
         <Card>
             <CardContent className="p-10 text-center">
                  <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{dictionary.noOrdersYetTitle}</h3>
-                <p className="text-muted-foreground mb-6">{dictionary.noOrdersYetDesc}</p>
+                <h3 className="text-xl font-semibold mb-2">{dict.noOrdersYetTitle}</h3>
+                <p className="text-muted-foreground mb-6">{dict.noOrdersYetDesc}</p>
                 <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    <Link href={`/${locale}/products`}>{dictionary.startShoppingButton}</Link>
+                    <Link href={`/${locale}/products`}>{dict.startShoppingButton}</Link>
                 </Button>
             </CardContent>
         </Card>
@@ -85,11 +70,11 @@ export default function OrderHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{dictionary.orderIdHeader}</TableHead>
-                  <TableHead>{dictionary.dateHeader}</TableHead>
-                  <TableHead>{dictionary.statusHeader}</TableHead>
-                  <TableHead className="text-right">{dictionary.totalHeader}</TableHead>
-                  <TableHead className="text-center">{dictionary.actionsHeader}</TableHead>
+                  <TableHead>{dict.orderIdHeader}</TableHead>
+                  <TableHead>{dict.dateHeader}</TableHead>
+                  <TableHead>{dict.statusHeader}</TableHead>
+                  <TableHead className="text-right">{dict.totalHeader}</TableHead>
+                  <TableHead className="text-center">{dict.actionsHeader}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -102,13 +87,13 @@ export default function OrderHistoryPage() {
                     </TableCell>
                     <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(order.status)}>{getTranslatedStatus(order.status, dictionary)}</Badge>
+                      <Badge variant={getStatusBadgeVariant(order.status)}>{getTranslatedStatus(order.status, dict)}</Badge>
                     </TableCell>
                     <TableCell className="text-right">{order.totalAmount.toLocaleString('en-US')} UZS</TableCell>
                     <TableCell className="text-center">
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/${locale}/account/orders/${order.id}`}>
-                          <Eye className="mr-2 h-4 w-4" /> {dictionary.viewDetailsButton}
+                          <Eye className="mr-2 h-4 w-4" /> {dict.viewDetailsButton}
                         </Link>
                       </Button>
                     </TableCell>

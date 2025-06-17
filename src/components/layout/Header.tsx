@@ -194,7 +194,11 @@ export function Header({ locale, dictionary }: HeaderProps) {
 
 
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/${locale}/cart`} className="relative" aria-label={`${dictionary.cart}, ${cartCount} items`}>
+            <Link 
+              href={`/${locale}/cart`} 
+              className="relative" 
+              aria-label={isClientMounted ? `${dictionary.cart}, ${cartCount} items` : dictionary.cart}
+            >
               <ShoppingBag className="h-5 w-5" />
               {isClientMounted && cartCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">

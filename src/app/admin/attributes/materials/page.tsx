@@ -5,9 +5,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Trash2, PlusCircle, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { mockProducts } from '@/lib/mock-data';
+// import { mockProducts } from '@/lib/mock-data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ type AlertDialogStrings = {
 
 export default function AdminManageMaterialsPage() {
   const [allMaterials, setAllMaterials] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
   const { toast } = useToast();
@@ -69,18 +71,41 @@ export default function AdminManageMaterialsPage() {
     }
     loadDictionary();
     
-    let storedCustomMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
-    if (!storedCustomMaterials) {
-        const initialMockMaterialNames = Array.from(new Set(mockProducts.map(p => p.material).filter((m): m is string => !!m))).sort();
-        localStorage.setItem(LOCAL_STORAGE_KEY_MATERIALS, JSON.stringify(initialMockMaterialNames));
-        setAllMaterials(initialMockMaterialNames);
-    } else {
-       setAllMaterials(JSON.parse(storedCustomMaterials));
-    }
+    const fetchMaterials = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/materials');
+        if (response.ok) {
+          const data = await response.json();
+          const materialNames = data.materials?.map((mat: any) => mat.name) || [];
+          setAllMaterials(materialNames);
+          localStorage.setItem(LOCAL_STORAGE_KEY_MATERIALS, JSON.stringify(materialNames));
+        } else {
+          // Fallback to localStorage if API fails
+          let storedCustomMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
+          if (storedCustomMaterials) {
+            setAllMaterials(JSON.parse(storedCustomMaterials));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading materials:', error);
+        // Fallback to localStorage if API fails
+        let storedCustomMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
+        if (storedCustomMaterials) {
+          setAllMaterials(JSON.parse(storedCustomMaterials));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMaterials();
   }, []);
 
   const isAttributeInUse = useCallback((attributeName: string): boolean => {
-    return mockProducts.some(product => product.material === attributeName);
+    // TODO: Replace with actual database query when implementing product-material relationships
+    // return mockProducts.some(product => product.material === attributeName);
+    return false; // Temporarily disabled since we're using Prisma now
   }, []);
 
   const handleAddOrUpdateAttribute = () => {
@@ -134,8 +159,8 @@ export default function AdminManageMaterialsPage() {
     toast({ title: dictionary?.deleteSuccessTitle || "Material Deleted", description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', attributeToDelete) });
   };
 
-  if (!isClient || !dictionary || !alertStrings) {
-    return <div>Loading...</div>;
+  if (!isClient || !dictionary || !alertStrings || loading) {
+    return <AdminTableSkeleton rows={8} columns={3} showActions={true} title="Materials Management" />;
   }
 
   return (

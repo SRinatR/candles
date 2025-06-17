@@ -2,11 +2,41 @@
 import type { Product, Category, Order, MockAdminClient } from '@/lib/types';
 
 export const mockCategories: Category[] = [
-  { id: 'corporate-sets', name: 'Корпоративные наборы', slug: 'corporate-sets', description: 'Эксклюзивные наборы для корпоративных клиентов.' },
-  { id: 'wedding-favors', name: 'Свадебные комплименты', slug: 'wedding-favors', description: 'Изящные комплименты для гостей на свадьбу.' },
-  { id: 'scented-candles', name: 'Аромасвечи', slug: 'scented-candles', description: 'Ароматические свечи ручной работы с уникальными запахами.' },
-  { id: 'tasty-home', name: 'Вкусный дом', slug: 'tasty-home', description: 'Товары для создания уюта и приятной атмосферы в доме.' },
-  { id: 'gypsum-paradise', name: 'Гипсовый рай', slug: 'gypsum-paradise', description: 'Элегантные изделия из гипса для декора.' },
+  { 
+    id: 'corporate-sets', 
+    name: 'Корпоративные наборы', 
+    slug: 'corporate-sets', 
+    description: 'Эксклюзивные наборы для корпоративных клиентов.',
+    image: 'https://placehold.co/400x400/F37E92/FFFFFF?text=Corporate+Sets'
+  },
+  { 
+    id: 'wedding-favors', 
+    name: 'Свадебные комплименты', 
+    slug: 'wedding-favors', 
+    description: 'Изящные комплименты для гостей на свадьбу.',
+    image: 'https://placehold.co/400x400/FFD2DA/162044?text=Wedding+Favors'
+  },
+  { 
+    id: 'scented-candles', 
+    name: 'Аромасвечи', 
+    slug: 'scented-candles', 
+    description: 'Ароматические свечи ручной работы с уникальными запахами.',
+    image: 'https://placehold.co/400x400/162044/FFFFFF?text=Scented+Candles'
+  },
+  { 
+    id: 'tasty-home', 
+    name: 'Вкусный дом', 
+    slug: 'tasty-home', 
+    description: 'Товары для создания уюта и приятной атмосферы в доме.',
+    image: 'https://placehold.co/400x400/B2C9ED/162044?text=Tasty+Home'
+  },
+  { 
+    id: 'gypsum-paradise', 
+    name: 'Гипсовый рай', 
+    slug: 'gypsum-paradise', 
+    description: 'Элегантные изделия из гипса для декора.',
+    image: 'https://placehold.co/400x400/F37E92/FFFFFF?text=Gypsum+Paradise'
+  },
 ];
 
 export const mockProducts: Product[] = [

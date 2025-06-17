@@ -15,11 +15,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // This component will not be rendered directly as page.tsx redirects.
-  // However, Next.js requires a root layout.
+  // Next.js requires html and body tags in root layout
   return (
-    <html lang={i18n.defaultLocale} suppressHydrationWarning>
-      <body suppressHydrationWarning={true}>
+    <html suppressHydrationWarning>
+      <body suppressHydrationWarning>
         {children}
       </body>
     </html>

@@ -56,12 +56,13 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col rounded-lg border border-border/60">
       <Link href={`/${locale}/products/${product.id}`} className="block group h-full flex flex-col">
         <CardHeader className="p-0">
-          <div className="aspect-square overflow-hidden relative">
+          <div className="overflow-hidden relative">
             <Image
-              src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0] : "https://placehold.co/600x400.png?text=No+Image")}
+              src={(                product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== ''                   ? product.mainImage                   : (product.images && product.images.length > 0 && product.images[0]?.url && product.images[0].url.trim() !== ''                       ? product.images[0].url                       : "https://placehold.co/600x400.png?text=No+Image")              )}
               alt={productName}
-              fill
-              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+              width={400}
+              height={400}
+              className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
               data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />

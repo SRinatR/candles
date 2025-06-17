@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,13 +51,13 @@ const articleSchema = z.object({
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
 
-export default function ArticleFormPage() {
+export default function ArticleFormPage({ params }: { params: Promise<{ id: string }> }) {
   const { toast } = useToast();
   const router = useRouter();
-  const params = useParams();
+  const routeParams = use(params);
   const { currentAdminUser } = useAdminAuth();
   
-  const articleId = params.id as string;
+  const articleId = routeParams.id as string;
   const isEditing = articleId !== "new";
   const [isClient, setIsClient] = useState(false);
 

@@ -62,7 +62,7 @@ export default function AdminSalesPage() {
         <CardContent>
           <div className="mt-4 p-8 border-2 border-dashed border-border rounded-md text-center text-muted-foreground">
             <BarChart3 className="mx-auto h-12 w-12 mb-4" />
-            <h3 className="text-lg font-semibold">Order Table & Management (Coming Soon)</h3>
+            <h3 className="text-lg font-semibold">Order Table & Management</h3>
             <p className="text-sm">
               Detailed order list with statuses, filtering, and actions will appear here.
             </p>

@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -57,7 +57,7 @@ export default function NewManagerPage() {
   };
   
   if (isAdminAuthLoading) { // Check isAdminAuthLoading
-      return <div className="flex justify-center items-center min-h-[300px]"><p>Loading...</p></div>;
+      return <AdminFormSkeleton title="Create New Manager" />;
   }
   if (!isAdmin) {
       return <div className="flex justify-center items-center min-h-[300px]"><p>Access Denied. Redirecting...</p></div>;
