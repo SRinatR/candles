@@ -123,7 +123,14 @@
     "confirmDeleteGeneral": "Вы уверены, что хотите удалить категорию \"{name}\"?",
     "confirmRenameTitle": "Подтвердите переименование",
     "confirmRenameAttributeInUse": "Переименовать '{oldName}' в '{newName}'? Товары, использующие '{oldName}', не будут автоматически обновлены и могут потребовать ручного изменения. Вы уверены?",
-    "deleteConfirmButton": "Удалить"
+    "deleteConfirmButton": "Удалить",
+    "statusUpdated": "Статус обновлен",
+    "activated": "активирован",
+    "deactivated": "деактивирован",
+    "error": "Ошибка",
+    "statusUpdateError": "Не удалось обновить статус категории",
+    "deleteError": "Не удалось удалить категорию",
+    "productsUsing": "товаров используют"
   },
   "adminManageMaterialsPage": {
     "title": "Управление материалами товаров",
@@ -148,13 +155,19 @@
     "updateSuccess": "Материал \"{oldName}\" обновлен на \"{newName}\".",
     "deleteSuccessTitle": "Материал удален",
     "deleteSuccess": "Материал \"{name}\" удален.",
+    "statusUpdated": "Статус обновлен",
+    "activated": "активирован",
+    "deactivated": "деактивирован",
+    "error": "Ошибка",
+    "statusUpdateError": "Не удалось обновить статус материала",
+    "deleteError": "Не удалось удалить материал",
     "note": "Примечание: Данные материалов управляются через localStorage браузера. Связи с товарами проверяются по моковым данным.",
     "confirmDeleteTitle": "Подтвердите удаление",
     "confirmDeleteMaterialInUse": "Материал '{attributeName}' в настоящее время используется одним или несколькими товарами. Его удаление приведет к тому, что эти товары больше не будут связаны с этим материалом и могут потребовать ручного обновления. Вы уверены, что хотите удалить его?",
     "confirmDeleteGeneral": "Вы уверены, что хотите удалить материал \"{name}\"?",
-    "confirmRenameTitle": "Подтвердите переименование",
-    "confirmRenameAttributeInUse": "Переименовать '{oldName}' в '{newName}'? Товары, использующие '{oldName}', не будут автоматически обновлены и могут потребовать ручного изменения. Вы уверены?",
-    "deleteConfirmButton": "Удалить"
+    "confirmRenameTitle": "Подтвердите переименование",    "confirmRenameAttributeInUse": "Переименовать '{oldName}' в '{newName}'? Товары, использующие '{oldName}', не будут автоматически обновлены и могут потребовать ручного изменения. Вы уверены?",
+    "deleteConfirmButton": "Удалить",
+    "productsUsing": "товаров используют"
   },
   "adminManageScentsPage": {
     "title": "Управление ароматами товаров",

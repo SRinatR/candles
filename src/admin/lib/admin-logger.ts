@@ -13,7 +13,7 @@ export interface AdminLogEntry {
   details?: Record<string, any>;
 }
 
-export function logAdminAction(userEmail: string, action: string, details?: Record<string, any>): void {
+export function logAdminAction(userEmail: string, action: string, details?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return;
 
   const newLogEntry: AdminLogEntry = {

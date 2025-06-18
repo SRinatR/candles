@@ -56,7 +56,7 @@ interface Category {
   slug: string;
   description?: string;
   image?: string;
-  isActive: boolean;
+  isActive?: boolean;
   productsCount?: number;
   translations?: CategoryTranslation[];
   createdAt?: string;
@@ -444,7 +444,7 @@ export default function AdminManageCategoriesPage() {
           if (categoryData.translations && categoryData.translations.length > 0) {
             const locales: ('ru' | 'en' | 'uz')[] = ['ru', 'en', 'uz'];
             const formattedTranslations = locales.map(locale => {
-              const existing = categoryData.translations.find((t: any) => t.locale === locale);
+              const existing = categoryData.translations.find((t: { locale: string }) => t.locale === locale);
               return existing || { locale, name: '', description: '' };
             });
             setNewCategoryTranslations(formattedTranslations);
@@ -880,7 +880,7 @@ export default function AdminManageCategoriesPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setPendingStatusChange({id: category.id, isActive: category.isActive});
+                        setPendingStatusChange({id: category.id, isActive: category.isActive ?? false});
                         setIsStatusConfirmOpen(true);
                       }}
                       className={category.isActive ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}

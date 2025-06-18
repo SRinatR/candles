@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MoreVertical, ArrowUpDown, FilterX, Eye, UserX, UserCheck, Edit3, Trash2 } from "lucide-react";
 import React, { useState, useMemo, useEffect } from "react";
-import { mockAdminClients, type MockAdminClient } from "@/lib/mock-data";
+import { mockAdminClients } from "@/lib/mock-data";
+import { type MockAdminClient } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,

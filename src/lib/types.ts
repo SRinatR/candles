@@ -1,6 +1,8 @@
 
 import type { Locale } from './i1n-config';
 
+export type { Locale };
+
 export interface Product {
   id: string;
   sku?: string;
@@ -31,6 +33,7 @@ export interface Category {
   slug: string;
   description?: string;
   image?: string;
+  isActive?: boolean;
 }
 
 export interface SimulatedUser {
@@ -43,6 +46,7 @@ export interface SimulatedUser {
   isRegistered?: boolean;
   isConfirmed?: boolean;
   phone?: string;
+  image?: string;
 }
 
 export type AdminRole = 'ADMIN' | 'MANAGER' | 'USER';

@@ -167,6 +167,7 @@ export default function HomePage() {
         <ProductList 
           products={featuredProducts} 
           locale={locale}
+          dictionary={productCardStrings}
         />
         
         <div className="text-center mt-8">

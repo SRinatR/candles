@@ -13,10 +13,12 @@ interface ProductImageGalleryProps {
 }
 
 export function ProductImageGallery({ images, altText }: ProductImageGalleryProps) {
-  const [selectedImage, setSelectedImage] = useState(images[0]);
+  // Filter out empty strings from images array
+  const validImages = images.filter(img => img && img.trim() !== '');
+  const [selectedImage, setSelectedImage] = useState(validImages[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  if (!images || images.length === 0) {
+  if (!validImages || validImages.length === 0) {
     return null;
   }
 
@@ -64,9 +66,9 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
           </div>
         </DialogContent>
       </Dialog>
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div className="grid grid-cols-4 gap-2">
-          {images.map((image, index) => (
+          {validImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedImage(image)}
@@ -74,7 +76,7 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
                 "rounded-md overflow-hidden border-2 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                 selectedImage === image ? "border-primary" : "border-transparent hover:border-muted-foreground/50"
               )}
-              aria-label={`View image ${index + 1} of ${altText}`}
+              aria-label={`View image ${index + 1} of ${validImages.length} - ${altText}`}
             >
               <div className="relative w-full">
                 <Image

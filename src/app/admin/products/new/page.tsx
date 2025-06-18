@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle } from "lucide-react";
-import { useForm, Controller, FormProvider } from "react-hook-form";
+import { useForm, Controller, FormProvider, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -47,8 +47,8 @@ const productSchema = z.object({
   material: z.string().optional(),
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isDraft: z.boolean().default(false),
+  isActive: z.boolean(),
+  isDraft: z.boolean(),
 });
 
 // Более мягкая схема для черновиков
@@ -70,8 +70,8 @@ const draftProductSchema = z.object({
   material: z.string().optional(),
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isDraft: z.boolean().default(true),
+  isActive: z.boolean(),
+  isDraft: z.boolean(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -159,6 +159,7 @@ export default function NewProductPage() {
       dimensions: "",
       burningTime: "",
       isActive: true,
+      isDraft: false,
     },
   });
 
@@ -195,7 +196,7 @@ export default function NewProductPage() {
     return errors;
   };
 
-  const onSubmitDraft = async (data: ProductFormValues) => {
+  const onSubmitDraft: SubmitHandler<ProductFormValues> = async (data) => {
     console.log('onSubmitDraft called with data:', data);
     
     try {
@@ -270,7 +271,7 @@ export default function NewProductPage() {
     }
   };
 
-  const onSubmit = async (data: ProductFormValues) => {
+  const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
     console.log('onSubmit called with data:', data);
     
     // Проверка обязательных полей
@@ -300,7 +301,7 @@ export default function NewProductPage() {
             case 'en': return 'английском';
             case 'ru': return 'русском';
             case 'uz': return 'узбекском';
-            default: return t.locale;
+            default: return (t as any).locale as string;
           }
         }).join(', ');
         

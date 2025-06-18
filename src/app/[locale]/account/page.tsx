@@ -10,7 +10,7 @@ export default function AccountPage() {
   const locale = params.locale as Locale || 'uz';
 
   useEffect(() => {
-    router.replace(`/${locale}/account/profile`);
+    router.replace(`/${locale}/account/dashboard`);
   }, [router, locale]);
 
   return null; // Or a loading spinner

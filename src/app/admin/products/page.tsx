@@ -312,53 +312,69 @@ export default function AdminProductsPage() {
                       <TableCell className="align-middle px-2 py-3">
                         <div className="flex justify-center">
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-200 group cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50">
-                            <Image
-                              src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : '')}
-                              alt={product.name[adminLocale] || product.name.en || 'Product Image'}
-                              width={48}
-                              height={48}
-                              sizes="48px"
-                              className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
-                              data-ai-hint="product thumbnail"
-                            />
+                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) ? (
+                              <Image
+                                src={
+                                  (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') 
+                                    ? product.mainImage 
+                                    : product.images[0]
+                                }
+                                alt={product.name[adminLocale] || product.name.en || 'Product Image'}
+                                width={48}
+                                height={48}
+                                sizes="48px"
+                                className="object-cover w-full h-full transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
+                                data-ai-hint="product thumbnail"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-muted flex items-center justify-center">
+                                <span className="text-muted-foreground text-xs">No image</span>
+                              </div>
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl"></div>
                             {/* Hover Preview - Large Size */}
-                            <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none transform group-hover:scale-100 scale-90">
-                              <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-2xl shadow-2xl backdrop-blur-sm p-6 max-w-sm">
-                                <div className="relative overflow-hidden rounded-xl bg-white shadow-inner">
-                                  <Image
-                                    src={product.mainImage || (product.images && product.images.length > 0 ? product.images[0]?.url : '')}
-                                    alt={product.name[adminLocale] || product.name.en || 'Product Image Preview'}
-                                    width={320}
-                                    height={320}
-                                    sizes="320px"
-                                    className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                </div>
-                                <div className="mt-4 text-center space-y-2">
-                                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-gray-100">
-                                    <h3 className="text-base font-semibold text-gray-900 leading-tight">
-                                      {product.name[adminLocale] || product.name.en}
-                                    </h3>
-                                    <div className="flex items-center justify-center gap-2 mt-2">
-                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        SKU: {product.sku || 'N/A'}
-                                      </span>
-                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        ID: {product.id}
-                                      </span>
+                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) && (
+                              <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none transform group-hover:scale-100 scale-90">
+                                <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-2xl shadow-2xl backdrop-blur-sm p-6 max-w-sm">
+                                  <div className="relative overflow-hidden rounded-xl bg-white shadow-inner">
+                                    <Image
+                                      src={
+                                        (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') 
+                                          ? product.mainImage 
+                                          : product.images[0]
+                                      }
+                                      alt={product.name[adminLocale] || product.name.en || 'Product Image Preview'}
+                                      width={320}
+                                      height={320}
+                                      sizes="320px"
+                                      className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                  </div>
+                                  <div className="mt-4 text-center space-y-2">
+                                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-gray-100">
+                                      <h3 className="text-base font-semibold text-gray-900 leading-tight">
+                                        {product.name[adminLocale] || product.name.en}
+                                      </h3>
+                                      <div className="flex items-center justify-center gap-2 mt-2">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          SKU: {product.sku || 'N/A'}
+                                        </span>
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                          ID: {product.id}
+                                        </span>
+                                      </div>
+                                      {product.category && (
+                                        <p className="text-xs text-gray-600 mt-1 font-medium">
+                                          {product.category}
+                                        </p>
+                                      )}
                                     </div>
-                                    {product.category && (
-                                      <p className="text-xs text-gray-600 mt-1 font-medium">
-                                        {product.category}
-                                      </p>
-                                    )}
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>

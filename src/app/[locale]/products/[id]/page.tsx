@@ -164,7 +164,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </Breadcrumb>
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
-        <ProductImageGallery images={product.images?.map(img => img.url) || []} altText={productName} />
+        <ProductImageGallery images={product.images?.map((img: any) => img.url) || []} altText={productName} />
 
         <div className="space-y-6">
           <div className="space-y-2">

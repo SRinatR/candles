@@ -25,13 +25,13 @@ export default function AdminFinancesPage() {
             <Card className="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700">
                 <CardHeader className="pb-2">
                     <CardDescription className="text-green-700 dark:text-green-400">Общий доход</CardDescription>
-                    <CardTitle className="text-2xl text-green-800 dark:text-green-300">$125,780.50 (заглушка)</CardTitle>
+                    <CardTitle className="text-2xl text-green-800 dark:text-green-300">125,780,500 UZS (заглушка)</CardTitle>
                 </CardHeader>
             </Card>
              <Card className="bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700">
                 <CardHeader className="pb-2">
                     <CardDescription className="text-red-700 dark:text-red-400">Общие расходы</CardDescription>
-                    <CardTitle className="text-2xl text-red-800 dark:text-red-300">$30,120.75 (заглушка)</CardTitle>
+                    <CardTitle className="text-2xl text-red-800 dark:text-red-300">30,120,750 UZS (заглушка)</CardTitle>
                 </CardHeader>
             </Card>
           </div>

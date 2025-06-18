@@ -10,7 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, SubmitHandler } from "react-hook-form"
 import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
   }, [nextAuthSession, simulatedUser, form, locale]);
 
 
-  function onSubmit(data: CheckoutFormValues) {
+  const onSubmit: SubmitHandler<CheckoutFormValues> = (data) => {
     console.log("Checkout data:", data);
     toast({
       title: dictionary.orderPlacedTitle,
@@ -167,15 +167,25 @@ export default function CheckoutPage() {
                 <div key={item.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 rounded-md overflow-hidden border">
-                      <Image 
-                        src={item.mainImage || item.images[0]?.url} 
-                        alt={itemName} 
-                        width={48}
-                        height={48}
-                        className="object-cover w-full h-auto" 
-                        data-ai-hint="checkout item" 
-                        sizes="48px"
-                      />
+                      {((item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') || (item.images && item.images.length > 0 && item.images[0])) ? (
+                        <Image 
+                          src={
+                            (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
+                              ? item.mainImage 
+                              : item.images[0]
+                          } 
+                          alt={itemName} 
+                          width={48}
+                          height={48}
+                          className="object-cover w-full h-auto" 
+                          data-ai-hint="checkout item" 
+                          sizes="48px"
+                        />
+                      ) : (
+                        <div className="w-full h-12 bg-muted flex items-center justify-center">
+                          <span className="text-muted-foreground text-xs">No image</span>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-sm">{itemName}</p>

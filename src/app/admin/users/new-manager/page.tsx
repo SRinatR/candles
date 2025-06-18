@@ -4,8 +4,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +48,7 @@ export default function NewManagerPage() {
   }, [isAdmin, router, isAdminAuthLoading]);
 
 
-  const onSubmit = async (data: ManagerFormValues) => {
+  const onSubmit: SubmitHandler<ManagerFormValues> = async (data) => {
     const success = await addManager(data.name, data.email, data.password); 
     if (success) {
         // Toast message for success is handled in addManager

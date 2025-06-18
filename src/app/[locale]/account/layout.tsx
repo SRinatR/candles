@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useParams } from "next/navigation"; 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, MapPin, ShoppingBag, LogOut, Link2 } from "lucide-react";
+import { User, MapPin, ShoppingBag, LogOut, Link2, LayoutDashboard, Settings, Heart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react"; 
@@ -46,10 +46,13 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const isLoadingAuth = nextAuthStatus === "loading" || isLoadingSimulatedAuth;
 
   const sidebarNavItems = [
+    { title: dictionary.navDashboard, href: `/${locale}/account/dashboard`, icon: LayoutDashboard },
     { title: dictionary.navProfile, href: `/${locale}/account/profile`, icon: User },
+    { title: dictionary.navWishlist, href: `/${locale}/account/wishlist`, icon: Heart },
     { title: dictionary.navAddresses, href: `/${locale}/account/addresses`, icon: MapPin },
     { title: dictionary.navOrderHistory, href: `/${locale}/account/orders`, icon: ShoppingBag },
     { title: dictionary.navAccountLinking, href: `/${locale}/account/linking`, icon: Link2 },
+    { title: dictionary.navSettings, href: `/${locale}/account/settings`, icon: Settings },
   ];
 
   useEffect(() => {

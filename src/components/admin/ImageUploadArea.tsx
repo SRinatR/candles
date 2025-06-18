@@ -72,7 +72,7 @@ export function ImageUploadArea({
     async (acceptedFiles: File[], rejectedFiles: any[]) => {
       if (rejectedFiles.length > 0) {
         rejectedFiles.forEach(({ errors }) => {
-          errors.forEach((err: any) => {
+          errors.forEach((err: { code: string; message: string }) => {
             toast({
               title: 'File Upload Error',
               description: err.message,

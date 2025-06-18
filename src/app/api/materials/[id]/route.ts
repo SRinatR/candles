@@ -11,14 +11,15 @@ const updateMaterialSchema = z.object({
 // GET /api/materials/[id] - Получить материал по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const material = await prisma.material.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         products: includeProducts ? {
           where: { isActive: true },
@@ -57,13 +58,13 @@ export async function GET(
       products: includeProducts ? material.products?.map(product => ({
         id: product.id,
         sku: product.sku,
-        name: product.translations.reduce((acc, t) => {
+        name: (product as any).translations.reduce((acc: Record<string, string>, t: any) => {
           acc[t.locale] = t.name;
           return acc;
         }, {} as Record<string, string>),
         price: product.price,
         stock: product.stock,
-        mainImage: product.images[0]?.url || null,
+        mainImage: (product as any).images[0]?.url || null,
         isActive: product.isActive
       })) : undefined,
       createdAt: material.createdAt,
@@ -84,15 +85,16 @@ export async function GET(
 // PUT /api/materials/[id] - Обновить материал
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     const validatedData = updateMaterialSchema.parse(body);
     
     // Проверка существования материала
     const existingMaterial = await prisma.material.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     if (!existingMaterial) {
@@ -107,7 +109,7 @@ export async function PUT(
       const nameExists = await prisma.material.findFirst({
         where: {
           name: validatedData.name,
-          id: { not: params.id }
+          id: { not: resolvedParams.id }
         }
       });
       
@@ -121,7 +123,7 @@ export async function PUT(
     
     // Обновление материала
     const updatedMaterial = await prisma.material.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: validatedData,
       include: {
         _count: {
@@ -158,12 +160,13 @@ export async function PUT(
 // DELETE /api/materials/[id] - Удалить материал
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Проверка существования материала
     const existingMaterial = await prisma.material.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         _count: {
           select: {
@@ -193,7 +196,7 @@ export async function DELETE(
     
     // Удаление материала
     await prisma.material.delete({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     return NextResponse.json(

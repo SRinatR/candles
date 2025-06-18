@@ -103,12 +103,21 @@ export function AdminDashboardSkeleton() {
   );
 }
 
-export function AdminFormSkeleton() {
+export function AdminFormSkeleton({ title }: { title?: string } = {}) {
   return (
     <Card>
       <CardHeader>
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-4 w-64" />
+        {title ? (
+          <>
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <Skeleton className="h-4 w-64" />
+          </>
+        ) : (
+          <>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {Array.from({ length: 4 }).map((_, i) => (

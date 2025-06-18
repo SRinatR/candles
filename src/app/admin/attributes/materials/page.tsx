@@ -341,7 +341,7 @@ export default function AdminManageMaterialsPage() {
         const translations = data.translations || [];
         const locales: ('ru' | 'en' | 'uz')[] = ['ru', 'en', 'uz'];
         const formattedTranslations = locales.map(locale => {
-          const existing = translations.find((t: any) => t.locale === locale);
+          const existing = translations.find((t: { locale: string }) => t.locale === locale);
           return existing || { locale, name: '' };
         });
         

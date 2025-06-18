@@ -104,7 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
-      let finalQuantity;
+      let finalQuantity: number;
 
       if (existingItem) {
         const potentialQuantity = existingItem.quantity + quantityToAdd;

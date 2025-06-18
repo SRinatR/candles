@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -80,7 +80,7 @@ const addressSchema = z.object({
   country: z.string()
     .min(1, { message: "Country is required." })
     .max(50, { message: "Country name is too long." }),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean(),
 });
 
 type AddressFormData = z.infer<typeof addressSchema>;
@@ -147,6 +147,7 @@ export default function AccountAddressesPage() {
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
+      id: undefined,
       street: "",
       city: "",
       state: "",
@@ -264,7 +265,7 @@ export default function AccountAddressesPage() {
     }
   }, [addresses, dictionary, toast]);
 
-  const onSubmit = useCallback(async (data: AddressFormData) => {
+  const onSubmit: SubmitHandler<AddressFormData> = useCallback(async (data) => {
     if (!dictionary) return;
     
     try {

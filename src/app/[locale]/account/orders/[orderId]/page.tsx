@@ -40,18 +40,19 @@ function getTranslatedStatus(status: Order['status'], dict: AccountOrderDetailPa
 }
 
 interface OrderDetailPageProps {
-  params: {
+  params: Promise<{
     orderId: string;
     locale: Locale;
-  }
+  }>;
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const locale = params.locale || 'uz';
+  const resolvedParams = await params;
+  const locale = resolvedParams.locale || 'uz';
   const fullDictionary = await getDictionary(locale); 
   const dictionary = fullDictionary.accountOrderDetailPage;
 
-  const order = mockOrders.find(o => o.id === params.orderId || o.orderNumber === params.orderId);
+  const order = mockOrders.find(o => o.id === resolvedParams.orderId || o.orderNumber === resolvedParams.orderId);
 
   if (!order) {
     notFound();
@@ -106,7 +107,24 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               {detailedItems.map((item) => (
                 <li key={item.id} className="flex items-center space-x-4">
                   <div className="relative w-16 h-16 rounded-md overflow-hidden border shrink-0">
-                    <Image src={item.mainImage} alt={item.name as string} fill className="object-cover" data-ai-hint="ordered item" sizes="64px" />
+                    {((item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') || (item.images && item.images.length > 0 && item.images[0])) ? (
+                      <Image 
+                        src={
+                          (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
+                            ? item.mainImage 
+                            : item.images[0]
+                        } 
+                        alt={item.name as string} 
+                        fill 
+                        className="object-cover" 
+                        data-ai-hint="ordered item" 
+                        sizes="64px" 
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-xs">No image</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-grow">
                     <Link href={`/${locale}/products/${item.id}`} className="font-medium hover:text-primary">{item.name}</Link>

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useForm, Controller, FormProvider } from "react-hook-form"; 
+import { useForm, Controller, FormProvider, SubmitHandler } from "react-hook-form"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -47,8 +47,8 @@ const productSchema = z.object({
   material: z.string().optional(),
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isDraft: z.boolean().default(false),
+  isActive: z.boolean(),
+  isDraft: z.boolean(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -75,6 +75,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const formMethods = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      isActive: true,
+      isDraft: false,
+    },
   });
 
   const { register, handleSubmit, control, formState, reset, setValue, watch } = formMethods;
@@ -104,7 +108,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           const categoriesData = await categoriesRes.json();
           
           setProductToEdit(foundProduct);
-          setAvailableCategories(categoriesData.categories?.map((c: any) => c.name) || []);
+          setAvailableCategories(categoriesData.categories?.map((c: { name: string }) => c.name) || []);
           
           reset({
             name_en: foundProduct.name.en || "",
@@ -156,7 +160,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }, [productId, router, toast]); // Removed reset to avoid potential loops if it's not stable
 
 
-  const onSubmit = (data: ProductFormValues) => {
+  const onSubmit: SubmitHandler<ProductFormValues> = (data) => {
     const updatedProductData = { 
       id: productId, 
       name: { en: data.name_en, ru: data.name_ru, uz: data.name_uz },

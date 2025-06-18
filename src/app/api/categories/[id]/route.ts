@@ -22,14 +22,15 @@ const updateCategorySchema = z.object({
 // GET /api/categories/[id] - Получить категорию по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const category = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         translations: true,
         products: includeProducts ? {
@@ -73,13 +74,13 @@ export async function GET(
       products: includeProducts ? category.products?.map(product => ({
         id: product.id,
         sku: product.sku,
-        name: product.translations.reduce((acc, t) => {
+        name: (product as any).translations.reduce((acc: Record<string, string>, t: any) => {
           acc[t.locale] = t.name;
           return acc;
         }, {} as Record<string, string>),
         price: product.price,
         stock: product.stock,
-        mainImage: product.images[0]?.url || null,
+        mainImage: (product as any).images[0]?.url || null,
         isActive: product.isActive
       })) : undefined,
       createdAt: category.createdAt,
@@ -100,15 +101,16 @@ export async function GET(
 // PUT /api/categories/[id] - Обновить категорию
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     const validatedData = updateCategorySchema.parse(body);
     
     // Проверка существования категории
     const existingCategory = await prisma.category.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     if (!existingCategory) {
@@ -126,7 +128,7 @@ export async function PUT(
         prisma.category.findFirst({
           where: {
             name: validatedData.name,
-            id: { not: params.id }
+            id: { not: resolvedParams.id }
           }
         }).then(result => ({ type: 'name', exists: !!result }))
       );
@@ -137,7 +139,7 @@ export async function PUT(
         prisma.category.findFirst({
           where: {
             slug: validatedData.slug,
-            id: { not: params.id }
+            id: { not: resolvedParams.id }
           }
         }).then(result => ({ type: 'slug', exists: !!result }))
       );
@@ -158,7 +160,7 @@ export async function PUT(
     const { translations, ...categoryData } = validatedData;
     
     const updatedCategory = await prisma.category.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: {
         ...categoryData,
         ...(translations && {
@@ -204,12 +206,13 @@ export async function PUT(
 // DELETE /api/categories/[id] - Удалить категорию
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Проверка существования категории
     const existingCategory = await prisma.category.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         _count: {
           select: {
@@ -239,7 +242,7 @@ export async function DELETE(
     
     // Удаление категории
     await prisma.category.delete({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     return NextResponse.json(

@@ -161,7 +161,7 @@ export default function AdminManageScentsPage() {
   
   const updateScentTranslation = (locale: 'en' | 'ru' | 'uz', value: string) => {
     setNewScentTranslations(prev => 
-      prev.map(t => t.locale === locale ? { ...t, name: value } : t)
+      prev.map((t: ScentTranslation) => t.locale === locale ? { ...t, name: value } : t)
     );
   };
 
@@ -332,14 +332,14 @@ export default function AdminManageScentsPage() {
         const data = await response.json();
         if (data.translations) {
           // Устанавливаем переводы из базы данных
-          const translations = data.translations.reduce((acc: ScentTranslation[], t: any) => {
+          const translations = data.translations.reduce((acc: ScentTranslation[], t: { locale: string; name: string }) => {
             acc.push({ locale: t.locale as 'en' | 'ru' | 'uz', name: t.name });
             return acc;
           }, []);
           
           // Дополняем недостающие локали
           ['ru', 'en', 'uz'].forEach(locale => {
-            if (!translations.find(t => t.locale === locale)) {
+            if (!translations.find((t: ScentTranslation) => t.locale === locale)) {
               translations.push({ locale: locale as 'en' | 'ru' | 'uz', name: '' });
             }
           });

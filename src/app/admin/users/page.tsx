@@ -262,9 +262,9 @@ export default function AdminUsersPage() {
             <div className="py-4 space-y-2 text-sm">
               <p><strong>{dict.nameLabel}:</strong> {selectedUser.name}</p>
               <p><strong>{dict.emailLabel}:</strong> {selectedUser.email}</p>
-              <p><strong>{dict.roleLabel}:</strong> <Badge variant="outline">{selectedUser.role}</Badge></p>
+              <p><strong>{dict.newRoleLabel}:</strong> <Badge variant="outline">{selectedUser.role}</Badge></p>
               <div><strong>{dict.statusLabel}:</strong> <Badge variant={selectedUser.isBlocked ? "destructive" : "secondary"}>{selectedUser.isBlocked ? dict.statusBlocked : dict.statusActive}</Badge></div>
-              {selectedUser.isPredefined && <p><Badge variant="info" className="mt-2">{dict.predefinedUserBadge}</Badge></p>}
+              {selectedUser.isPredefined && <p><Badge variant="secondary" className="mt-2">{dict.predefinedUserBadge}</Badge></p>}
             </div>
             <DialogFooter>
               <DialogClose asChild><Button variant="outline">{dict.closeButton}</Button></DialogClose>

@@ -117,13 +117,20 @@
     "updateSuccess": "\"{oldName}\" has been updated to \"{newName}\".",
     "deleteSuccessTitle": "Category Deleted",
     "deleteSuccess": "\"{name}\" has been deleted.",
+    "statusUpdated": "Status Updated",
+    "activated": "activated",
+    "deactivated": "deactivated",
+    "error": "Error",
+    "statusUpdateError": "Failed to update material status",
+    "deleteError": "Failed to delete material",
 
     "confirmDeleteTitle": "Confirm Deletion",
     "confirmDeleteCategoryInUse": "The category '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this category and may need to be updated manually. Are you sure you want to delete it?",
     "confirmDeleteGeneral": "Are you sure you want to delete the category \"{name}\"?",
     "confirmRenameTitle": "Confirm Rename",
     "confirmRenameAttributeInUse": "Renaming '{oldName}' to '{newName}'? Products currently using '{oldName}' will not be automatically updated with this new name and may need to be updated manually to reflect the change. Are you sure?",
-    "deleteConfirmButton": "Delete"
+    "deleteConfirmButton": "Delete",
+    "productsUsing": "products using"
   },
   "adminManageMaterialsPage": {
     "title": "Manage Product Materials",
@@ -154,7 +161,14 @@
     "confirmDeleteGeneral": "Are you sure you want to delete the material \"{name}\"?",
     "confirmRenameTitle": "Confirm Rename",
     "confirmRenameAttributeInUse": "Renaming '{oldName}' to '{newName}'? Products currently using '{oldName}' will not be automatically updated with this new name and may need to be updated manually to reflect the change. Are you sure?",
-    "deleteConfirmButton": "Delete"
+    "deleteConfirmButton": "Delete",
+    "statusUpdated": "Status Updated",
+    "activated": "activated",
+    "deactivated": "deactivated",
+    "error": "Error",
+    "statusUpdateError": "Failed to update material status",
+    "deleteError": "Failed to delete material",
+    "productsUsing": "products using"
   },
   "adminManageScentsPage": {
     "title": "Manage Product Scents",

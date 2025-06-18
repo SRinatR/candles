@@ -122,7 +122,13 @@ export default function CartPage() {
             <Card key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4 shadow-sm">
               <div className="relative w-full sm:w-24 rounded-md overflow-hidden shrink-0 border">
                 <Image 
-                    src={item.mainImage || (item.images && item.images.length > 0 ? item.images[0]?.url : "https://placehold.co/100x100.png?text=No+Image")}
+                    src={
+                      (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
+                        ? item.mainImage 
+                        : (item.images && item.images.length > 0 && item.images[0]) 
+                          ? item.images[0]
+                          : "https://placehold.co/100x100.png?text=No+Image"
+                    }
                     alt={itemName} 
                     width={96}
                     height={96}

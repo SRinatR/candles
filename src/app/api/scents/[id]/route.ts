@@ -11,14 +11,15 @@ const updateScentSchema = z.object({
 // GET /api/scents/[id] - Получить аромат по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const scent = await prisma.scent.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         products: includeProducts ? {
           where: { isActive: true },
@@ -57,13 +58,13 @@ export async function GET(
       products: includeProducts ? scent.products?.map(product => ({
         id: product.id,
         sku: product.sku,
-        name: product.translations.reduce((acc, t) => {
+        name: (product as any).translations.reduce((acc: Record<string, string>, t: any) => {
           acc[t.locale] = t.name;
           return acc;
         }, {} as Record<string, string>),
         price: product.price,
         stock: product.stock,
-        mainImage: product.images[0]?.url || null,
+        mainImage: (product as any).images[0]?.url || null,
         isActive: product.isActive
       })) : undefined,
       createdAt: scent.createdAt,
@@ -84,15 +85,16 @@ export async function GET(
 // PUT /api/scents/[id] - Обновить аромат
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     const validatedData = updateScentSchema.parse(body);
     
     // Проверка существования аромата
     const existingScent = await prisma.scent.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     if (!existingScent) {
@@ -107,7 +109,7 @@ export async function PUT(
       const nameExists = await prisma.scent.findFirst({
         where: {
           name: validatedData.name,
-          id: { not: params.id }
+          id: { not: resolvedParams.id }
         }
       });
       
@@ -121,7 +123,7 @@ export async function PUT(
     
     // Обновление аромата
     const updatedScent = await prisma.scent.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: validatedData,
       include: {
         _count: {
@@ -158,12 +160,13 @@ export async function PUT(
 // DELETE /api/scents/[id] - Удалить аромат
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Проверка существования аромата
     const existingScent = await prisma.scent.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         _count: {
           select: {
@@ -193,7 +196,7 @@ export async function DELETE(
     
     // Удаление аромата
     await prisma.scent.delete({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     return NextResponse.json(
