@@ -98,10 +98,10 @@ export function Header({ locale, dictionary }: HeaderProps) {
   const accountLink = isAuthenticated ? `/${locale}/account/profile` : `/${locale}/login`;
   
   let userName = "";
-  if (nextAuthSession?.user?.name) {
-    userName = nextAuthSession.user.name;
-  } else if (simulatedUser?.name) {
-    userName = simulatedUser.name;
+  if (nextAuthSession?.user?.firstName) {
+    userName = `${nextAuthSession.user.firstName} ${nextAuthSession.user.lastName || ''}`.trim();
+  } else if (simulatedUser?.firstName) {
+    userName = `${simulatedUser.firstName} ${simulatedUser.lastName || ''}`.trim();
   } else if (nextAuthSession?.user?.email) {
     userName = nextAuthSession.user.email;
   } else if (simulatedUser?.email) {
@@ -290,7 +290,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                             className="flex items-center space-x-2 text-base font-medium text-foreground/80 transition-colors hover:text-foreground p-2 rounded-md hover:bg-muted"
                           >
                             <User className="h-5 w-5" />
-                            <span className="truncate">{userName || dictionary.account}</span>
+                            <span className="break-words">{userName || dictionary.account}</span>
                           </Link>
                           <Button variant="outline" 
                             onClick={handleLogout}

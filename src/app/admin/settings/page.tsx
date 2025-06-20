@@ -3,18 +3,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
-import { AlertTriangle, Save } from "lucide-react";
+import { AlertTriangle, Save, Bell, ChevronRight } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import React, { useEffect } from 'react'; // Import React for useEffect
+import Link from 'next/link';
+import React, { useEffect } from 'react';
+import { useSession } from "next-auth/react";
 
 export default function AdminSettingsPage() {
-  const { isAdmin, isLoading } = useAdminAuth(); // Add isLoading from context
+  const { data: session, status } = useSession();
+  const isLoading = status === "loading";
+  const isAdmin = session?.user?.role === "ADMIN";
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) { // Check isLoading before redirecting
+    if (!isLoading && !isAdmin) {
       router.replace('/admin/dashboard');
     }
   }, [isAdmin, router, isLoading]);
@@ -45,6 +48,35 @@ export default function AdminSettingsPage() {
           Manage general store settings, payment, shipping, and taxes. (ADMIN Only)
         </p>
       </div>
+
+      {/* Notification Settings */}
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            Настройки уведомлений
+          </CardTitle>
+          <CardDescription>
+            Управляйте настройками получения уведомлений о событиях в системе поддержки
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Персональные уведомления</p>
+              <p className="text-sm text-muted-foreground">
+                Настройте email, звуковые уведомления и уведомления в приложении
+              </p>
+            </div>
+            <Link href="/admin/settings/notifications">
+              <Button variant="outline" className="flex items-center gap-2">
+                Настроить
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

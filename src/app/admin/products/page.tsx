@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 // import { mockProducts } from "@/lib/mock-data";
 import type { Product } from "@/lib/types";
-import { PlusCircle, Edit3, Trash2, Search } from "lucide-react";
+import { PlusCircle, Edit3, Trash2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect, useMemo } from "react";
@@ -21,18 +21,17 @@ import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { i18nAdmin } from '@/admin/lib/i18n-config-admin';
 import { getAdminDictionary } from '@/admin/lib/getAdminDictionary';
 import type enAdminMessages from '@/admin/dictionaries/en.json';
-import { useSearchParams } from 'next/navigation';
+// Removed useSearchParams import - no longer needed
 
 type AdminProductsPageDict = typeof enAdminMessages.adminProductsPage;
 
 
 export default function AdminProductsPage() {
   const { toast } = useToast();
-  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showDrafts, setShowDrafts] = useState(false);
+  // Removed showDrafts state - now only showing published products
   const { currentAdminUser } = useAdminAuth();
   const [adminLocale, setAdminLocale] = useState<AdminLocale>('en');
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
@@ -89,13 +88,7 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
-  // Handle URL parameter for draft mode
-  useEffect(() => {
-    const draftParam = searchParams.get('draft');
-    if (draftParam === 'true') {
-      setShowDrafts(true);
-    }
-  }, [searchParams]);
+  // Removed draft mode handling - drafts are now in separate page
 
   // Отслеживание изменений языка в localStorage
   useEffect(() => {
@@ -136,8 +129,8 @@ export default function AdminProductsPage() {
         const sku = product.sku || '';
         const isDraft = (product as any).isDraft || false;
         
-        // Фильтр по типу (черновик или обычный товар)
-        const typeMatch = showDrafts ? isDraft : !isDraft;
+        // Only show published products (not drafts)
+        const typeMatch = !isDraft;
         
         // Фильтр по поисковому запросу
         const searchMatch = searchTerm === '' || (
@@ -148,7 +141,7 @@ export default function AdminProductsPage() {
         
         return typeMatch && searchMatch;
     });
-  }, [products, searchTerm, showDrafts, adminLocale, dict]);
+  }, [products, searchTerm, adminLocale, dict]);
 
   const handleDeleteProduct = async (productId: string, productNameObj: Product['name']) => {
     if (!dict) return;
@@ -249,11 +242,18 @@ export default function AdminProductsPage() {
             {dict.description}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/products/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> {dict.addNewButton}
-          </Link>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/products/drafts">
+              <FileText className="mr-2 h-4 w-4" /> Черновики
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/products/new">
+              <PlusCircle className="mr-2 h-4 w-4" /> {dict.addNewButton}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -272,16 +272,7 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="show-drafts"
-                checked={showDrafts}
-                onCheckedChange={setShowDrafts}
-              />
-              <label htmlFor="show-drafts" className="text-sm font-medium cursor-pointer">
-                {showDrafts ? "Черновики" : "Товары"}
-              </label>
-            </div>
+            {/* Removed draft toggle - drafts are now in separate page */}
           </div>
         </CardHeader>
         <CardContent>
@@ -317,7 +308,7 @@ export default function AdminProductsPage() {
                                 src={
                                   (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') 
                                     ? product.mainImage 
-                                    : product.images[0]
+                                    : (typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url)
                                 }
                                 alt={product.name[adminLocale] || product.name.en || 'Product Image'}
                                 width={48}
@@ -342,7 +333,7 @@ export default function AdminProductsPage() {
                                       src={
                                         (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') 
                                           ? product.mainImage 
-                                          : product.images[0]
+                                          : (typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url)
                                       }
                                       alt={product.name[adminLocale] || product.name.en || 'Product Image Preview'}
                                       width={320}
@@ -383,7 +374,7 @@ export default function AdminProductsPage() {
                       </TableCell>
                       <TableCell className="font-medium align-middle px-2 py-3">
                         <div className="max-w-[200px]">
-                          <span className="block truncate" title={product.name[adminLocale] || product.name.en}>
+                          <span className="block break-words" title={product.name[adminLocale] || product.name.en}>
                             {product.name[adminLocale] || product.name.en}
                           </span>
                         </div>

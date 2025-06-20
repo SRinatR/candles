@@ -112,7 +112,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         src={
                           (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
                             ? item.mainImage 
-                            : item.images[0]
+                            : (typeof item.images[0] === 'string' ? item.images[0] : item.images[0].url)
                         } 
                         alt={item.name as string} 
                         fill 

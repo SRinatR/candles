@@ -14,13 +14,13 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
       <style>
         {`
           .logo-text {
-            font-family: var(--font-geist-sans), 'Arial', sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 24px;
             font-weight: 600;
-            fill: hsl(var(--foreground));
+            fill: var(--color-foreground);
           }
           .logo-highlight {
-            fill: hsl(var(--accent));
+            fill: var(--color-accent);
           }
         `}
       </style>

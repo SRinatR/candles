@@ -398,7 +398,7 @@ export default function OrdersPage() {
                                   </div>
                                   <div>
                                     <p className="font-medium text-gray-900">Shipping Address</p>
-                                    <p className="text-gray-600 truncate">{order.shippingAddress}</p>
+                                    <p className="text-gray-600 break-words">{order.shippingAddress}</p>
                                   </div>
                                 </div>
                                 

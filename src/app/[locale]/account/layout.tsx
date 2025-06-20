@@ -83,10 +83,15 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   };
 
   let welcomeName = dictionary.guest;
-  if (nextAuthSession?.user?.name) welcomeName = nextAuthSession.user.name;
-  else if (simulatedUser?.name) welcomeName = simulatedUser.name;
-  else if (nextAuthSession?.user?.email) welcomeName = nextAuthSession.user.email;
-  else if (simulatedUser?.email) welcomeName = simulatedUser.email;
+  if (nextAuthSession?.user?.firstName) {
+    welcomeName = `${nextAuthSession.user.firstName} ${nextAuthSession.user.lastName || ''}`.trim();
+  } else if (simulatedUser?.firstName) {
+    welcomeName = `${simulatedUser.firstName} ${simulatedUser.lastName || ''}`.trim();
+  } else if (nextAuthSession?.user?.email) {
+    welcomeName = nextAuthSession.user.email;
+  } else if (simulatedUser?.email) {
+    welcomeName = simulatedUser.email;
+  }
 
 
   if (isLoadingAuth || !isAuthenticated) {

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Test User</title>
+</head>
+<body>
+    <h1>Create Test User for Askim Candles</h1>
+    <button onclick="createTestUser()">Create Test User</button>
+    <div id="result"></div>
+
+    <script>
+        function createTestUser() {
+            const testUser = {
+                id: 'test-user-1',
+                email: 'test@example.com',
+                password: 'password123',
+                firstName: 'Test',
+                lastName: 'User',
+                name: 'Test User',
+                isRegistered: true,
+                isConfirmed: true
+            };
+
+            // Store in localStorage
+            const users = JSON.parse(localStorage.getItem('scentSationalSimulatedUsers') || '{}');
+            users[testUser.email] = testUser;
+            localStorage.setItem('scentSationalSimulatedUsers', JSON.stringify(users));
+            
+            // Set as current user
+            localStorage.setItem('scentSationalSimulatedCurrentUser', JSON.stringify(testUser));
+            
+            document.getElementById('result').innerHTML = `
+                <p>Test user created successfully!</p>
+                <p>Email: ${testUser.email}</p>
+                <p>Password: ${testUser.password}</p>
+                <p>You can now navigate to the login page and use these credentials.</p>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -274,9 +274,9 @@ function AccountLinkingPageComponent() {
                     <IconRenderer iconName={account.iconName} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-card-foreground truncate">{account.name}</p>
+                    <p className="font-medium text-card-foreground break-words">{account.name}</p>
                     {account.linked && account.email && (
-                      <p className="text-xs text-muted-foreground truncate" title={account.email}>
+                      <p className="text-xs text-muted-foreground break-words" title={account.email}>
                         {account.email}
                       </p>
                     )}

@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user && user.password === pass && user.isConfirmed) { 
       setCurrentUser(user);
       if (typeof window !== 'undefined') localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(user));
-      toast({ title: dictionary.loginSuccessful, description: dictionary.welcomeBack.replace('{name}', user.name || user.email) });
+      toast({ title: dictionary.loginSuccessful, description: dictionary.welcomeBack.replace('{name}', `${user.firstName} ${user.lastName}`.trim() || user.email) });
       setIsLoading(false);
       return true;
     } else if (user && user.password === pass && !user.isConfirmed) {

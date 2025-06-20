@@ -30,7 +30,8 @@ import { useToast } from "@/hooks/use-toast";
 type AdminUsersPageDict = typeof enAdminMessages.adminUsersPage;
 
 const managerEditSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  firstName: z.string().min(2, "First name must be at least 2 characters."),
+  lastName: z.string().optional(),
   email: z.string().email("Invalid email address."),
 });
 type ManagerEditFormValues = z.infer<typeof managerEditSchema>;
@@ -87,7 +88,7 @@ export default function AdminUsersPage() {
   const openViewModal = (user: AdminUser) => { setSelectedUser(user); setIsViewModalOpen(true); };
   const openEditModal = (user: AdminUser) => { 
     setSelectedUser(user); 
-    editManagerForm.reset({ name: user.name, email: user.email });
+    editManagerForm.reset({ firstName: user.firstName, lastName: user.lastName, email: user.email });
     setIsEditModalOpen(true); 
   };
   const openRoleChangeModal = (user: AdminUser) => { setSelectedUser(user); setSelectedRoleInModal(user.role); setIsRoleChangeModalOpen(true); };
@@ -108,7 +109,7 @@ export default function AdminUsersPage() {
     if (!selectedUser || !dict) return;
     const success = await deleteManager(selectedUser.email);
     if (success) {
-      toast({ title: dict.deleteManagerSuccessTitle, description: dict.deleteManagerSuccessDesc.replace('{name}', selectedUser.name) });
+      toast({ title: dict.deleteManagerSuccessTitle, description: dict.deleteManagerSuccessDesc.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim()) });
       setIsDeleteAlertOpen(false);
       setSelectedUser(null);
     }
@@ -119,7 +120,7 @@ export default function AdminUsersPage() {
       toast({
         title: dict.roleChangeSimulatedTitle,
         description: dict.roleChangeSimulatedDesc
-          .replace('{name}', selectedUser.name)
+          .replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())
           .replace('{role}', selectedRoleInModal),
       });
     }
@@ -186,7 +187,7 @@ export default function AdminUsersPage() {
                       <TableRow key={user.id}>
                         <TableCell className="font-medium px-3 py-3 align-top">
                           <div className="flex items-center gap-2">
-                            <span>{user.name}</span>
+                            <span>{`${user.firstName} ${user.lastName || ''}`.trim()}</span>
                             {user.isPredefined && <Badge variant="outline" className="text-xs whitespace-nowrap">{dict.predefinedUserBadge}</Badge>}
                             {isCurrentUserAdmin && <Badge variant="default" className="text-xs whitespace-nowrap">{dict.currentUserAdminBadge}</Badge>}
                           </div>
@@ -257,14 +258,14 @@ export default function AdminUsersPage() {
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{dict.viewProfileModalTitle.replace('{name}', selectedUser.name)}</DialogTitle>
+              <DialogTitle>{dict.viewProfileModalTitle.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())}</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-2 text-sm">
-              <p><strong>{dict.nameLabel}:</strong> {selectedUser.name}</p>
+              <p><strong>{dict.nameLabel}:</strong> {`${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim()}</p>
               <p><strong>{dict.emailLabel}:</strong> {selectedUser.email}</p>
-              <p><strong>{dict.newRoleLabel}:</strong> <Badge variant="outline">{selectedUser.role}</Badge></p>
+              <div><strong>{dict.newRoleLabel}:</strong> <Badge variant="outline">{selectedUser.role}</Badge></div>
               <div><strong>{dict.statusLabel}:</strong> <Badge variant={selectedUser.isBlocked ? "destructive" : "secondary"}>{selectedUser.isBlocked ? dict.statusBlocked : dict.statusActive}</Badge></div>
-              {selectedUser.isPredefined && <p><Badge variant="secondary" className="mt-2">{dict.predefinedUserBadge}</Badge></p>}
+              {selectedUser.isPredefined && <div><Badge variant="secondary" className="mt-2">{dict.predefinedUserBadge}</Badge></div>}
             </div>
             <DialogFooter>
               <DialogClose asChild><Button variant="outline">{dict.closeButton}</Button></DialogClose>
@@ -280,14 +281,19 @@ export default function AdminUsersPage() {
             <FormProvider {...editManagerForm}>
               <form onSubmit={editManagerForm.handleSubmit(handleEditManagerSubmit)}>
                 <DialogHeader>
-                  <DialogTitle>{dict.editManagerModalTitle.replace('{name}', selectedUser.name)}</DialogTitle>
+                  <DialogTitle>{dict.editManagerModalTitle.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())}</DialogTitle>
                   <DialogDescription>{dict.editManagerModalDesc}</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-name">{dict.nameLabel}</Label>
-                    <Input id="edit-name" {...editManagerForm.register("name")} />
-                    {editManagerForm.formState.errors.name && <p className="text-sm text-destructive">{editManagerForm.formState.errors.name.message}</p>}
+                    <Label htmlFor="edit-firstName">{dict.firstNameLabel || 'First Name'}</Label>
+                    <Input id="edit-firstName" {...editManagerForm.register("firstName")} />
+                    {editManagerForm.formState.errors.firstName && <p className="text-sm text-destructive">{editManagerForm.formState.errors.firstName.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-lastName">{dict.lastNameLabel || 'Last Name'}</Label>
+                    <Input id="edit-lastName" {...editManagerForm.register("lastName")} />
+                    {editManagerForm.formState.errors.lastName && <p className="text-sm text-destructive">{editManagerForm.formState.errors.lastName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-email">{dict.emailLabel}</Label>
@@ -312,7 +318,7 @@ export default function AdminUsersPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>{dict.deleteManagerConfirmTitle}</AlertDialogTitle>
               <AlertDialogDescription>
-                {dict.deleteManagerConfirmDesc.replace('{name}', selectedUser.name)}
+                {dict.deleteManagerConfirmDesc.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -330,11 +336,11 @@ export default function AdminUsersPage() {
           <Dialog open={isRoleChangeModalOpen} onOpenChange={setIsRoleChangeModalOpen}>
               <DialogContent>
                   <DialogHeader>
-                      <DialogTitle>{dict.changeRoleModalTitle.replace('{name}', selectedUser.name)}</DialogTitle>
+                      <DialogTitle>{dict.changeRoleModalTitle.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())}</DialogTitle>
                       <DialogDescription>{dict.changeRoleModalDesc}</DialogDescription>
                   </DialogHeader>
                   <div className="py-4 space-y-2">
-                      <p className="text-sm">{dict.currentRoleLabel} <Badge>{selectedUser.role}</Badge></p>
+                      <div className="text-sm">{dict.currentRoleLabel} <Badge>{selectedUser.role}</Badge></div>
                       <div>
                           <Label htmlFor="role-select" className="text-sm font-medium">{dict.newRoleLabel}</Label>
                           <Select value={selectedRoleInModal} onValueChange={(value) => setSelectedRoleInModal(value as AdminRole)}>
@@ -362,7 +368,7 @@ export default function AdminUsersPage() {
           <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
               <DialogContent>
                   <DialogHeader>
-                      <DialogTitle>{dict.permissionsModalTitle.replace('{name}', selectedUser.name)}</DialogTitle>
+                      <DialogTitle>{dict.permissionsModalTitle.replace('{name}', `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim())}</DialogTitle>
                       <DialogDescription>{dict.permissionsModalDesc}</DialogDescription>
                   </DialogHeader>
                   <div className="py-4 text-sm text-muted-foreground">

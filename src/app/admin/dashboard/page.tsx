@@ -121,12 +121,12 @@ export default function AdminDashboardPage() {
                 <ul className="space-y-3">
                   {recentLogs.map((log, index) => (
                     <li key={index} className="border-b pb-2 last:border-b-0 last:pb-0">
-                      <p className="font-medium truncate text-sm">{log.action}</p>
+                      <p className="font-medium break-words text-sm">{log.action}</p>
                       <p className="text-muted-foreground text-xs">
                         {log.userEmail} - {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                        {log.details && Object.keys(log.details).length > 0 && (
-                         <p className="text-muted-foreground text-xs truncate">
+                         <p className="text-muted-foreground text-xs break-words">
                            Details: {Object.entries(log.details).map(([key, value]) => `${key}: ${value}`).join(', ')}
                          </p>
                        )}

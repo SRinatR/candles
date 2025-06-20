@@ -1,63 +1,20 @@
 
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { AdminFormSkeleton, AdminLoginSkeleton } from "@/components/admin/AdminTableSkeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Label } from "@/components/ui/label"; 
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Logo } from "@/components/icons/Logo";
-import React, { useState, useEffect } from "react";
-import { Mail, KeyRound, ShieldAlert, Eye, EyeOff, Smartphone, Monitor } from "lucide-react";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import type { AdminLocale } from "@/admin/lib/i18n-config-admin";
-import { i18nAdmin } from "@/admin/lib/i18n-config-admin";
-import { getAdminDictionary } from "@/admin/lib/getAdminDictionary";
-import type enAdminMessages from '@/admin/dictionaries/en.json';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-type AdminLoginDictionary = typeof enAdminMessages.adminLoginPage;
-
-export default function AdminLoginPage() {
-  const { login, isLoading, currentAdminUser } = useAdminAuth();
+export default function AdminLoginRedirect() {
   const router = useRouter();
-  const { toast } = useToast(); // Keep for other potential toasts, though login errors are now from context
-  const isMobile = useIsMobile();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [dict, setDict] = useState<AdminLoginDictionary | null>(null);
-  const [isClient, setIsClient] = useState(false);
   
-  useEffect(() => {
-    setIsClient(true);
-    async function loadDictionary() {
-      const storedLocale = localStorage.getItem('admin-lang') as AdminLocale | null;
-      const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
-      const fullDict = await getAdminDictionary(localeToLoad);
-      setDict(fullDict.adminLoginPage);
-    }
-    loadDictionary();
+  useEffect(() => { 
+    router.replace('/admin/auth/signin'); 
+  }, [router]);
+  
+  return null;
+}
 
-    if (currentAdminUser) {
-      router.replace('/admin/dashboard');
-    }
-  }, [currentAdminUser, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!dict) return; 
-
-    if (!email || !password) {
-        toast({ title: dict.loginErrorTitle, description: dict.loginErrorDescRequired, variant: "destructive" });
-        return;
-    }
-    await login(email, password); // login function in AdminAuthContext handles its own toasts & redirect
-  };
   
   if (isLoading || currentAdminUser || !dict || !isClient) {
     return <AdminLoginSkeleton />;

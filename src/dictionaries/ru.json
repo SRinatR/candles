@@ -102,7 +102,9 @@
     "streetAddressLabel": "Улица, дом",
     "cityLabel": "Город",
     "stateProvinceLabel": "Область/Республика",
+    "regionLabel": "Регион",
     "zipPostalCodeLabel": "Почтовый индекс",
+    "postalCodeLabel": "Индекс",
     "countryLabel": "Страна",
     "setDefaultAddressLabel": "Сделать адресом по умолчанию",
     "cancelButton": "Отмена",
@@ -122,7 +124,13 @@
     "addressUpdatedToast": "Адрес обновлен",
     "addressUpdatedDescToast": "Ваш адрес успешно обновлен.",
     "addressAddedToast": "Адрес добавлен",
-    "addressAddedDescToast": "Ваш новый адрес сохранен."
+    "addressAddedDescToast": "Ваш новый адрес сохранен.",
+    "addressAddedSuccess": "Адрес успешно добавлен!",
+    "addressUpdatedSuccess": "Адрес успешно обновлен!",
+    "editAddressTitle": "Редактировать адрес",
+    "editAddressDesc": "Обновите информацию о вашем адресе доставки",
+    "deleteButton": "Удалить",
+    "cancelButton": "Отмена"
   },
   "accountOrderHistoryPage": {
     "title": "История заказов",

@@ -203,6 +203,54 @@ export async function PUT(
   }
 }
 
+// PATCH /api/categories/[id] - Частичное обновление категории (например, статус)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const resolvedParams = await params;
+    const body = await request.json();
+    
+    // Проверка существования категории
+    const existingCategory = await prisma.category.findUnique({
+      where: { id: resolvedParams.id }
+    });
+    
+    if (!existingCategory) {
+      return NextResponse.json(
+        { error: 'Категория не найдена' },
+        { status: 404 }
+      );
+    }
+    
+    // Обновление только переданных полей
+    const updatedCategory = await prisma.category.update({
+      where: { id: resolvedParams.id },
+      data: body,
+      include: {
+        translations: true,
+        _count: {
+          select: {
+            products: {
+              where: { isActive: true }
+            }
+          }
+        }
+      }
+    });
+    
+    return NextResponse.json(updatedCategory);
+    
+  } catch (error) {
+    console.error('Ошибка при обновлении категории:', error);
+    return NextResponse.json(
+      { error: 'Внутренняя ошибка сервера' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/categories/[id] - Удалить категорию
 export async function DELETE(
   request: NextRequest,

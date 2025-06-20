@@ -307,9 +307,9 @@ export const mockOrders: Order[] = [
 ];
 
 export const mockAdminClients: MockAdminClient[] = [
-  { id: 'client-001', name: 'Alisher Usmanov', email: 'alisher.u@example.com', registrationDate: '2023-01-15T10:00:00Z', totalOrders: 5, totalSpent: 125000000, isBlocked: false },
-  { id: 'client-002', name: 'Gulnara Karimova', email: 'gulnara.k@example.com', registrationDate: '2023-03-22T14:30:00Z', totalOrders: 2, totalSpent: 45000000, isBlocked: false },
-  { id: 'client-003', name: 'Timur Begaliev', email: 'timur.b@example.com', registrationDate: '2023-05-10T09:15:00Z', totalOrders: 8, totalSpent: 210000000, isBlocked: true },
-  { id: 'client-004', name: 'Dildora Ahmedova', email: 'dildora.a@example.com', registrationDate: '2023-07-01T11:00:00Z', totalOrders: 1, totalSpent: 22990000, isBlocked: false },
-  { id: 'client-005', name: 'Rustam Qosimov', email: 'rustam.q@example.com', registrationDate: '2023-08-19T18:45:00Z', totalOrders: 12, totalSpent: 350000000, isBlocked: false },
+  { id: 'client-001', firstName: 'Alisher', lastName: 'Usmanov', email: 'alisher.u@example.com', registrationDate: '2023-01-15T10:00:00Z', totalOrders: 5, totalSpent: 125000000, isBlocked: false },
+  { id: 'client-002', firstName: 'Gulnara', lastName: 'Karimova', email: 'gulnara.k@example.com', registrationDate: '2023-03-22T14:30:00Z', totalOrders: 2, totalSpent: 45000000, isBlocked: false },
+  { id: 'client-003', firstName: 'Timur', lastName: 'Begaliev', email: 'timur.b@example.com', registrationDate: '2023-05-10T09:15:00Z', totalOrders: 8, totalSpent: 210000000, isBlocked: true },
+  { id: 'client-004', firstName: 'Dildora', lastName: 'Ahmedova', email: 'dildora.a@example.com', registrationDate: '2023-07-01T11:00:00Z', totalOrders: 1, totalSpent: 22990000, isBlocked: false },
+  { id: 'client-005', firstName: 'Rustam', lastName: 'Qosimov', email: 'rustam.q@example.com', registrationDate: '2023-08-19T18:45:00Z', totalOrders: 12, totalSpent: 350000000, isBlocked: false },
 ];

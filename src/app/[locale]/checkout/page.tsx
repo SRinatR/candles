@@ -88,8 +88,8 @@ export default function CheckoutPage() {
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       email: nextAuthSession?.user?.email || simulatedUser?.email || "",
-      firstName: simulatedUser?.firstName || (nextAuthSession?.user?.name?.split(' ')[0] || ""),
-      lastName: simulatedUser?.lastName || (nextAuthSession?.user?.name?.split(' ').slice(1).join(' ') || ""),
+      firstName: simulatedUser?.firstName || nextAuthSession?.user?.firstName || "",
+      lastName: simulatedUser?.lastName || nextAuthSession?.user?.lastName || "",
       address: "",
       city: "",
       country: "Uzbekistan", 
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
                           src={
                             (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
                               ? item.mainImage 
-                              : item.images[0]
+                              : (typeof item.images[0] === 'string' ? item.images[0] : item.images[0].url)
                           } 
                           alt={itemName} 
                           width={48}

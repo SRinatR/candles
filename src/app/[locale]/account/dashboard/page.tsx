@@ -1,272 +1,402 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import type { Locale } from "@/lib/i1n-config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { 
   ShoppingBag, 
   Package, 
   Heart, 
   Star, 
-  TrendingUp, 
   Calendar,
   MapPin,
   CreditCard,
-  Gift,
-  Award,
-  Clock,
-  ArrowRight
-} from "lucide-react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext";
-import type { Locale } from '@/lib/i1n-config';
-import { mockOrders } from "@/lib/mock-data";
-import { useState, useEffect } from "react";
+  Settings,
+  User,
+  ArrowRight,
+  Mail,
+  Phone,
+  CalendarDays,
+  Truck,
+  CheckCircle
+} from 'lucide-react';
+import Link from 'next/link';
+import { formatDistanceToNow } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
 
-// Mock data for dashboard
-const mockUserStats = {
-  totalOrders: 12,
-  totalSpent: 450000,
-  favoriteProducts: 8,
-  loyaltyPoints: 1250,
-  memberSince: "2023-06-15",
-  nextReward: 2000,
-  currentTier: "Silver"
+import enMessages from '@/dictionaries/en.json';
+import ruMessages from '@/dictionaries/ru.json';
+import uzMessages from '@/dictionaries/uz.json';
+
+type Dictionary = typeof enMessages;
+
+const dictionaries: Record<Locale, Dictionary> = {
+  en: enMessages,
+  ru: ruMessages,
+  uz: uzMessages,
 };
 
-const mockRecentActivity = [
-  { id: 1, type: "order", description: "Order #ORD-2024-001 delivered", date: "2024-01-15", icon: Package },
-  { id: 2, type: "review", description: "Reviewed Lavender Candle", date: "2024-01-12", icon: Star },
-  { id: 3, type: "wishlist", description: "Added Rose Scented Candle to wishlist", date: "2024-01-10", icon: Heart },
-  { id: 4, type: "order", description: "Order #ORD-2024-002 placed", date: "2024-01-08", icon: ShoppingBag }
-];
+const getDictionary = (locale: Locale) => {
+  return dictionaries[locale] || dictionaries.en;
+};
 
-const mockQuickActions = [
-  { title: "Reorder Favorites", description: "Quickly reorder your most loved items", icon: ShoppingBag, href: "/products", color: "bg-blue-500" },
-  { title: "Track Orders", description: "Check the status of your recent orders", icon: Package, href: "/account/orders", color: "bg-green-500" },
-  { title: "Update Profile", description: "Keep your information up to date", icon: MapPin, href: "/account/profile", color: "bg-purple-500" },
-  { title: "Manage Addresses", description: "Add or edit shipping addresses", icon: MapPin, href: "/account/addresses", color: "bg-orange-500" }
-];
-
-interface DashboardPageProps {
-  params: {
-    locale: Locale;
-  };
+const getDateLocale = (locale: Locale) => {
+  switch (locale) {
+    case 'ru': return ru;
+    case 'en': return enUS;
+    default: return enUS;
+  }
 }
 
 export default function DashboardPage() {
-  const params = useParams();
   const router = useRouter();
-  const locale = params.locale as Locale || 'uz';
+  const params = useParams();
+  const locale = (params?.locale as Locale) || 'uz';
   
-  const { data: nextAuthSession } = useSession();
-  const { currentUser: simulatedUser } = useSimulatedAuth();
+  const { data: nextAuthSession, status: nextAuthStatus } = useSession();
+  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useAuth();
   
-  const [mounted, setMounted] = useState(false);
+  const [dict, setDict] = useState<Dictionary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const isAuthenticated = !!nextAuthSession || !!simulatedUser;
+  const isLoadingAuth = nextAuthStatus === "loading" || isLoadingSimulatedAuth;
   
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const dictionary = getDictionary(locale);
+    setDict(dictionary);
+  }, [locale]);
   
-  if (!mounted) {
-    return <div className="flex justify-center items-center min-h-[300px]">Loading...</div>;
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) {
+      router.replace(`/${locale}/login`);
+    } else if (isAuthenticated) {
+      setIsLoading(false);
+    }
+  }, [isLoadingAuth, isAuthenticated, router, locale]);
+  
+  if (isLoadingAuth || isLoading || !dict) {
+    return <div className="flex justify-center items-center min-h-[300px]"><p>Loading...</p></div>;
   }
   
-  const user = nextAuthSession?.user || simulatedUser;
-  const userName = user?.name || user?.email || "Guest";
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  if (!isAuthenticated) {
+    return null;
+  }
   
-  const recentOrders = mockOrders.slice(0, 3);
-  const progressToNextReward = (mockUserStats.loyaltyPoints / mockUserStats.nextReward) * 100;
-  
+  // Mock user data for demonstration
+  const user = {
+    id: simulatedUser?.id || nextAuthSession?.user?.id || '1',
+    firstName: simulatedUser?.firstName || nextAuthSession?.user?.firstName || 'User',
+    lastName: simulatedUser?.lastName || nextAuthSession?.user?.lastName || '',
+    email: simulatedUser?.email || nextAuthSession?.user?.email || 'user@example.com',
+    phone: simulatedUser?.phone || null,
+    image: simulatedUser?.image || nextAuthSession?.user?.image || null,
+    emailVerified: simulatedUser?.isConfirmed || !!nextAuthSession?.user?.emailVerified,
+    createdAt: simulatedUser?.createdAt || new Date(),
+    role: 'USER',
+    newsletter: simulatedUser?.newsletter || false,
+    _count: {
+      orders: 0,
+      addresses: 0,
+      wishlistItems: 0
+    }
+  };
+
+  // Mock data for demonstration
+  const recentOrders = [
+    {
+      id: '1',
+      orderNumber: 'ORD-2024-001',
+      status: 'DELIVERED',
+      total: 89.99,
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      _count: {
+        items: 2
+      }
+    }
+  ];
+
+  const addresses = [
+    {
+      id: '1',
+      city: 'Tashkent',
+      region: 'Tashkent',
+      isDefault: true
+    }
+  ];
+
+  const quickActions = [
+    { 
+      title: "View Orders", 
+      description: "Track your recent purchases", 
+      icon: ShoppingBag, 
+      href: `/${locale}/account/orders`, 
+      color: "bg-blue-500" 
+    },
+    { 
+      title: "Manage Addresses", 
+      description: "Update delivery addresses", 
+      icon: MapPin, 
+      href: `/${locale}/account/addresses`, 
+      color: "bg-green-500" 
+    },
+    { 
+      title: "Profile Settings", 
+      description: "Update your personal info", 
+      icon: User, 
+      href: `/${locale}/account/profile`, 
+      color: "bg-purple-500" 
+    },
+    { 
+      title: "Account Settings", 
+      description: "Security and preferences", 
+      icon: Settings, 
+      href: `/${locale}/account/settings`, 
+      color: "bg-orange-500" 
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-4 py-8">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={user?.image || ''} alt={userName} />
-            <AvatarFallback className="text-lg font-semibold">{userInitials}</AvatarFallback>
-          </Avatar>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {userName}!</h1>
-            <p className="text-muted-foreground">Here's what's happening with your account</p>
-          </div>
-        </div>
-        <Badge variant="secondary" className="text-sm px-3 py-1">
-          <Award className="w-4 h-4 mr-1" />
-          {mockUserStats.currentTier} Member
-        </Badge>
-      </div>
-      
-      <Separator />
-      
-      {/* Stats Overview */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockUserStats.totalOrders}</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockUserStats.totalSpent.toLocaleString()} UZS</div>
-            <p className="text-xs text-muted-foreground">+15% from last month</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Loyalty Points</CardTitle>
-            <Gift className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockUserStats.loyaltyPoints}</div>
-            <p className="text-xs text-muted-foreground">{mockUserStats.nextReward - mockUserStats.loyaltyPoints} points to next reward</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Wishlist Items</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{mockUserStats.favoriteProducts}</div>
-            <p className="text-xs text-muted-foreground">3 items on sale</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Loyalty Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Loyalty Progress
-          </CardTitle>
-          <CardDescription>
-            You're {mockUserStats.nextReward - mockUserStats.loyaltyPoints} points away from your next reward!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Current Points: {mockUserStats.loyaltyPoints}</span>
-              <span>Next Reward: {mockUserStats.nextReward}</span>
-            </div>
-            <Progress value={progressToNextReward} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              Earn points with every purchase and unlock exclusive rewards!
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome back, {user.firstName} {user.lastName || ''}!
+            </h1>
+            <p className="text-gray-600">
+              Here's what's happening with your account
             </p>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {mockQuickActions.map((action, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
-              <Link href={`/${locale}${action.href}`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-2 rounded-lg ${action.color} text-white`}>
-                      <action.icon className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{action.title}</h3>
-                      <p className="text-sm text-muted-foreground">{action.description}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Link>
-            </Card>
-          ))}
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={user.image || ''} alt={`${user.firstName} ${user.lastName || ''}`.trim() || 'User'} />
+                <AvatarFallback>
+                  {user.firstName?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+          </Avatar>
         </div>
       </div>
-      
-      {/* Recent Activity & Orders */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Recent Orders
-              </span>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/${locale}/account/orders`}>
-                  View All
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Account Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Overview</CardTitle>
+              <CardDescription>
+                Your account statistics and activity
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <ShoppingBag className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-blue-900">{user._count.orders}</div>
+                  <div className="text-sm text-blue-700">Total Orders</div>
+                </div>
+                
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <MapPin className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-green-900">{user._count.addresses}</div>
+                  <div className="text-sm text-green-700">Addresses</div>
+                </div>
+                
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <Heart className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-purple-900">{user._count.wishlistItems}</div>
+                  <div className="text-sm text-purple-700">Wishlist Items</div>
+                </div>
+                
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <Calendar className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-orange-900">
+                    {Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))}
+                  </div>
+                  <div className="text-sm text-orange-700">Days Member</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{order.orderNumber}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(order.date).toLocaleDateString()}
-                  </p>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>
+                    Your latest purchases and their status
+                  </CardDescription>
                 </div>
-                <div className="text-right">
-                  <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'}>
-                    {order.status}
-                  </Badge>
-                  <p className="text-sm font-medium mt-1">
-                    {order.totalAmount.toLocaleString()} UZS
-                  </p>
-                </div>
+                <Link href={`/${locale}/account/orders`}>
+                  <Button variant="outline" size="sm">
+                    View All
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-        
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockRecentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center space-x-3">
-                <div className="p-2 bg-muted rounded-full">
-                  <activity.icon className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No orders yet
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Start shopping to see your orders here
+                  </p>
+                  <Link href={`/${locale}/products`}>
+                    <Button>
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      Start Shopping
+                    </Button>
+                  </Link>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Package className="h-8 w-8 text-gray-400" />
+                        <div>
+                          <h4 className="font-medium">Order #{order.orderNumber}</h4>
+                          <p className="text-sm text-gray-600">
+                            {order._count.items} item{order._count.items !== 1 ? 's' : ''} • 
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                        <p className="text-sm font-medium mt-1">
+                          ${order.total.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Frequently used account features
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {quickActions.map((action, index) => (
+                <Link key={index} href={action.href}>
+                  <div className="flex items-center p-3 rounded-lg border hover:bg-gray-50 transition-colors cursor-pointer">
+                    <div className={`p-2 rounded-lg ${action.color} text-white mr-3`}>
+                      <action.icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{action.title}</h4>
+                      <p className="text-xs text-gray-600">{action.description}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Account Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Information</CardTitle>
+              <CardDescription>
+                Your current account details
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-gray-500" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(activity.date).toLocaleDateString()}
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                </div>
+                {user.emailVerified ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                    Pending
+                  </Badge>
+                )}
+              </div>
+              
+              {user.phone && (
+                <div className="flex items-center space-x-3">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium">Phone</p>
+                    <p className="text-sm text-gray-600">{user.phone}</p>
+                  </div>
+                </div>
+              )}
+              
+              {addresses.length > 0 && (
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium">Default Address</p>
+                    <p className="text-sm text-gray-600">
+                      {addresses[0].city}, {addresses[0].region}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-3">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Member Since</p>
+                  <p className="text-sm text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

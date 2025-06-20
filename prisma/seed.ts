@@ -8,31 +8,37 @@ async function main() {
 
   // Создание пользователей
   console.log('👥 Создание пользователей...');
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = await bcrypt.hash('adminpass', 10);
   const managerPassword = await bcrypt.hash('manager123', 10);
   const userPassword = await bcrypt.hash('user123', 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@askim-candles.uz' },
+    where: { email: 'admin@askimcandles.com' },
     update: {},
     create: {
-      email: 'admin@askim-candles.uz',
-      name: 'Администратор',
+      email: 'admin@askimcandles.com',
+      firstName: 'Store',
+      lastName: 'Administrator',
       password: adminPassword,
       role: 'ADMIN',
-      isBlocked: false
+      isBlocked: false,
+      isActive: true,
+      emailVerified: new Date()
     }
   });
 
   const manager = await prisma.user.upsert({
-    where: { email: 'manager@askim-candles.uz' },
+    where: { email: 'manager@askimcandles.com' },
     update: {},
     create: {
-      email: 'manager@askim-candles.uz',
-      name: 'Менеджер',
+      email: 'manager@askimcandles.com',
+      firstName: 'Store',
+      lastName: 'Manager',
       password: managerPassword,
       role: 'MANAGER',
-      isBlocked: false
+      isBlocked: false,
+      isActive: true,
+      emailVerified: new Date()
     }
   });
 
@@ -41,10 +47,13 @@ async function main() {
     update: {},
     create: {
       email: 'user@example.com',
-      name: 'Тестовый пользователь',
+      firstName: 'Test',
+      lastName: 'User',
       password: userPassword,
       role: 'USER',
-      isBlocked: false
+      isBlocked: false,
+      isActive: true,
+      emailVerified: new Date()
     }
   });
 
@@ -272,12 +281,17 @@ async function main() {
   ];
 
   const createdProducts = [];
-  for (const productData of products) {
+  for (let i = 0; i < products.length; i++) {
+    const productData = products[i];
     const { translations, images, attributes, ...productFields } = productData;
+    
+    // Добавляем уникальный суффикс к SKU для избежания дублирования
+    const uniqueSku = `${productFields.sku}-${Math.random().toString(36).substr(2, 9)}`;
     
     const product = await prisma.product.create({
       data: {
         ...productFields,
+        sku: uniqueSku,
         translations: {
           create: translations
         },
@@ -300,6 +314,192 @@ async function main() {
 
   console.log(`✅ Создано продуктов: ${createdProducts.length}`);
 
+  // Создание финансовых категорий
+  console.log('💰 Создание финансовых категорий...');
+  console.log('DEBUG: Начинаем создание финансовых категорий');
+  
+  let financeCategories;
+  try {
+  financeCategories = await Promise.all([
+    prisma.financeCategory.upsert({
+      where: { name: 'Продажи' },
+      update: {},
+      create: {
+        name: 'Продажи',
+        description: 'Доходы от продажи товаров',
+        type: 'INCOME'
+      }
+    }),
+    prisma.financeCategory.upsert({
+      where: { name: 'Закупки' },
+      update: {},
+      create: {
+        name: 'Закупки',
+        description: 'Расходы на закупку товаров',
+        type: 'EXPENSE'
+      }
+    }),
+    prisma.financeCategory.upsert({
+      where: { name: 'Маркетинг' },
+      update: {},
+      create: {
+        name: 'Маркетинг',
+        description: 'Расходы на рекламу и маркетинг',
+        type: 'EXPENSE'
+      }
+    }),
+    prisma.financeCategory.upsert({
+      where: { name: 'Операционные расходы' },
+      update: {},
+      create: {
+        name: 'Операционные расходы',
+        description: 'Общие операционные расходы',
+        type: 'EXPENSE'
+      }
+    })
+  ]);
+  
+  console.log('DEBUG: Финансовые категории созданы успешно');
+  } catch (error) {
+    console.error('ERROR: Ошибка при создании финансовых категорий:', error);
+    throw error;
+  }
+
+  // Типы транзакций определены как enum в схеме Prisma
+  console.log('📋 Типы транзакций используют enum из схемы...');
+
+  // Создание тестовых заказов
+  console.log('🛒 Создание тестовых заказов...');
+  const testOrders = [];
+  for (let i = 0; i < 10; i++) {
+    const order = await prisma.order.create({
+      data: {
+        orderNumber: `ORD-${Date.now()}-${i}`,
+        userId: Math.random() > 0.5 ? user.id : null,
+        status: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'][Math.floor(Math.random() * 5)] as any,
+        totalAmount: Math.floor(Math.random() * 500000) + 50000, // от 50,000 до 550,000 сум
+        currency: 'UZS',
+        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // последние 30 дней
+        items: {
+          create: {
+            productId: createdProducts[Math.floor(Math.random() * createdProducts.length)].id,
+            quantity: Math.floor(Math.random() * 3) + 1,
+            price: Math.floor(Math.random() * 100000) + 25000,
+            name: 'Test Product',
+            sku: `SKU-${Date.now()}`
+          }
+        }
+      }
+    });
+    testOrders.push(order);
+  }
+
+  // Создание финансовых транзакций
+  console.log('💳 Создание финансовых транзакций...');
+  const transactions = [];
+  
+  // Транзакции от заказов
+  for (const order of testOrders) {
+    if (order.status === 'DELIVERED') {
+      const transaction = await prisma.transaction.create({
+        data: {
+          amount: order.totalAmount,
+          description: `Доход от заказа ${order.orderNumber}`,
+          date: order.createdAt,
+          type: 'INCOME',
+          categoryId: financeCategories.find(c => c.name === 'Продажи')!.id,
+          status: 'COMPLETED',
+          createdBy: admin.id,
+          orderId: order.id
+        }
+      });
+      transactions.push(transaction);
+    }
+  }
+
+  // Дополнительные расходные транзакции
+  const expenseTransactions = [
+    {
+      amount: -150000,
+      description: 'Закупка воска для свечей',
+      category: 'Закупки'
+    },
+    {
+      amount: -75000,
+      description: 'Реклама в Instagram',
+      category: 'Маркетинг'
+    },
+    {
+      amount: -200000,
+      description: 'Аренда склада',
+      category: 'Операционные расходы'
+    },
+    {
+      amount: -50000,
+      description: 'Упаковочные материалы',
+      category: 'Закупки'
+    },
+    {
+      amount: -100000,
+      description: 'Реклама в Google Ads',
+      category: 'Маркетинг'
+    }
+  ];
+
+  for (const expense of expenseTransactions) {
+    const transaction = await prisma.transaction.create({
+      data: {
+        amount: expense.amount,
+        description: expense.description,
+        date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+        type: 'EXPENSE',
+        categoryId: financeCategories.find(c => c.name === expense.category)!.id,
+        status: 'COMPLETED',
+        createdBy: admin.id
+      }
+    });
+    transactions.push(transaction);
+  }
+
+  // Создание финансового периода
+  console.log('📅 Создание финансового периода...');
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  
+  const nextMonth = new Date(currentMonth);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  
+  const totalIncome = transactions
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const totalExpenses = Math.abs(transactions
+    .filter(t => t.amount < 0)
+    .reduce((sum, t) => sum + t.amount, 0));
+  
+  await prisma.financePeriod.upsert({
+    where: {
+      startDate_endDate: {
+        startDate: currentMonth,
+        endDate: nextMonth
+      }
+    },
+    update: {
+      totalRevenue: totalIncome,
+      totalExpenses,
+      netProfit: totalIncome - totalExpenses
+    },
+    create: {
+      name: `${currentMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}`,
+      startDate: currentMonth,
+      endDate: nextMonth,
+      totalRevenue: totalIncome,
+      totalExpenses,
+      netProfit: totalIncome - totalExpenses
+    }
+  });
+
   console.log('🎉 Заполнение базы данных завершено!');
   console.log('\n📊 Статистика:');
   console.log(`👥 Пользователи: ${[admin, manager, user].length}`);
@@ -307,8 +507,12 @@ async function main() {
   console.log(`🧱 Материалы: ${createdMaterials.length}`);
   console.log(`🌸 Ароматы: ${createdScents.length}`);
   console.log(`🕯️ Продукты: ${createdProducts.length}`);
+  console.log(`🛒 Заказы: ${testOrders.length}`);
+  console.log(`💰 Финансовые категории: ${financeCategories.length}`);
+  console.log(`💳 Транзакции: ${transactions.length}`);
+  console.log(`📅 Финансовые периоды: 1`);
   console.log('\n🔐 Тестовые аккаунты:');
-  console.log('Admin: admin@askim-candles.uz / admin123');
+  console.log('Admin: admin@askimcandles.com / adminpass');
   console.log('Manager: manager@askim-candles.uz / manager123');
   console.log('User: user@example.com / user123');
 }

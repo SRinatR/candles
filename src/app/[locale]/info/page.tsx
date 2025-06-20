@@ -119,7 +119,7 @@ export default function UsefulInfoPage() {
                    <CardTitle className="text-xl">{articleTitle}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 flex-grow">
-                  <CardDescription className="line-clamp-3">{articleTeaser}</CardDescription>
+                  <CardDescription className="break-words">{articleTeaser}</CardDescription>
                 </CardContent>
                 <CardContent className="pt-0">
                    <Button variant="outline" asChild className="w-full sm:w-auto mt-auto">

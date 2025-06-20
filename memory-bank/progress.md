@@ -3,9 +3,54 @@
 ## 1. What's Built and Working (Current Status)
 
 *   **Technical Foundation:**
+    *   **✅ NextAuth Унификация (2025-01-27):** Полностью унифицирована система аутентификации админ-панели:
+        *   **База данных готова:** Обновлен seed.ts, созданы тестовые аккаунты admin@askimcandles.com и manager@askimcandles.com
+        *   **Безопасная аутентификация:** Заменен AdminAuthContext на NextAuth с серверной проверкой ролей
+        *   **Защищенные маршруты:** Middleware автоматически перенаправляет неавторизованных пользователей
+        *   **Новые компоненты:** AdminHeader и AdminSidebar с интеграцией NextAuth сессий
+        *   **Производственная готовность:** Система готова для развертывания в продакшене
     *   **React 19.1 Compatibility:** Full compatibility with React 19.1 features and improvements.
     *   **TypeScript Compilation:** All TypeScript errors resolved, clean build achieved with exit code 0.
+    *   **✅ Sales Report API & UI Enhancements:** 
+        *   Fixed an incorrect default import of `prisma` and corrected comment placement in `src/app/api/admin/reports/sales/route.ts`, resolving a persistent build error.
+        *   **✅ Enterprise-Grade Reports & Analytics Dashboard:** Completely transformed `/admin/reports` into a corporate-level reporting interface:
+            *   **Professional KPI Dashboard:** Color-coded metric cards with icons showing Total Revenue (green), Total Orders (blue), and Average Order Value (purple)
+            *   **Multi-Format Data Export:** CSV, Excel, and PDF export capabilities with timestamped file names
+            *   **Advanced Filtering System:** Real-time search, status filtering (Completed/Pending/Processing/Cancelled), and date range selection
+            *   **Responsive Table Design:** Horizontal scrolling, hover effects, status badges, and proper column sizing
+            *   **Interactive Controls:** Refresh button with loading states, clear filters functionality
+            *   **Enterprise Typography:** Professional spacing, hierarchy, and visual design patterns
+            *   **Smart Empty States:** Contextual messaging and clear user guidance when no data is available
+            *   **✅ Text Overflow Prevention:** Comprehensive text overflow fixes throughout the dashboard:
+                *   KPI card values with `truncate` class to prevent currency overflow
+                *   Table cells with `max-w-` constraints and `truncate` for proper text handling
+                *   Hover tooltips (`title` attributes) for full text display on truncated content
+                *   Report descriptions with `break-words` for proper text wrapping
+                *   Filter controls with `min-w-0` and `flex-shrink-0` for responsive behavior
+                *   Enhanced table column width management for optimal display
+    *   **✅ Admin Categories Page Fixed:** Resolved critical dictionary loading issue causing skeleton-only display.
+        *   **Dictionary Access Corrected:** Fixed incorrect path from `fullDict.categories` to `fullDict.adminManageCategoriesPage`.
+        *   **Full Functionality Restored:** Categories management page now displays and functions correctly.
+        *   **API Integration Working:** Categories API endpoint confirmed operational with proper data loading.
+    *   **✅ Admin Category Drafts Page Fixed:** Resolved similar dictionary loading issue in drafts management page.
+        *   **AlertStrings Structure Corrected:** Fixed incorrect access from `dict.alerts` to proper `dict.common` structure.
+        *   **Consistent Implementation:** Applied same alertStrings pattern as main categories page for uniformity.
+        *   **Full Drafts Functionality:** Category drafts page now loads and operates correctly with all dialogs working.
+    *   **✅ Product Drafts Management Page:** Created comprehensive product drafts interface at `/admin/products/drafts`.
+        *   **Advanced Filtering:** Implemented filtering, search, and bulk operations.
+        *   **Detailed Edit Dialog:** Added tabbed interface with status management.
+        *   **Navigation Integration:** Connected from main products page for seamless workflow.
+    *   **✅ Turbopack Font Compatibility Fixed:** Resolved critical build errors with next/font/google module resolution in Turbopack environment.
+        *   **Font System Updated:** Temporarily disabled Geist fonts due to Turbopack compatibility issues, implemented modern system font stack.
+        *   **Build Stability:** Eliminated 'Module not found' errors for '@vercel/turbopack-next/internal/font/google/font'.
+        *   **Performance Maintained:** System fonts provide excellent fallback with consistent typography across platforms.
     *   **✅ User Profile Form Fixed:** Resolved TypeScript errors in profile page - newsletter field type mismatch and SubmitHandler typing issues corrected.
+    *   **✅ Image Component TypeScript Errors Fixed:** Resolved all Next.js Image src prop type errors by properly handling image objects with url property extraction across cart, checkout, orders, and admin product pages.
+    *   **✅ HTML Hydration Error Fixed:** Resolved nested html/body tags causing hydration mismatch by restructuring layout hierarchy - removed html/body from locale layout, keeping only in root layout.
+    *   **✅ Fixed API internal server errors by adding missing NextRequest/NextResponse imports and PATCH method for category status updates**
+    *   **✅ Resolved database connectivity issues:** Created .env file with proper database configuration for Docker environment
+    *   **✅ Fixed "Failed to update category status" console error:** Resolved stale state closure issue in toggleCategoryStatus function - localStorage now updates with fresh state from setAllCategories callback, category toggle functionality fully operational
+    *   **✅ Fixed API 500 Internal Server Error:** Added missing PrismaClient import to prisma.ts file, resolving server-side database connection issues causing PATCH endpoint failures
     *   **Tailwind CSS 4.x Support FULLY WORKING (2025-01-27):** 
         *   **PostCSS Configuration:** Fixed postcss.config.mjs with proper Tailwind 4.x syntax
         *   **Tailwind Config:** Restructured tailwind.config.ts with correct TypeScript typing and export

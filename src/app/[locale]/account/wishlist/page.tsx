@@ -204,16 +204,16 @@ export default function WishlistPage() {
         <div className="p-4 flex flex-col flex-1">
           {/* Category */}
           <div className="mb-2">
-            <Badge variant="outline" className="text-xs px-2 py-1 max-w-[120px] truncate">{item.category}</Badge>
+            <Badge variant="outline" className="text-xs px-2 py-1 max-w-[120px] break-words">{item.category}</Badge>
           </div>
           
           {/* Product name */}
-          <h3 className="font-bold text-sm mb-2 line-clamp-2 text-gray-900 group-hover:text-primary transition-colors leading-tight break-words">
+          <h3 className="font-bold text-sm mb-2 break-words text-gray-900 group-hover:text-primary transition-colors leading-tight">
             {item.name}
           </h3>
           
           {/* Description */}
-          <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed flex-1">
+          <p className="text-xs text-muted-foreground mb-3 break-words leading-relaxed flex-1">
             {item.description}
           </p>
           
@@ -296,11 +296,11 @@ export default function WishlistPage() {
           <div className="flex-1 min-w-0 flex flex-col justify-between">
             <div>
               <div className="flex items-start justify-between mb-2">
-                <h3 className="font-bold text-lg text-gray-900 line-clamp-1 pr-4">{item.name}</h3>
+                <h3 className="font-bold text-lg text-gray-900 break-words pr-4">{item.name}</h3>
                 <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">{item.category}</Badge>
               </div>
               
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+              <p className="text-sm text-muted-foreground mb-3 break-words leading-relaxed">
                 {item.description}
               </p>
               

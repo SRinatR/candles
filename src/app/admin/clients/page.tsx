@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MoreVertical, ArrowUpDown, FilterX, Eye, UserX, UserCheck, Edit3, Trash2 } from "lucide-react";
 import React, { useState, useMemo, useEffect } from "react";
-import { mockAdminClients } from "@/lib/mock-data";
+import { apiClient } from '@/lib/api-client';
 import { type MockAdminClient } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -42,10 +42,14 @@ import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { i18nAdmin } from '@/admin/lib/i18n-config-admin';
 import { getAdminDictionary } from '@/admin/lib/getAdminDictionary';
 import type enAdminMessages from '@/admin/dictionaries/en.json';
+import { useLocalPreferences } from '@/hooks/use-preferences';
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Download } from "lucide-react";
+import { ChartContainer } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 type AdminClientsPageDict = typeof enAdminMessages.adminClientsPage;
 type SortableClientKeys = keyof Pick<MockAdminClient, 'name' | 'email' | 'registrationDate' | 'totalOrders' | 'totalSpent'>;
@@ -59,12 +63,14 @@ const clientEditSchema = z.object({
 });
 type ClientEditFormValues = z.infer<typeof clientEditSchema>;
 
-export default function AdminClientsPage() {
-  const [clients, setClients] = useState<MockAdminClient[]>(mockAdminClients);
+export default function ManageClientsPage() {
+  const [isClient, setIsClient] = useState(false);
+  const [clients, setClients] = useState<MockAdminClient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const [dict, setDict] = useState<AdminClientsPageDict | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const { preferences } = useLocalPreferences();
 
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'blocked'>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortableClientKeys; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
@@ -82,17 +88,41 @@ export default function AdminClientsPage() {
 
   useEffect(() => {
     setIsClient(true);
-    const storedLocale = localStorage.getItem('admin-lang') as AdminLocale | null;
-    const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
-    
-    async function loadDictionary() {
-      const fullDict = await getAdminDictionary(localeToLoad);
-      setDict(fullDict.adminClientsPage);
-    }
-    loadDictionary();
+    fetchClients();
   }, []);
 
+  const fetchClients = async () => {
+    setIsLoading(true);
+    const response = await apiClient.getUsers({ role: 'client', limit: 1000 }); // Fetch all clients
+    if (response.data) {
+      setClients(response.data.data as MockAdminClient[]);
+    } else {
+      toast({
+        title: "Ошибка загрузки клиентов",
+        description: response.error || "Произошла неизвестная ошибка.",
+        variant: "destructive",
+      });
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (isClient) {
+      const localeToLoad = (preferences.language as AdminLocale) || i18nAdmin.defaultLocale;
+      
+      async function loadDictionary() {
+        const fullDict = await getAdminDictionary(localeToLoad);
+        setDict(fullDict.adminClientsPage);
+      }
+      loadDictionary();
+    }
+  }, [preferences.language, isClient]);
+
   const processedClients = useMemo(() => {
+    if (!clients || clients.length === 0) {
+      return [];
+    }
+    
     let filtered = clients.filter(client =>
       (client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -150,17 +180,17 @@ export default function AdminClientsPage() {
     return <ArrowUpDown className="ml-1 h-3 w-3 inline opacity-30" />;
   };
 
-  const toggleBlockClient = (clientId: string) => {
+  const toggleBlockClient = async (clientId: string) => {
     if (!dict) return;
-    setClients(prevClients =>
-      prevClients.map(client =>
-        client.id === clientId ? { ...client, isBlocked: !client.isBlocked } : client
-      )
-    );
     const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    const updated = { ...client, isBlocked: !client.isBlocked };
+    await apiClient.updateUser(clientId, { isBlocked: updated.isBlocked });
+    setClients(prevClients => prevClients.map(c => c.id === clientId ? updated : c));
+    await apiClient.createLog({ action: updated.isBlocked ? "block" : "unblock", resource: "client", resourceId: clientId, details: { name: client.name, email: client.email } });
     toast({
-      title: client?.isBlocked ? (dict.clientUnblockedToastTitle || "Client Unblocked (Simulated)") : (dict.clientBlockedToastTitle || "Client Blocked (Simulated)"),
-      description: `${client?.name} ${dict.clientStatusUpdatedToastDesc || "status has been updated locally."}`,
+      title: updated.isBlocked ? (dict.clientBlockedToastTitle || "Client Blocked") : (dict.clientUnblockedToastTitle || "Client Unblocked"),
+      description: `${client.name} ${dict.clientStatusUpdatedToastDesc || "status has been updated."}`,
     });
   };
 
@@ -179,6 +209,7 @@ export default function AdminClientsPage() {
   const openViewModal = (client: MockAdminClient) => {
     setSelectedClient(client);
     setIsViewModalOpen(true);
+    apiClient.createLog({ action: "view", resource: "client", resourceId: client.id, details: { name: client.name, email: client.email } });
   };
 
   const openEditModal = (client: MockAdminClient) => {
@@ -192,42 +223,123 @@ export default function AdminClientsPage() {
     setIsDeleteAlertOpen(true);
   };
 
-  const handleEditSubmit = (data: ClientEditFormValues) => {
+  const handleEditSubmit = async (data: ClientEditFormValues) => {
     if (!selectedClient || !dict) return;
-    setClients(prevClients => 
-      prevClients.map(c => c.id === selectedClient.id ? { ...c, name: data.name, email: data.email } : c)
-    );
+    await apiClient.updateUser(selectedClient.id, { name: data.name, email: data.email });
+    setClients(prevClients => prevClients.map(c => c.id === selectedClient.id ? { ...c, name: data.name, email: data.email } : c));
+    await apiClient.createLog({ action: "edit", resource: "client", resourceId: selectedClient.id, details: { name: data.name, email: data.email } });
     toast({
-      title: dict.editClientSuccessTitle || "Client Updated (Simulated)",
-      description: (dict.editClientSuccessDesc || "Client '{name}' details have been updated locally.").replace('{name}', data.name),
+      title: dict.editClientSuccessTitle || "Client Updated",
+      description: (dict.editClientSuccessDesc || "Client '{name}' details have been updated.").replace('{name}', data.name),
     });
     setIsEditModalOpen(false);
     setSelectedClient(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedClient || !dict) return;
+    await apiClient.deleteUser(selectedClient.id);
     setClients(prevClients => prevClients.filter(c => c.id !== selectedClient.id));
+    await apiClient.createLog({ action: "delete", resource: "client", resourceId: selectedClient.id, details: { name: selectedClient.name, email: selectedClient.email } });
     toast({
-      title: dict.deleteClientSuccessTitle || "Client Deleted (Simulated)",
-      description: (dict.deleteClientSuccessDesc || "Client '{name}' has been deleted locally.").replace('{name}', selectedClient.name),
+      title: dict.deleteClientSuccessTitle || "Client Deleted",
+      description: (dict.deleteClientSuccessDesc || "Client '{name}' has been deleted.").replace('{name}', selectedClient.name),
     });
     setIsDeleteAlertOpen(false);
     setSelectedClient(null);
   };
 
-  if (!isClient || !dict) {
+  if (isLoading || !dict) {
     return <div>Loading clients...</div>;
   }
 
+  // --- Клиентская статистика и экспорт ---
+  const totalClients = clients?.length || 0;
+  const activeClients = clients?.filter(c => !c.isBlocked).length || 0;
+  const blockedClients = clients?.filter(c => c.isBlocked).length || 0;
+  const totalOrders = clients?.reduce((sum, c) => sum + c.totalOrders, 0) || 0;
+  const totalSpent = clients?.reduce((sum, c) => sum + c.totalSpent, 0) || 0;
+  const pieData = [
+    { name: 'Активные', value: activeClients, color: '#22c55e' },
+    { name: 'Заблокированные', value: blockedClients, color: '#ef4444' },
+  ];
+  const exportToCSV = () => {
+    if (!clients.length) return;
+    const headers = ['Имя', 'Email', 'Дата регистрации', 'Заказов', 'Потрачено', 'Статус'];
+    const csvContent = [
+      headers.join(','),
+      ...clients.map(c => [
+        `"${c.name}"`,
+        c.email,
+        c.registrationDate,
+        c.totalOrders,
+        c.totalSpent,
+        c.isBlocked ? 'Заблокирован' : 'Активен',
+      ].join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clients-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="mb-2">
         <h1 className="text-3xl font-bold tracking-tight">{dict.title}</h1>
-        <p className="text-muted-foreground">{dict.description}</p>
+        <p className="text-muted-foreground text-base mt-1">{dict.description}</p>
       </div>
-
-      <Card>
+      {/* Статистика и экспорт */}
+      <div className="flex flex-wrap gap-4 items-center justify-between bg-muted/60 rounded-xl p-4 shadow-sm">
+        <div className="flex gap-4 flex-wrap">
+          <div className="bg-white dark:bg-muted rounded-lg p-4 min-w-[120px] text-center shadow">
+            <div className="text-2xl font-bold text-primary">{totalClients}</div>
+            <div className="text-muted-foreground text-xs mt-1">Всего клиентов</div>
+          </div>
+          <div className="bg-white dark:bg-muted rounded-lg p-4 min-w-[120px] text-center shadow">
+            <div className="text-2xl font-bold text-green-600">{activeClients}</div>
+            <div className="text-muted-foreground text-xs mt-1">Активные</div>
+          </div>
+          <div className="bg-white dark:bg-muted rounded-lg p-4 min-w-[120px] text-center shadow">
+            <div className="text-2xl font-bold text-red-500">{blockedClients}</div>
+            <div className="text-muted-foreground text-xs mt-1">Заблокированные</div>
+          </div>
+          <div className="bg-white dark:bg-muted rounded-lg p-4 min-w-[140px] text-center shadow">
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <div className="text-muted-foreground text-xs mt-1">Всего заказов</div>
+          </div>
+          <div className="bg-white dark:bg-muted rounded-lg p-4 min-w-[140px] text-center shadow">
+            <div className="text-2xl font-bold text-yellow-600">{totalSpent.toLocaleString('ru-RU')} UZS</div>
+            <div className="text-muted-foreground text-xs mt-1">Потрачено</div>
+          </div>
+        </div>
+        <Button variant="outline" onClick={exportToCSV} className="mt-4 sm:mt-0">
+          <Download className="mr-2 h-4 w-4" /> Экспорт CSV
+        </Button>
+      </div>
+      {/* Круговая диаграмма временно отключена */}
+      {/* <div className="w-full max-w-md mx-auto mt-4">
+        {pieData.length === 0 ? (
+          <div className="text-center text-muted-foreground py-12">Нет данных для отображения</div>
+        ) : (
+          <ChartContainer config={{ Активные: { color: '#22c55e', label: 'Активные' }, Заблокированные: { color: '#ef4444', label: 'Заблокированные' } }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                  {pieData.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
+      </div> */}
+      <Card className="mt-2">
         <CardHeader>
           <CardTitle>{dict.listTitle}</CardTitle>
           <CardDescription>
@@ -377,7 +489,7 @@ export default function AdminClientsPage() {
               <p><strong>{dict.totalOrdersHeader}:</strong> {selectedClient.totalOrders}</p>
               <p><strong>{dict.totalSpentHeader}:</strong> {selectedClient.totalSpent.toLocaleString('en-US')} UZS</p>
               <div className="flex items-center space-x-2">
-                <strong>{dict.statusHeader}:</strong>
+                <span><strong>{dict.statusHeader}:</strong></span>
                 <Badge variant={selectedClient.isBlocked ? "destructive" : "secondary"}>
                   {selectedClient.isBlocked ? dict.statusBlockedBadge : dict.statusActiveBadge}
                 </Badge>

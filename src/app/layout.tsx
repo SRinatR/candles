@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-// Removed direct redirect import as page.tsx handles it.
+import { Providers } from './providers';
 import { i18n } from '@/lib/i1n-config';
 
 // This root layout only redirects to the default locale via page.tsx
@@ -19,7 +19,9 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning>
       <body suppressHydrationWarning>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

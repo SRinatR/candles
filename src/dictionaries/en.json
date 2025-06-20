@@ -85,7 +85,7 @@
     "emailForLogin": "Email used for login.",
     "phoneLabel": "Phone Number (Optional)",
     "phonePlaceholder": "e.g., +1 555-123-4567",
-    "phoneBackendNote": "Storing phone numbers requires backend database integration.",
+    "phoneBackendNote": "Phone numbers are stored securely in the database.",
     "saveChangesButton": "Save Changes",
     "loadingProfile": "Loading profile...",
     "pleaseLogin": "Please log in to view your profile.",
@@ -102,7 +102,9 @@
     "streetAddressLabel": "Street Address",
     "cityLabel": "City",
     "stateProvinceLabel": "State/Province",
+    "regionLabel": "Region",
     "zipPostalCodeLabel": "ZIP/Postal Code",
+    "postalCodeLabel": "Postal Code",
     "countryLabel": "Country",
     "setDefaultAddressLabel": "Set as default address",
     "cancelButton": "Cancel",
@@ -122,7 +124,13 @@
     "addressUpdatedToast": "Address Updated",
     "addressUpdatedDescToast": "Your address has been successfully updated.",
     "addressAddedToast": "Address Added",
-    "addressAddedDescToast": "Your new address has been saved."
+    "addressAddedDescToast": "Your new address has been saved.",
+    "addressAddedSuccess": "Address added successfully!",
+    "addressUpdatedSuccess": "Address updated successfully!",
+    "editAddressTitle": "Edit Address",
+    "editAddressDesc": "Update your delivery address information",
+    "deleteButton": "Delete",
+    "cancelButton": "Cancel"
   },
   "accountOrderHistoryPage": {
     "title": "Order History",

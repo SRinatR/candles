@@ -57,21 +57,37 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
       <Link href={`/${locale}/products/${product.id}`} className="block group h-full flex flex-col">
         <CardHeader className="p-0">
           <div className="overflow-hidden relative">
-            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) ? (
-              <Image
-                src={(product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') ? product.mainImage : (product.images[0] || '')}
-                alt={productName}
-                width={400}
-                height={400}
-                className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
-                data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
-              />
-            ) : (
-              <div className="w-full h-[400px] bg-muted flex items-center justify-center">
-                <span className="text-muted-foreground text-sm">No image</span>
-              </div>
-            )}
+            {(() => {
+              const mainImageSrc = product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '' ? product.mainImage : null;
+              
+              let fallbackImageSrc = null;
+              if (product.images && product.images.length > 0 && product.images[0]) {
+                const firstImage = product.images[0];
+                if (typeof firstImage === 'string' && firstImage.trim() !== '') {
+                  fallbackImageSrc = firstImage;
+                } else if (typeof firstImage === 'object' && firstImage.url && firstImage.url.trim() !== '') {
+                  fallbackImageSrc = firstImage.url;
+                }
+              }
+              
+              const imageSrc = mainImageSrc || fallbackImageSrc;
+              
+              return imageSrc ? (
+                <Image
+                  src={imageSrc}
+                  alt={productName}
+                  width={400}
+                  height={400}
+                  className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
+                  data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+                />
+              ) : (
+                <div className="w-full h-[400px] bg-muted flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">No image</span>
+                </div>
+              );
+            })()}
           </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col"> {/* Modified: Added flex flex-col */}
@@ -79,7 +95,7 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
             <CardTitle className="text-lg font-semibold leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2"> {/* Added line-clamp-2 */}
               {productName}
             </CardTitle>
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{productDescription}</p>
+            <p className="text-sm text-muted-foreground break-words mb-2">{productDescription}</p>
           </div>
           <p className="text-lg font-bold text-foreground mt-auto pt-2"> {/* Modified: Added mt-auto and pt-2 */}
             {product.price.toLocaleString('en-US')} UZS

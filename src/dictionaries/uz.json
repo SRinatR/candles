@@ -101,7 +101,9 @@
     "streetAddressLabel": "Ko'cha Manzili",
     "cityLabel": "Shahar",
     "stateProvinceLabel": "Viloyat/Respublika",
+    "regionLabel": "Viloyat",
     "zipPostalCodeLabel": "Pochta Indeksi",
+    "postalCodeLabel": "Pochta Indeksi",
     "countryLabel": "Mamlakat",
     "setDefaultAddressLabel": "Asosiy manzil sifatida belgilash",
     "cancelButton": "Bekor qilish",
@@ -121,7 +123,13 @@
     "addressUpdatedToast": "Manzil Yangilandi",
     "addressUpdatedDescToast": "Manzilingiz muvaffaqiyatli yangilandi.",
     "addressAddedToast": "Manzil Qo'shildi",
-    "addressAddedDescToast": "Yangi manzilingiz saqlandi."
+    "addressAddedDescToast": "Yangi manzilingiz saqlandi.",
+    "addressAddedSuccess": "Manzil muvaffaqiyatli qo'shildi!",
+    "addressUpdatedSuccess": "Manzil muvaffaqiyatli yangilandi!",
+    "editAddressTitle": "Manzilni tahrirlash",
+    "editAddressDesc": "Yetkazib berish manzili ma'lumotlarini yangilang",
+    "deleteButton": "O'chirish",
+    "cancelButton": "Bekor qilish"
   },
   "accountOrderHistoryPage": {
     "title": "Buyurtmalar Tarixi",

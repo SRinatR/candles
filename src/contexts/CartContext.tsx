@@ -1,192 +1,247 @@
 
-"use client";
+'use client';
 
-import type { CartItem, Product } from '@/lib/types';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useParams } from 'next/navigation';
-import type { Locale } from '@/lib/i1n-config';
+import { Product } from '@/types/product';
+import { toast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api-client';
 
-// Simulating dictionary loading for client component
-import enMessages from '@/dictionaries/en.json';
-import ruMessages from '@/dictionaries/ru.json';
-import uzMessages from '@/dictionaries/uz.json';
-
-type FullDictionary = typeof enMessages;
-type CartContextToastsDictionary = FullDictionary['cartContextToasts'];
-
-const dictionaries: Record<Locale, FullDictionary> = {
-  en: enMessages,
-  ru: ruMessages,
-  uz: uzMessages,
-};
-
-// Fallback dictionary for toasts if primary loading fails or keys are missing
-const fallbackCartContextToasts: CartContextToastsDictionary = {
-  errorTitle: "Error",
-  infoTitle: "Info",
-  productOutOfStockToast: "{productName} is out of stock.",
-  stockAvailableToast: "Not enough stock. Quantity updated to {availableStock}.",
-  addedToCartLimitedStockToast: "Not enough stock. Added {availableStock} to cart.",
-  genericError: "An unexpected error occurred."
-};
-
-const getCartContextToastsDictionary = (locale: Locale): CartContextToastsDictionary => {
-  const mainDict = dictionaries[locale] || dictionaries.en;
-  return mainDict?.cartContextToasts || fallbackCartContextToasts;
-};
-
+interface CartItem {
+  id: string;
+  product: Product;
+  quantity: number;
+}
 
 interface CartContextType {
-  cartItems: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
+  items: CartItem[];
+  addItem: (product: Product, quantity?: number) => void;
+  removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  cartCount: number;
-  cartTotal: number;
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
+  isInCart: (productId: string) => boolean;
+  getItemQuantity: (productId: string) => number;
+  isLoading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'askimCart';
+// Генерация ID сессии для анонимных пользователей
+function getSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  
+  let sessionId = sessionStorage.getItem('cart-session-id');
+  if (!sessionId) {
+    sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    sessionStorage.setItem('cart-session-id', sessionId);
+  }
+  return sessionId;
+}
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { toast } = useToast();
-  const params = useParams();
-  const locale = (params.locale as Locale) || 'uz';
-  const dictionary = getCartContextToastsDictionary(locale);
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-      if (storedCart) {
-        try {
-          const parsedCart = JSON.parse(storedCart);
-          if (Array.isArray(parsedCart)) {
-            return parsedCart;
-          }
-        } catch (error) {
-          console.error("Failed to parse cart from localStorage on init:", error);
-          localStorage.removeItem(CART_STORAGE_KEY);
-        }
-      }
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-    }
-  }, [cartItems]);
-
-  const addToCart = (product: Product, quantityToAdd: number = 1) => {
-    const productName = product.name[locale] || product.name.en;
-    if (!product || product.stock === undefined) {
-      console.error("Product data is invalid or stock is undefined", product);
-      toast({
-        title: dictionary.errorTitle,
-        description: dictionary.genericError,
-        variant: "destructive",
-      });
-      return;
-    }
+  // Загрузка корзины с сервера
+  const loadCart = async () => {
+    if (typeof window === 'undefined') return;
     
-    if (product.stock <= 0 && !cartItems.find(item => item.id === product.id)) {
+    setIsLoading(true);
+    try {
+      const sessionId = getSessionId();
+      const response = await apiClient.getCart({ sessionId });
+      
+      if (response.data) {
+        setItems(response.data.items || []);
+      }
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    } finally {
+      setIsLoading(false);
+      setIsLoaded(true);
+    }
+  };
+
+  // Загрузка корзины при монтировании
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  const addItem = async (product: Product, quantity: number = 1) => {
+    if (!product) {
+      console.error("Product is undefined or null");
+      return;
+    }
+
+    if (product.stock <= 0) {
       toast({
-        title: dictionary.errorTitle,
-        description: (dictionary.productOutOfStockToast || fallbackCartContextToasts.productOutOfStockToast).replace('{productName}', productName),
+        title: "Ошибка",
+        description: `${product.name || 'Товар'} отсутствует на складе.`,
         variant: "destructive",
       });
       return;
     }
 
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      let finalQuantity: number;
+    setIsLoading(true);
+    try {
+      const sessionId = getSessionId();
+      const response = await apiClient.addToCart({
+        productId: product.id,
+        quantity,
+        sessionId
+      });
 
-      if (existingItem) {
-        const potentialQuantity = existingItem.quantity + quantityToAdd;
-        if (potentialQuantity > product.stock) {
-          finalQuantity = product.stock;
-          toast({
-            title: dictionary.infoTitle,
-            description: (dictionary.stockAvailableToast || fallbackCartContextToasts.stockAvailableToast).replace('{availableStock}', String(product.stock)),
-          });
-        } else {
-          finalQuantity = potentialQuantity;
-        }
-        return prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: Math.max(0, finalQuantity) } 
-            : item
-        );
+      if (response.error) {
+        toast({
+          title: "Ошибка",
+          description: response.error,
+          variant: "destructive",
+        });
       } else {
-        if (quantityToAdd > product.stock) {
-          finalQuantity = product.stock;
-          toast({
-            title: dictionary.infoTitle,
-            description: (dictionary.addedToCartLimitedStockToast || fallbackCartContextToasts.addedToCartLimitedStockToast).replace('{availableStock}', String(product.stock)),
-          });
-        } else {
-          finalQuantity = quantityToAdd;
-        }
-         if (finalQuantity <= 0) return prevItems; // Don't add if resulting quantity is 0 or less
-        return [...prevItems, { ...product, quantity: Math.max(1, finalQuantity) }];
+        // Перезагрузить корзину после добавления
+        await loadCart();
+        toast({
+          title: "Успешно",
+          description: `${product.name || 'Товар'} добавлен в корзину.`,
+        });
       }
-    });
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить товар в корзину.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  const removeItem = async (productId: string) => {
+    const item = items.find(item => item.product.id === productId);
+    if (!item) return;
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.removeFromCart(item.id);
+      
+      if (response.error) {
+        toast({
+          title: "Ошибка",
+          description: response.error,
+          variant: "destructive",
+        });
+      } else {
+        await loadCart();
+        toast({
+          title: "Успешно",
+          description: "Товар удален из корзины.",
+        });
+      }
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить товар из корзины.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    const itemInCart = cartItems.find(item => item.id === productId);
-    if (!itemInCart) return;
-    const productName = itemInCart.name[locale] || itemInCart.name.en;
+  const updateQuantity = async (productId: string, newQuantity: number) => {
+    const item = items.find(item => item.product.id === productId);
+    if (!item) return;
 
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      await removeItem(productId);
       return;
     }
 
-    let finalQuantity = newQuantity;
-    if (newQuantity > itemInCart.stock) {
-      finalQuantity = itemInCart.stock;
+    setIsLoading(true);
+    try {
+      const response = await apiClient.updateCartItem(item.id, newQuantity);
+      
+      if (response.error) {
+        toast({
+          title: "Ошибка",
+          description: response.error,
+          variant: "destructive",
+        });
+      } else {
+        await loadCart();
+      }
+    } catch (error) {
+      console.error('Error updating cart:', error);
       toast({
-        title: dictionary.infoTitle,
-        description: (dictionary.stockAvailableToast || fallbackCartContextToasts.stockAvailableToast).replace('{availableStock}', String(itemInCart.stock)),
+        title: "Ошибка",
+        description: "Не удалось обновить количество.",
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (finalQuantity === 0) { // If stock is 0, and user tries to update to 0 (or it was capped to 0)
-        removeFromCart(productId);
-        return;
-    }
-
-
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId ? { ...item, quantity: finalQuantity } : item
-      ).filter(item => item.quantity > 0) // Ensure items with 0 quantity are removed
-    );
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const clearCart = async () => {
+    setIsLoading(true);
+    try {
+      const sessionId = getSessionId();
+      const response = await apiClient.clearCart({ sessionId });
+      
+      if (response.error) {
+        toast({
+          title: "Ошибка",
+          description: response.error,
+          variant: "destructive",
+        });
+      } else {
+        setItems([]);
+        toast({
+          title: "Успешно",
+          description: "Корзина очищена.",
+        });
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось очистить корзину.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const getTotalItems = () => items.reduce((total, item) => total + item.quantity, 0);
+  const getTotalPrice = () => items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  const isInCart = (productId: string) => items.some(item => item.product.id === productId);
+  const getItemQuantity = (productId: string) => {
+    const item = items.find(item => item.product.id === productId);
+    return item ? item.quantity : 0;
+  };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal }}>
+    <CartContext.Provider value={{
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      getTotalItems,
+      getTotalPrice,
+      isInCart,
+      getItemQuantity,
+      isLoading
+    }}>
       {children}
     </CartContext.Provider>
   );
-};
+}
 
 export const useCart = () => {
   const context = useContext(CartContext);

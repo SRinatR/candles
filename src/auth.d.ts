@@ -16,7 +16,9 @@ declare module "next-auth" {
 
   interface User extends DefaultUser {
     // Add your custom properties here
-    // id: string; // Example: if your User model has an id
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
   }
 }
 

@@ -11,24 +11,107 @@ datasource db {
 }
 
 // Роли пользователей
-enum Role {
+enum UserRole {
   ADMIN
   MANAGER
   USER
 }
 
+// Пол пользователя
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// Языки
+enum Language {
+  UZ
+  RU
+  EN
+}
+
 // Пользователи (для сайта и админки)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String?  // Хешированный пароль (null для OAuth пользователей)
-  role      Role     @default(USER)
-  isBlocked Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?   // для email/password auth
+  firstName     String
+  lastName      String
+  middleName    String?
+  phone         String?
+  dateOfBirth   DateTime?
+  gender        Gender?
   
+  // Google OAuth fields
+  googleId      String?   @unique
+  image         String?
+  
+  // Preferences
+  newsletter    Boolean   @default(false)
+  language      Language  @default(UZ)
+  
+  // Status
+  isActive      Boolean   @default(true)
+  emailVerified DateTime?
+  emailVerificationToken String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  
+  // Admin fields
+  role          UserRole  @default(USER)
+  lastLoginAt   DateTime?
+  isBlocked     Boolean   @default(false)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Связи
+  addresses     Address[]
+  sessions      UserSession[]
+  logs          AdminLog[]
+  preferences   UserPreference?
+  carts         Cart[]
+  orders        Order[] // Связь с заказами пользователя
+  transactions  Transaction[] // Связь с созданными транзакциями
+  
+  // Связи с системой поддержки
+  ticketsCreated     SupportTicket[] @relation("TicketsCreated")
+  ticketsAssigned    SupportTicket[] @relation("TicketsAssigned")
+  ticketMessages     TicketMessage[] @relation("TicketMessagesAuthored")
+  ticketAttachments  TicketAttachment[] @relation("TicketAttachmentsUploaded")
+  ticketHistory      TicketHistory[] @relation("TicketHistoryPerformed")
+  notifications Notification[]
+  emailLogs     EmailLog[]
+  notificationPreferences Json?
+
   @@map("users")
+}
+
+// Адреса пользователей
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title      String  // "Дом", "Работа", etc.
+  street     String
+  house      String
+  apartment  String?
+  city       String
+  region     String
+  postalCode String?
+  landmark   String?
+  comment    String?
+  country    String  @default("UZ")
+  
+  isDefault  Boolean @default(false)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@map("addresses")
 }
 
 // Категории товаров
@@ -112,6 +195,10 @@ model Product {
   // Дополнительные атрибуты
   attributes  ProductAttribute[]
   
+  // Корзина
+  cartItems   CartItem[]
+  orderItems  OrderItem[] // Связь с элементами заказа
+  
   @@map("products")
 }
 
@@ -192,4 +279,481 @@ model ScentTranslation {
   
   @@unique([scentId, locale])
   @@map("scent_translations")
+}
+
+// Сессии пользователей
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_sessions")
+}
+
+// Логи действий администраторов
+model AdminLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // Тип действия (CREATE, UPDATE, DELETE, LOGIN, etc.)
+  resource  String   // Ресурс (PRODUCT, CATEGORY, USER, etc.)
+  resourceId String? // ID ресурса
+  details   Json?    // Дополнительные детали действия
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("admin_logs")
+}
+
+// Настройки пользователей
+model UserPreference {
+  id       String @id @default(cuid())
+  userId   String @unique
+  theme    String @default("light") // light, dark, system
+  language String @default("en")   // en, ru, uz
+  settings Json?  // Дополнительные настройки в JSON
+  
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_preferences")
+}
+
+// Корзина покупок
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    // null для анонимных пользователей
+  sessionId String?    // для анонимных пользователей
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  
+  @@map("carts")
+}
+
+// Элементы корзины
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  productId Int
+  quantity  Int    @default(1)
+  
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// Статьи/контент
+model Article {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  translations ArticleTranslation[]
+  
+  @@map("articles")
+}
+
+// Переводы статей
+model ArticleTranslation {
+  id        String @id @default(cuid())
+  articleId String
+  locale    String // 'en', 'ru', 'uz'
+  title     String
+  content   String
+  excerpt   String?
+  
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  @@unique([articleId, locale])
+  @@map("article_translations")
+}
+
+// Статус заказа
+enum OrderStatus {
+  PENDING     // Ожидает обработки
+  PROCESSING  // В обработке
+  SHIPPED     // Отправлен
+  DELIVERED   // Доставлен
+  CANCELLED   // Отменен
+  REFUNDED    // Возвращен
+}
+
+// Заказы
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique @default(cuid()) // Уникальный номер заказа, можно генерировать
+  userId      String?     // ID пользователя, может быть null для гостевых заказов
+  user        User?       @relation(fields: [userId], references: [id])
+  sessionId   String?     // ID сессии для гостевых заказов
+  status      OrderStatus @default(PENDING)
+  totalAmount Float
+  currency    String      @default("UZS") // Валюта заказа
+  items       OrderItem[]
+  transactions Transaction[] // Связанные финансовые транзакции
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Информация о доставке (можно вынести в отдельную модель)
+  shippingAddress Json? // Адрес доставки в формате JSON
+  // Информация об оплате (можно вынести в отдельную модель)
+  paymentDetails  Json? // Детали платежа в формате JSON
+
+  @@index([userId])
+  @@map("orders")
+}
+
+// Элементы заказа
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id]) // onDelete: Restrict - чтобы не удалить товар, если он есть в заказах
+  quantity  Int
+  price     Float   // Цена товара на момент покупки
+  name      String  // Название товара на момент покупки (для истории)
+  sku       String? // Артикул товара на момент покупки
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("order_items")
+}
+
+// Типы финансовых транзакций
+enum TransactionType {
+  INCOME   // Доход
+  EXPENSE  // Расход
+}
+
+// Статусы транзакций
+enum TransactionStatus {
+  COMPLETED // Завершено
+  PENDING   // В ожидании
+  CANCELLED // Отменено
+}
+
+// Категории финансовых транзакций
+model FinanceCategory {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  type         TransactionType // INCOME или EXPENSE
+  description  String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Связи
+  transactions Transaction[]
+  
+  @@map("finance_categories")
+}
+
+// Финансовые транзакции
+model Transaction {
+  id          String            @id @default(cuid())
+  type        TransactionType
+  categoryId  String
+  category    FinanceCategory   @relation(fields: [categoryId], references: [id])
+  description String
+  amount      Float
+  status      TransactionStatus @default(COMPLETED)
+  date        DateTime          @default(now())
+  
+  // Связь с заказом (если транзакция связана с продажей)
+  orderId     String?
+  order       Order?            @relation(fields: [orderId], references: [id])
+  
+  // Дополнительные поля
+  reference   String?           // Номер документа, ссылка и т.д.
+  notes       String?           // Дополнительные заметки
+  
+  // Кто создал транзакцию
+  createdBy   String?
+  createdUser User?             @relation(fields: [createdBy], references: [id])
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@index([type])
+  @@index([categoryId])
+  @@index([date])
+  @@index([status])
+  @@map("transactions")
+}
+
+// Финансовые периоды (для отчетности)
+model FinancePeriod {
+  id        String   @id @default(cuid())
+  name      String   // Например: "Январь 2024", "Q1 2024"
+  startDate DateTime
+  endDate   DateTime
+  isClosed  Boolean  @default(false)
+  
+  // Итоговые показатели за период
+  totalRevenue Float @default(0)
+  totalExpenses Float @default(0)
+  netProfit    Float @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([startDate, endDate])
+  @@map("finance_periods")
+}
+
+// === СИСТЕМА ПОДДЕРЖКИ И ТИКЕТОВ ===
+
+// Типы тикетов
+enum TicketType {
+  BUG         // Ошибка/баг
+  FEATURE     // Предложение/новая функция
+  SUPPORT     // Техническая поддержка
+  COMPLAINT   // Жалоба
+  QUESTION    // Вопрос
+}
+
+// Приоритеты тикетов
+enum TicketPriority {
+  LOW         // Низкий
+  MEDIUM      // Средний
+  HIGH        // Высокий
+  CRITICAL    // Критический
+}
+
+// Статусы тикетов
+enum TicketStatus {
+  OPEN        // Открыт
+  IN_PROGRESS // В работе
+  PENDING     // Ожидает ответа
+  RESOLVED    // Решен
+  CLOSED      // Закрыт
+  REOPENED    // Переоткрыт
+}
+
+// Области продукта
+enum ProductArea {
+  FRONTEND      // Фронтенд
+  BACKEND       // Бэкенд
+  ADMIN_PANEL   // Админ-панель
+  DATABASE      // База данных
+  API           // API
+  MOBILE        // Мобильное приложение
+  PAYMENT       // Платежная система
+  INVENTORY     // Управление товарами
+  USERS         // Управление пользователями
+  ORDERS        // Управление заказами
+  ANALYTICS     // Аналитика
+  SECURITY      // Безопасность
+  PERFORMANCE   // Производительность
+  UI_UX         // UI/UX дизайн
+  OTHER         // Другое
+}
+
+// Тикеты поддержки
+model SupportTicket {
+  id              String        @id @default(cuid())
+  ticketNumber    String        @unique @default(cuid()) // Уникальный номер тикета
+  title           String
+  description     String
+  type            TicketType
+  priority        TicketPriority @default(MEDIUM)
+  status          TicketStatus   @default(OPEN)
+  productArea     ProductArea
+  tags            String[]       @default([])
+  estimatedHours  Float?
+  actualHours     Float?
+  dueDate         DateTime?
+  resolvedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Создатель тикета
+  createdById     String
+  createdBy       User           @relation("TicketsCreated", fields: [createdById], references: [id])
+  
+  // Назначенный исполнитель
+  assignedToId    String?
+  assignedTo      User?          @relation("TicketsAssigned", fields: [assignedToId], references: [id])
+  
+  // Связи
+  messages        TicketMessage[]
+  attachments     TicketAttachment[]
+  history         TicketHistory[]
+  notifications   Notification[]
+  emailLogs       EmailLog[]
+  
+  @@index([status])
+  @@index([priority])
+  @@index([type])
+  @@index([createdById])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
+// Сообщения в тикетах
+model TicketMessage {
+  id          String    @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  content     String
+  isInternal  Boolean   @default(false) // Внутренний комментарий (видят только сотрудники)
+  
+  // Автор сообщения
+  authorId    String
+  author      User      @relation("TicketMessagesAuthored", fields: [authorId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Связи
+  attachments TicketMessageAttachment[]
+  
+  @@index([ticketId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("ticket_messages")
+}
+
+// Вложения тикетов
+model TicketAttachment {
+  id          String        @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  fileName    String
+  originalName String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  
+  // Кто загрузил
+  uploadedById String
+  uploadedBy   User         @relation("TicketAttachmentsUploaded", fields: [uploadedById], references: [id])
+  
+  createdAt   DateTime     @default(now())
+  
+  @@index([ticketId])
+  @@index([uploadedById])
+  @@map("ticket_attachments")
+}
+
+// Вложения сообщений
+model TicketMessageAttachment {
+  id          String        @id @default(cuid())
+  messageId   String
+  message     TicketMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  fileName    String
+  originalName String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  
+  createdAt   DateTime      @default(now())
+  
+  @@index([messageId])
+  @@map("ticket_message_attachments")
+}
+
+// История изменений тикетов
+model TicketHistory {
+  id          String        @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  action      String        // Тип действия (STATUS_CHANGED, PRIORITY_CHANGED, ASSIGNED, etc.)
+  oldValue    String?
+  newValue    String?
+  description String?
+  
+  // Кто выполнил действие
+  performedById String
+  performedBy   User         @relation("TicketHistoryPerformed", fields: [performedById], references: [id])
+  
+  createdAt   DateTime      @default(now())
+  
+  @@index([ticketId])
+  @@index([performedById])
+  @@index([createdAt])
+  @@map("ticket_history")
+}
+
+// Уведомления
+model Notification {
+  id        String   @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  ticketId  String?
+  userId    String
+  metadata  Json     @default("{}")
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([ticketId])
+  @@map("notifications")
+}
+
+// Логи отправки email
+model EmailLog {
+  id        String      @id @default(cuid())
+  to        String
+  subject   String
+  ticketId  String?
+  userId    String?
+  status    EmailStatus @default(PENDING)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime    @default(now())
+
+  ticket SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  user   User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([status])
+  @@map("email_logs")
+}
+
+// Типы уведомлений
+enum NotificationType {
+  TICKET_CREATED
+  TICKET_UPDATED
+  MESSAGE_ADDED
+  TICKET_ASSIGNED
+  TICKET_CLOSED
+  TICKET_REOPENED
+  ATTACHMENT_ADDED
+}
+
+// Статусы email
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
 }

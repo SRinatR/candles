@@ -1,25 +1,25 @@
 
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import type { Locale } from "@/lib/i1n-config";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { useSession } from "next-auth/react"; 
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext"; 
-import { Edit3, Camera, Calendar, MapPin, Mail, Phone, User as UserIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import type { Locale } from '@/lib/i1n-config';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User, Mail, Phone, Calendar, Shield, Bell, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
+import { UserProfileForm } from "@/components/forms/UserProfileForm";
 
 import enMessages from '@/dictionaries/en.json';
 import ruMessages from '@/dictionaries/ru.json';
@@ -33,354 +33,139 @@ const dictionaries: Record<Locale, Dictionary> = {
   uz: uzMessages,
 };
 
-const getProfilePageDictionary = (locale: Locale) => {
-  const dict = dictionaries[locale] || dictionaries.en;
-  return dict.accountProfilePage;
+const getDictionary = (locale: Locale) => {
+  return dictionaries[locale] || dictionaries.en;
 };
 
-// Enhanced profile schema
-const profileSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }), 
-  email: z.string().email({ message: "Invalid email address." }),
-  phone: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  gender: z.string().optional(),
-  bio: z.string().max(500, { message: "Bio must be less than 500 characters." }).optional(),
-  website: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal("")),
-  location: z.string().optional(),
-  preferredLanguage: z.string().optional(),
-  newsletter: z.boolean().default(false),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
-
 export default function ProfilePage() {
-  const { toast } = useToast();
+  const router = useRouter();
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
-  const dictionary = getProfilePageDictionary(locale);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useSimulatedAuth();
-
-  const form = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: { 
-      name: "", 
-      email: "", 
-      phone: "",
-      dateOfBirth: "",
-      gender: "",
-      bio: "",
-      website: "",
-      location: "",
-      preferredLanguage: locale,
-      newsletter: false
-    },
-    mode: "onChange"
-  });
-
-  useEffect(() => {
-    let name = "";
-    let email = "";
-
-    if (nextAuthSession?.user) {
-      name = nextAuthSession.user.name || "";
-      email = nextAuthSession.user.email || "";
-    } else if (simulatedUser) {
-      name = simulatedUser.name || "";
-      email = simulatedUser.email || "";
-    }
-    
-    form.reset({ 
-      name, 
-      email, 
-      phone: simulatedUser?.phone || "",
-      dateOfBirth: "",
-      gender: "",
-      bio: "",
-      website: "",
-      location: "",
-      preferredLanguage: locale,
-      newsletter: false
-    });
-  }, [nextAuthSession, simulatedUser, form, locale]);
-
-  const onSubmit = async (data: any) => {
-    console.log("Profile data to update:", data);
-    setIsEditing(false);
-    toast({
-      title: dictionary.updateProfileTitle,
-      description: dictionary.updateProfileDesc,
-    });
-  };
+  const locale = (params?.locale as Locale) || 'uz';
   
-  if (nextAuthStatus === "loading" || isLoadingSimulatedAuth) {
-    return <div className="flex justify-center items-center p-10"><p>{dictionary.loadingProfile}</p></div>;
+  const { data: nextAuthSession, status: nextAuthStatus } = useSession();
+  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useAuth();
+  
+  const [dict, setDict] = useState<Dictionary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const isAuthenticated = !!nextAuthSession || !!simulatedUser;
+  const isLoadingAuth = nextAuthStatus === "loading" || isLoadingSimulatedAuth;
+  
+  useEffect(() => {
+    const dictionary = getDictionary(locale);
+    setDict(dictionary);
+  }, [locale]);
+  
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) {
+      router.replace(`/${locale}/login`);
+    } else if (isAuthenticated) {
+      setIsLoading(false);
+    }
+  }, [isLoadingAuth, isAuthenticated, router, locale]);
+  
+  if (isLoadingAuth || isLoading || !dict) {
+    return <div className="flex justify-center items-center min-h-[300px]"><p>Loading...</p></div>;
   }
-
-  if (nextAuthStatus === "unauthenticated" && !simulatedUser) {
-    return <div className="flex justify-center items-center p-10"><p>{dictionary.pleaseLogin}</p></div>;
+  
+  if (!isAuthenticated) {
+    return null;
   }
-
-  const user = nextAuthSession?.user || simulatedUser;
-  const userName = user?.name || user?.email || "Guest";
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  
+  // Mock user data for demonstration
+  const user = {
+    id: simulatedUser?.id || nextAuthSession?.user?.id || '1',
+    firstName: simulatedUser?.firstName || nextAuthSession?.user?.firstName || 'User',
+    lastName: simulatedUser?.lastName || nextAuthSession?.user?.lastName || '',
+    middleName: simulatedUser?.middleName || nextAuthSession?.user?.middleName || '',
+    email: simulatedUser?.email || nextAuthSession?.user?.email || 'user@example.com',
+    phone: simulatedUser?.phone || null,
+    image: simulatedUser?.image || nextAuthSession?.user?.image || null,
+    emailVerified: simulatedUser?.isConfirmed || !!nextAuthSession?.user?.emailVerified,
+    createdAt: simulatedUser?.createdAt || new Date(),
+    role: 'USER',
+    newsletter: simulatedUser?.newsletter || false
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Profile</h1>
-          <p className="text-gray-600">Manage your account information</p>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Profile Settings
+        </h1>
+        <p className="text-gray-600">
+          Update your personal information and preferences
+        </p>
+      </div>
 
-        {/* Profile Header */}
-        <Card className="border border-gray-200">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.image || ''} alt={userName} />
-                  <AvatarFallback className="text-lg font-medium bg-gray-100 text-gray-700">{userInitials}</AvatarFallback>
-                </Avatar>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full p-0 bg-white border border-gray-200 hover:bg-gray-50"
-                  onClick={() => toast({ title: "Feature Coming Soon", description: "Profile picture upload will be available soon." })}
-                >
-                  <Camera className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              <div className="flex-1">
-                <h2 className="text-xl font-medium text-gray-900">{userName}</h2>
-                <p className="text-gray-600 text-sm">{user?.email}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="secondary" className="text-xs">Member</Badge>
-                  <Badge variant="outline" className="text-xs text-green-700 border-green-200">Verified</Badge>
-                </div>
-              </div>
-              
-              <Button
-                variant={isEditing ? "outline" : "default"}
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Edit3 className="mr-2 h-4 w-4" />
-                {isEditing ? "Cancel" : "Edit"}
-              </Button>
-            </div>
+      <div className="max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>
+              Keep your profile information up to date
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UserProfileForm
+              initialData={{
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                middleName: user.middleName || '',
+                phone: user.phone || '',
+                dateOfBirth: user.dateOfBirth?.toISOString() || '',
+                gender: user.gender || undefined,
+                language: user.language,
+                newsletter: user.newsletter
+              }}
+              onSuccess={() => {
+                // Optionally redirect or show success message
+                window.location.reload();
+              }}
+            />
           </CardContent>
         </Card>
 
-        {/* Profile Form */}
-        <Card className="border border-gray-200">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-lg font-medium text-gray-900">{dictionary.profileInfoTitle}</CardTitle>
-            <CardDescription className="text-sm text-gray-600">{dictionary.profileInfoDesc}</CardDescription>
-          </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6">
-              {/* Basic Information */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-4">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField 
-                    control={form.control} 
-                    name="name" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.fullNameLabel}</FormLabel>
-                        <FormControl>
-                          <Input {...field} disabled={!isEditing} className="mt-1" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField 
-                    control={form.control} 
-                    name="email" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.emailAddressLabel}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="email" 
-                            {...field} 
-                            disabled={!!nextAuthSession?.user?.email || !!simulatedUser?.email || !isEditing}
-                            className="mt-1" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        {(nextAuthSession?.user?.email || simulatedUser?.email) && (
-                          <FormDescription className="text-xs text-gray-500">
-                            {nextAuthSession?.user?.email ? dictionary.emailManagedByProvider : dictionary.emailForLogin}
-                          </FormDescription>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField 
-                    control={form.control} 
-                    name="phone" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.phoneLabel}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="tel" 
-                            {...field} 
-                            placeholder={dictionary.phonePlaceholder}
-                            disabled={!isEditing}
-                            className="mt-1"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField 
-                    control={form.control} 
-                    name="location" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">Location</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="City, Country"
-                            disabled={!isEditing}
-                            className="mt-1"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-               
-               {/* Additional Information */}
-               <div>
-                 <h3 className="text-sm font-medium text-gray-900 mb-4">Additional Information</h3>
-                <div className="space-y-4">
-                  <FormField 
-                    control={form.control} 
-                    name="bio" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">Bio</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field} 
-                            placeholder="Tell us about yourself..."
-                            className="min-h-[80px] mt-1 resize-none"
-                            disabled={!isEditing}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs text-gray-500">
-                          {field.value?.length || 0}/500 characters
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField 
-                      control={form.control} 
-                      name="website" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium">Website</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="https://yourwebsite.com"
-                              disabled={!isEditing}
-                              className="mt-1"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField 
-                      control={form.control} 
-                      name="preferredLanguage" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium">Preferred Language</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isEditing}>
-                            <FormControl>
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="en">English</SelectItem>
-                              <SelectItem value="ru">Русский</SelectItem>
-                              <SelectItem value="uz">O'zbek</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            
-            {isEditing && (
-              <CardFooter className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm">
-                  Save Changes
-                </Button>
-              </CardFooter>
-            )}
-          </form>
-        </Form>
-      </Card>
-      
-        {/* Account Statistics */}
-        <Card className="border border-gray-200">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-medium text-gray-900">Account Overview</CardTitle>
+        {/* Account Status */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Account Status</CardTitle>
+            <CardDescription>
+              Your account verification and security status
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-slate-50/70 border border-slate-200 rounded-lg">
-                <div className="text-2xl font-semibold text-slate-700 mb-1">12</div>
-                <div className="text-xs text-slate-500">Orders</div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Email Verification</h4>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                </div>
+                <div>
+                  {user.emailVerified ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Pending
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-center p-4 bg-zinc-50/70 border border-zinc-200 rounded-lg">
-                <div className="text-2xl font-semibold text-zinc-700 mb-1">8</div>
-                <div className="text-xs text-zinc-500">Wishlist</div>
-              </div>
-              <div className="text-center p-4 bg-stone-50/70 border border-stone-200 rounded-lg">
-                <div className="text-2xl font-semibold text-stone-700 mb-1">1,250</div>
-                <div className="text-xs text-stone-500">Points</div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Member Since</h4>
+                  <p className="text-sm text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Active
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>

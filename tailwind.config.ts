@@ -16,7 +16,7 @@ const config: Config = {
   // Оставляем только минимальную конфигурацию здесь
   theme: {
     extend: {
-      // Шрифты (Geist Sans из вашего проекта)
+      // Шрифты (Geist Sans из проекта)
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'Arial', 'Helvetica', 'sans-serif'],
       },

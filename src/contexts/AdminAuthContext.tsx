@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AdminUser, AdminRole } from '@/lib/types';
+import { AdminUser, UserRole } from '@/lib/types';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -31,7 +31,7 @@ interface AdminAuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isManager: boolean;
-  role: AdminRole | null;
+  role: UserRole | null;
   predefinedUsers: Record<string, AdminUser>;
   dynamicallyAddedManagers: AdminUser[];
   addManager: (name: string, email: string, pass: string) => Promise<boolean>;
@@ -51,7 +51,8 @@ const initialPredefinedUsers: Record<string, AdminUser> = {
   'admin@askimcandles.com': {
     id: 'admin001',
     email: 'admin@askimcandles.com',
-    name: 'Store Administrator',
+    firstName: 'Store',
+    lastName: 'Administrator',
     role: 'ADMIN',
     password: 'adminpass', 
     isPredefined: true,
@@ -60,7 +61,8 @@ const initialPredefinedUsers: Record<string, AdminUser> = {
   'manager@askimcandles.com': {
     id: 'manager001',
     email: 'manager@askimcandles.com',
-    name: 'Store Manager',
+    firstName: 'Store',
+    lastName: 'Manager',
     role: 'MANAGER',
     password: 'managerpass', 
     isPredefined: true,
@@ -189,7 +191,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         logAdminAction(predefinedUser.email, loginStrings.loginSuccessTitle || "Admin Login Successful");
         toast({
           title: loginStrings.loginSuccessTitle || "Admin Login Successful",
-          description: (loginStrings.loginWelcomeMessage || "Welcome, {name}!").replace('{name}', predefinedUser.name || 'Admin')
+          description: (loginStrings.loginWelcomeMessage || "Welcome, {name}!").replace('{name}', `${predefinedUser.firstName} ${predefinedUser.lastName}`.trim() || 'Admin')
         });
         router.push('/admin/dashboard');
         setIsLoading(false);

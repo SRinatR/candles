@@ -126,7 +126,7 @@ export default function CartPage() {
                       (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 
                         ? item.mainImage 
                         : (item.images && item.images.length > 0 && item.images[0]) 
-                          ? item.images[0]
+                          ? (typeof item.images[0] === 'string' ? item.images[0] : item.images[0].url)
                           : "https://placehold.co/100x100.png?text=No+Image"
                     }
                     alt={itemName} 

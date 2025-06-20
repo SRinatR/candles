@@ -3,12 +3,67 @@
 ## Date: 2025-01-27 (Current Update)
 
 ## 1. Current Focus
+*   **✅ NextAuth Унификация Завершена (2025-01-27):** Полностью унифицирована система аутентификации в админ-панели через NextAuth.js:
+    *   **✅ База данных обновлена:** Исправлен `seed.ts`, выполнен сброс и пересоздание БД с админ-пользователями
+    *   **✅ Тестовые аккаунты созданы:** admin@askimcandles.com (adminpass) и manager@askimcandles.com (manager123)
+    *   **✅ Новая страница входа:** `/admin/auth/signin` использует NextAuth с проверкой ролей ADMIN/MANAGER
+    *   **✅ Middleware обновлен:** Добавлена защита админ-маршрутов с автоматическим перенаправлением
+    *   **✅ Admin layout переписан:** Теперь использует useSession вместо AdminAuthContext
+    *   **✅ Новые компоненты:** AdminHeader.tsx и AdminSidebar.tsx с проверкой ролей
+    *   **✅ Безопасность улучшена:** Серверная аутентификация вместо localStorage
+    *   **✅ Единообразие достигнуто:** Одна система аутентификации для всего приложения
+*   **✅ Sales Report API & UI Enhancements:** 
+    *   Fixed a build error in `src/app/api/admin/reports/sales/route.ts` caused by an incorrect default import of `prisma` from `src/lib/prisma.ts`. Changed to a named import (`import { prisma } from '@/lib/prisma';`). Ensured comments were correctly placed to avoid build issues.
+    *   **✅ Enterprise-Level Reports & Analytics Dashboard:** Completely redesigned the `/admin/reports` page with corporate-grade features:
+        *   **Professional KPI Cards:** Added color-coded metric cards with icons for Total Revenue, Total Orders, and Average Order Value
+        *   **Advanced Data Export:** Implemented CSV, Excel, and PDF export functionality with proper file naming
+        *   **Comprehensive Filtering:** Added search by Order ID/Customer, status filtering, and date range filtering
+        *   **Responsive Data Table:** Enhanced table with horizontal scrolling, hover effects, and status badges
+        *   **Real-time Data Refresh:** Added refresh button with loading animation
+        *   **Professional Typography:** Improved text hierarchy and spacing for enterprise appearance
+        *   **Empty State Handling:** Added proper empty state with clear call-to-action
+        *   **✅ Text Overflow Prevention:** Fixed text overflow issues throughout the Reports & Analytics section:
+            *   Added `truncate` class to KPI card values to prevent currency overflow
+            *   Applied `max-w-` constraints with `truncate` to all table cells
+            *   Added `title` attributes for full text display on hover
+            *   Implemented `break-words` for report descriptions
+            *   Added `min-w-0` and `flex-shrink-0` to filter controls for proper responsive behavior
+            *   Enhanced table responsiveness with proper column width constraints
+*   **✅ Admin Categories Page Dictionary Loading Fixed:** Resolved critical issue where categories page showed only skeleton animation instead of actual content.
+    *   **✅ Dictionary path corrected:** Fixed incorrect dictionary access from `fullDict.categories` to `fullDict.adminManageCategoriesPage`.
+    *   **✅ Categories now loading properly:** Admin categories management page now displays categories correctly with full functionality.
+    *   **✅ API connectivity confirmed:** Categories API endpoint working properly (GET /api/categories 200 in 189ms).
+    *   **✅ Console errors eliminated:** Resolved "noDictionary: true" debug logs and unreachable code warnings.
+*   **✅ Admin Category Drafts Page Dictionary Loading Fixed:** Resolved similar dictionary loading issue in drafts page.
+    *   **✅ AlertStrings configuration corrected:** Fixed incorrect access from `dict.alerts` to proper `dict.common` structure.
+    *   **✅ Drafts page now functional:** Category drafts management page now loads properly with all alert dialogs working.
+    *   **✅ Consistent pattern applied:** Used same alertStrings structure as main categories page for consistency.
+*   **✅ Created dedicated product drafts page**
+    *   **✅ Built comprehensive product drafts management interface** at `/admin/products/drafts`
+    *   **✅ Implemented advanced filtering** by status, search, and category
+    *   **✅ Added bulk operations** (publish, delete) with confirmation dialogs
+    *   **✅ Created detailed edit dialog** with tabbed interface for product properties
+    *   **✅ Integrated status management** (draft, pending_review, needs_changes)
+    *   **✅ Added navigation link** from main products page
+    *   **✅ Responsive design** with modern UI components
+*   **✅ Turbopack Font Module Error Fixed:** Resolved critical build error with next/font/google and Turbopack compatibility.
+    *   **✅ Geist fonts temporarily disabled:** Commented out Geist and Geist_Mono imports due to Turbopack module resolution issues.
+    *   **✅ System fonts implemented:** Replaced font variables with modern system font stack for better compatibility.
+    *   **✅ Build errors eliminated:** Module not found errors for '@vercel/turbopack-next/internal/font/google/font' resolved.
+    *   **✅ Application fully functional:** Server running successfully with database connectivity and all features working.
 *   **✅ TypeScript Errors Resolution Completed:** Fixed all remaining TypeScript compilation errors in admin panel and user profile.
     *   Added missing dictionary properties to English admin materials dictionary.
     *   Fixed Zod schema type assignment error in products edit page.
     *   **✅ Fixed user profile form TypeScript errors:** Resolved newsletter field type mismatch and SubmitHandler typing issues.
+    *   **✅ Fixed Image src TypeScript errors:** Resolved all Next.js Image component src prop type errors across 4 files by properly extracting url property from image objects.
+    *   **✅ Fixed HTML hydration error:** Resolved nested html/body tags issue by removing html/body from locale layout and keeping only in root layout.
+    *   **✅ Fixed API Internal Server Errors:** Added missing NextRequest/NextResponse imports to API routes and implemented PATCH method for category status updates.
+    *   **✅ Resolved database connectivity issues:** Created .env file with proper database configuration and fixed Docker database connectivity.
+    *   **✅ Fixed category status toggle errors:** Resolved "Failed to update category status" console error by fixing stale state closure issue in localStorage update - now uses fresh state from setAllCategories callback.
+    *   **✅ Fixed API 500 Internal Server Error:** Added missing PrismaClient import to prisma.ts file, resolving server-side database connection issues in category PATCH endpoints.
     *   Verified successful build completion with no TypeScript errors.
     *   All admin panel and user profile functionality now properly typed and functional.
+    *   Database properly configured with Docker environment and all console errors resolved.
 *   **✅ Полное изучение проекта завершено:** Проведен комплексный анализ всей архитектуры Askim Candles.
     *   Изучена полная структура проекта и все компоненты Memory Bank системы.
     *   Проанализированы технические решения и текущее состояние кодовой базы.
@@ -27,6 +82,17 @@
     *   All TypeScript compilation errors resolved - clean build achieved.
 
 ## 2. Recent Changes (Leading to this state)
+*   **✅ NextAuth Унификация Завершена (2025-01-27):** Полная замена AdminAuthContext на NextAuth.js:
+    *   **Обновлена база данных:** Исправлен seed.ts, выполнен сброс БД, созданы тестовые админ-аккаунты
+    *   **Создана новая страница входа:** `/admin/auth/signin` с NextAuth интеграцией и проверкой ролей
+    *   **Переписан middleware:** Добавлена защита админ-маршрутов с автоматическим перенаправлением
+    *   **Обновлен admin layout:** Заменен AdminAuthContext на useSession из NextAuth
+    *   **Созданы новые компоненты:** AdminHeader.tsx и AdminSidebar.tsx с интеграцией NextAuth
+    *   **Улучшена безопасность:** Серверная аутентификация вместо localStorage
+    *   **Достигнуто единообразие:** Одна система аутентификации для всего приложения
+*   **✅ Sales Report API & UI Enhancements:** 
+    *   Corrected the import statement for `prisma` in `src/app/api/admin/reports/sales/route.ts` to a named import and ensured comments were correctly placed, resolving a persistent build error.
+    *   Enhanced the `/admin/reports` page by adding a table display for order details within the sales report, utilizing ShadCN UI components for a cleaner presentation.
 *   **✅ React 19.1.0 migration complete**
 *   **✅ Tailwind CSS 4.x compatibility FULLY FIXED (2025-01-27)**
     *   **✅ PostCSS configuration updated:** Fixed postcss.config.mjs for Tailwind 4.x syntax
@@ -80,7 +146,7 @@
 *   Improve the empty cart page (e.g., more engaging message, popular product suggestions).
 
 **Admin Panel Enhancements:**
-*   Implement basic order list UI for `/admin/sales` (using `mockOrders`).
+*   Implement basic order list UI for `/admin/sales` (using `mockOrders`). (Note: Sales report on `/admin/reports` now shows order details in a table).
 *   Add basic data visualization to Dashboard (simple charts for sales, top products using `shadcn/ui` charts with mock data).
 *   Implement pagination for admin lists (products, logs - client-side initially).
 
