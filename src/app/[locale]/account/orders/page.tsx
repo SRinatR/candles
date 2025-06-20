@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { Package, Search, Filter, Calendar, MapPin, CreditCard, Truck, CheckCircle, Clock, XCircle, Eye, Download, RefreshCw } from "lucide-react";
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -133,7 +133,7 @@ export default function OrdersPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useSimulatedAuth();
+  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useUnifiedAuth();
 
   const filteredAndSortedOrders = useMemo(() => {
     let filtered = mockOrders.filter(order => {

@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { BarChart, DollarSign, Package, ShoppingCart, Users, CreditCard, TrendingUp, TrendingDown, Repeat, Gift, BarChartBig, History, ListChecks } from "lucide-react"; // Added TrendingDown
 import { useEffect, useState } from "react";
 import type { AdminLocale } from "@/admin/lib/i18n-config-admin";
@@ -42,7 +42,7 @@ function StatCard({ title, value, description, icon: Icon, trend = 'neutral' }: 
 }
 
 export default function AdminDashboardPage() {
-  const { currentAdminUser } = useAdminAuth();
+  const { currentUser: currentAdminUser } = useUnifiedAuth();
   const [dict, setDict] = useState<AdminDashboardDictionary | null>(null);
   const [recentLogs, setRecentLogs] = useState<AdminLogEntry[]>([]);
 
@@ -53,15 +53,32 @@ export default function AdminDashboardPage() {
       const fullDict = await getAdminDictionary(localeToLoad);
       setDict(fullDict.adminDashboardPage);
     }
+    
+    async function loadRecentLogs() {
+      try {
+        const logsData = await getAdminLogs({ limit: 5 });
+        setRecentLogs(logsData.logs || []);
+      } catch (error) {
+        console.error('Failed to load recent logs:', error);
+        setRecentLogs([]);
+      }
+    }
+    
     loadDictionary();
-    setRecentLogs(getAdminLogs().slice(0, 5)); 
+    loadRecentLogs();
   }, []); 
 
   // Effect to refresh recent logs if logs might change due to actions on other pages
   useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
+    const handleStorageChange = async (event: StorageEvent) => {
       if (event.key === 'askimAdminLogs') {
-        setRecentLogs(getAdminLogs().slice(0, 5));
+        try {
+          const logsData = await getAdminLogs({ limit: 5 });
+          setRecentLogs(logsData.logs || []);
+        } catch (error) {
+          console.error('Failed to refresh recent logs:', error);
+          setRecentLogs([]);
+        }
       }
     };
     window.addEventListener('storage', handleStorageChange);

@@ -4,7 +4,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { AdminAuthProvider, useAdminAuth } from '@/contexts/AdminAuthContext';
+import { SessionProvider } from 'next-auth/react';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetTrigger } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -71,7 +72,7 @@ const navItems: NavItem[] = [
 
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const { currentAdminUser, logout, isLoading: isLoadingAuth, isAdmin, isManager } = useAdminAuth();
+  const { currentUser: currentAdminUser, logout, isLoading: isLoadingAuth, isAdmin, isManager } = useUnifiedAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -473,9 +474,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AdminAuthProvider>
+    <SessionProvider>
       <AdminLayoutContent>{children}</AdminLayoutContent>
-    </AdminAuthProvider>
+    </SessionProvider>
   );
 }
 

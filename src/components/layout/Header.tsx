@@ -6,7 +6,7 @@ import { Logo } from '@/components/icons/Logo';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import React, { useState, useEffect } from 'react';
@@ -44,7 +44,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
   const pathname = usePathname();
   const { cartCount } = useCart();
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { currentUser: simulatedUser, logout: simulatedLogout, isLoading: isLoadingSimulatedAuth } = useSimulatedAuth();
+  const { currentUser: simulatedUser, logout: simulatedLogout, isLoading: isLoadingSimulatedAuth } = useUnifiedAuth();
   
   const isAuthenticated = !!nextAuthSession || !!simulatedUser;
   const isLoadingAuth = nextAuthStatus === "loading" || isLoadingSimulatedAuth;

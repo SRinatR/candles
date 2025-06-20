@@ -4,8 +4,8 @@ import { z } from 'zod';
 
 // Схема валидации для создания/обновления материала
 const materialSchema = z.object({
-  name: z.string().min(1, 'Название материала обязательно'),
-  isActive: z.boolean().default(true)
+  name: z.record(z.string(), z.string().min(1, 'Название обязательно')),
+  slug: z.string().min(1, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Slug может содержать только строчные буквы, цифры и дефисы')
 });
 
 // GET /api/materials - Получить все материалы
@@ -23,15 +23,12 @@ export async function GET(request: NextRequest) {
     // Построение фильтров
     const where: any = {};
     
-    if (isActive !== null) {
-      where.isActive = isActive === 'true';
-    }
-    
     if (search) {
-      where.name = {
-        contains: search,
-        mode: 'insensitive'
-      };
+      where.OR = [
+        { name: { path: ['uz'], string_contains: search } },
+        { name: { path: ['ru'], string_contains: search } },
+        { name: { path: ['en'], string_contains: search } }
+      ];
     }
     
     // Получение материалов с пагинацией
@@ -42,24 +39,19 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           products: includeProducts ? {
-            where: { isActive: true },
             select: {
               id: true,
               sku: true,
-              price: true,
-              stock: true,
-              isActive: true
+              price: true
             }
           } : false,
           _count: {
             select: {
-              products: {
-                where: { isActive: true }
-              }
+              products: true
             }
           }
         },
-        orderBy: { name: 'asc' }
+        orderBy: { slug: 'asc' }
       }),
       prisma.material.count({ where })
     ]);
@@ -68,7 +60,7 @@ export async function GET(request: NextRequest) {
     const formattedMaterials = materials.map(material => ({
       id: material.id,
       name: material.name,
-      isActive: material.isActive,
+      slug: material.slug,
       productsCount: material._count.products,
       products: includeProducts ? material.products : undefined,
       createdAt: material.createdAt,
@@ -100,14 +92,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = materialSchema.parse(body);
     
-    // Проверка уникальности названия
+    // Проверка уникальности slug
     const existingMaterial = await prisma.material.findUnique({
-      where: { name: validatedData.name }
+      where: { slug: validatedData.slug }
     });
     
     if (existingMaterial) {
       return NextResponse.json(
-        { error: 'Материал с таким названием уже существует' },
+        { error: 'Материал с таким slug уже существует' },
         { status: 400 }
       );
     }
@@ -118,9 +110,7 @@ export async function POST(request: NextRequest) {
       include: {
         _count: {
           select: {
-            products: {
-              where: { isActive: true }
-            }
+            products: true
           }
         }
       }

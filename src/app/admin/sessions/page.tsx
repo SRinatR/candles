@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { LogOut, ShieldAlert, Info, Clock, Laptop, Globe } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from 'react';
@@ -35,7 +35,7 @@ const fallbackDict: AdminSessionsPageDict = {
 
 
 export default function AdminSessionsPage() {
-  const { currentAdminUser, logout, isAdmin, isLoading, sessionStartTime, sessionUserAgent } = useAdminAuth();
+  const { currentUser: currentAdminUser, logout, isAdmin, isLoading, sessionStartTime, sessionUserAgent } = useUnifiedAuth();
   const router = useRouter();
   const [dict, setDict] = useState<AdminSessionsPageDict>(fallbackDict);
   const [isClient, setIsClient] = useState(false);

@@ -5,33 +5,16 @@ import { z } from 'zod';
 // Схема валидации для создания/обновления продукта
 const productSchema = z.object({
   sku: z.string().min(1, 'SKU обязателен'),
+  name: z.record(z.string(), z.string().min(1, 'Название обязательно')),
+  description: z.record(z.string(), z.string().min(1, 'Описание обязательно')),
   price: z.number().positive('Цена должна быть положительной'),
   costPrice: z.number().positive().optional(),
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
-  stock: z.number().int().min(0, 'Количество не может быть отрицательным'),
-  isActive: z.boolean().default(true),
-  isDraft: z.boolean().default(false),
   categoryId: z.string().min(1, 'Категория обязательна'),
   materialId: z.string().optional(),
   scentId: z.string().optional(),
-  translations: z.array(z.object({
-    locale: z.enum(['en', 'ru', 'uz']),
-    name: z.string().min(1, 'Название обязательно'),
-    description: z.string().min(1, 'Описание обязательно')
-  })).min(1, 'Необходим хотя бы один перевод'),
-  images: z.array(z.union([
-    z.string().min(1, 'URL изображения не может быть пустым'),
-    z.object({
-      url: z.string().min(1, 'URL изображения не может быть пустым'),
-      isMain: z.boolean().default(false),
-      order: z.number().int().min(0).default(0)
-    })
-  ])).optional(),
-  attributes: z.array(z.object({
-    key: z.string().min(1),
-    value: z.string().min(1)
-  })).optional()
+  images: z.array(z.string().min(1, 'URL изображения не может быть пустым')).optional()
 });
 
 // GET /api/products - Получить все продукты с фильтрацией
@@ -62,14 +45,14 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { sku: { contains: search, mode: 'insensitive' } },
         {
-          translations: {
-            some: {
-              OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } }
-              ]
-            }
-          }
+          OR: [
+            { name: { path: ['uz'], string_contains: search } },
+            { name: { path: ['ru'], string_contains: search } },
+            { name: { path: ['en'], string_contains: search } },
+            { description: { path: ['uz'], string_contains: search } },
+            { description: { path: ['ru'], string_contains: search } },
+            { description: { path: ['en'], string_contains: search } }
+          ]
         }
       ];
     }
@@ -83,14 +66,7 @@ export async function GET(request: NextRequest) {
         include: {
           category: true,
           material: true,
-          scent: true,
-          translations: includeTranslations ? true : {
-            where: { locale }
-          },
-          images: {
-            orderBy: { order: 'asc' }
-          },
-          attributes: true
+          scent: true
         },
         orderBy: { createdAt: 'desc' }
       }),
@@ -99,61 +75,56 @@ export async function GET(request: NextRequest) {
     
     // Форматирование ответа
     const formattedProducts = products.map(product => {
+      // Определяем главное изображение
+      const mainImage = product.images && product.images.length > 0 ? product.images[0] : null;
+      
       if (includeTranslations) {
-        // Для админ-панели: возвращаем все переводы в виде объекта
-        const nameTranslations: Record<string, string> = {};
-        const descriptionTranslations: Record<string, string> = {};
-        
-        product.translations.forEach(translation => {
-          nameTranslations[translation.locale] = translation.name;
-          descriptionTranslations[translation.locale] = translation.description;
-        });
-        
+        // Для админ-панели: возвращаем все переводы
         return {
           id: product.id,
           sku: product.sku,
-          name: nameTranslations,
-          description: descriptionTranslations,
+          name: product.name,
+          description: product.description,
           price: product.price,
           costPrice: product.costPrice,
-          category: product.category.name,
+          category: product.category?.name || null,
           categoryId: product.categoryId,
-          material: product.material?.name,
+          material: product.material?.name || null,
           materialId: product.materialId,
-          scent: product.scent?.name,
+          scent: product.scent?.name || null,
           scentId: product.scentId,
           dimensions: product.dimensions,
           burningTime: product.burningTime,
-          stock: product.stock,
-          isActive: product.isActive,
-          isDraft: product.isDraft,
-          images: product.images,
-          attributes: product.attributes,
+          images: product.images || [],
+          mainImage: mainImage,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt
         };
       } else {
         // Для фронтенда: возвращаем только перевод для текущей локали
+        const name = (product.name as any)?.[locale] || (product.name as any)?.['uz'] || '';
+        const description = (product.description as any)?.[locale] || (product.description as any)?.['uz'] || '';
+        const categoryName = (product.category?.name as any)?.[locale] || (product.category?.name as any)?.['uz'] || '';
+        const materialName = product.material ? ((product.material.name as any)?.[locale] || (product.material.name as any)?.['uz'] || '') : null;
+        const scentName = product.scent ? ((product.scent.name as any)?.[locale] || (product.scent.name as any)?.['uz'] || '') : null;
+        
         return {
           id: product.id,
           sku: product.sku,
-          name: product.translations[0]?.name || '',
-          description: product.translations[0]?.description || '',
+          name: name,
+          description: description,
           price: product.price,
           costPrice: product.costPrice,
-          category: product.category.name,
+          category: categoryName,
           categoryId: product.categoryId,
-          material: product.material?.name,
+          material: materialName,
           materialId: product.materialId,
-          scent: product.scent?.name,
+          scent: scentName,
           scentId: product.scentId,
           dimensions: product.dimensions,
           burningTime: product.burningTime,
-          stock: product.stock,
-          isActive: product.isActive,
-          isDraft: product.isDraft,
-          images: product.images,
-          attributes: product.attributes,
+          images: product.images || [],
+          mainImage: mainImage,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt
         };
@@ -227,50 +198,25 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Создание продукта с транзакцией
+    // Создание продукта
     const product = await prisma.product.create({
       data: {
         sku: validatedData.sku,
+        name: validatedData.name,
+        description: validatedData.description,
         price: validatedData.price,
         costPrice: validatedData.costPrice,
         dimensions: validatedData.dimensions,
         burningTime: validatedData.burningTime,
-        stock: validatedData.stock,
-        isActive: validatedData.isActive,
-        isDraft: validatedData.isDraft,
         categoryId: validatedData.categoryId,
         materialId: validatedData.materialId,
         scentId: validatedData.scentId,
-        translations: {
-          create: validatedData.translations
-        },
-        images: validatedData.images ? {
-          create: validatedData.images.map((img, index) => {
-            if (typeof img === 'string') {
-              return {
-                url: img,
-                isMain: false,
-                order: index
-              };
-            }
-            return {
-              url: img.url,
-              isMain: img.isMain || false,
-              order: img.order || index
-            };
-          })
-        } : undefined,
-        attributes: validatedData.attributes ? {
-          create: validatedData.attributes
-        } : undefined
+        images: validatedData.images || []
       },
       include: {
         category: true,
         material: true,
-        scent: true,
-        translations: true,
-        images: true,
-        attributes: true
+        scent: true
       }
     });
     

@@ -14,7 +14,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react"; 
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext"; 
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth"; 
 import { Edit3, Camera, Calendar, MapPin, Mail, Phone, User as UserIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -62,7 +62,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useSimulatedAuth();
+  const { currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useUnifiedAuth();
 
   const form = useForm({
     resolver: zodResolver(profileSchema),
@@ -143,7 +143,7 @@ export default function ProfilePage() {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.image || ''} alt={userName} />
+                  <AvatarImage src={user?.image && user.image.trim() !== '' ? user.image : undefined} alt={userName} />
                   <AvatarFallback className="text-lg font-medium bg-gray-100 text-gray-700">{userInitials}</AvatarFallback>
                 </Avatar>
                 <Button

@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import type { Locale } from '@/lib/i1n-config';
 import { mockOrders } from "@/lib/mock-data";
 import { useState, useEffect } from "react";
@@ -65,7 +65,7 @@ export default function DashboardPage() {
   const locale = params.locale as Locale || 'uz';
   
   const { data: nextAuthSession } = useSession();
-  const { currentUser: simulatedUser } = useSimulatedAuth();
+  const { currentUser: simulatedUser } = useUnifiedAuth();
   
   const [mounted, setMounted] = useState(false);
   
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={user?.image || ''} alt={userName} />
+            <AvatarImage src={user?.image && user.image.trim() !== '' ? user.image : undefined} alt={userName} />
             <AvatarFallback className="text-lg font-semibold">{userInitials}</AvatarFallback>
           </Avatar>
           <div>

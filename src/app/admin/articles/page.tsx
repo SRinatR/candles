@@ -14,7 +14,7 @@ import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { i18nAdmin } from '@/admin/lib/i18n-config-admin';
 import { getAdminDictionary } from '@/admin/lib/getAdminDictionary'; // For future title translation
 import { logAdminAction } from '@/admin/lib/admin-logger';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 
 const initialSeedArticles: Omit<Article, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
@@ -51,7 +51,7 @@ export default function AdminArticlesPage() {
   const { toast } = useToast();
   const [articles, setArticles] = useState<Article[]>([]);
   const [adminLocale, setAdminLocale] = useState<AdminLocale>('en');
-  const { currentAdminUser } = useAdminAuth();
+  const { currentUser: currentAdminUser } = useUnifiedAuth();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {

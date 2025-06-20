@@ -9,7 +9,7 @@ import { User, MapPin, ShoppingBag, LogOut, Link2, LayoutDashboard, Settings, He
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react"; 
-import { useAuth as useSimulatedAuth } from "@/contexts/AuthContext"; 
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth"; 
 import React, { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { Locale } from '@/lib/i1n-config';
@@ -39,7 +39,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const dictionary = getAccountLayoutDictionary(locale);
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { currentUser: simulatedUser, logout: simulatedLogout, isLoading: isLoadingSimulatedAuth } = useSimulatedAuth();
+  const { currentUser: simulatedUser, logout: simulatedLogout, isLoading: isLoadingSimulatedAuth } = useUnifiedAuth();
   const { toast } = useToast();
 
   const isAuthenticated = !!nextAuthSession || !!simulatedUser;

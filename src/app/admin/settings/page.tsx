@@ -3,14 +3,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { AdminFormSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { AlertTriangle, Save } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react'; // Import React for useEffect
 
 export default function AdminSettingsPage() {
-  const { isAdmin, isLoading } = useAdminAuth(); // Add isLoading from context
+  const { isAdmin, isLoading } = useUnifiedAuth(); // Add isLoading from context
   const router = useRouter();
 
   useEffect(() => {

@@ -11,7 +11,7 @@ import { Logo } from "@/components/icons/Logo";
 import { signIn, useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import { Chrome, Send, Globe, Mail, KeyRound, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext"; 
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth"; 
 import type { Locale } from '@/lib/i1n-config';
 
 import enMessages from '@/dictionaries/en.json';
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const dictionary = getLoginDictionary(locale);
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
-  const { login: simulatedLogin, currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useAuth(); 
+  const { login: simulatedLogin, currentUser: simulatedUser, isLoading: isLoadingSimulatedAuth } = useUnifiedAuth(); 
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -107,7 +107,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               {detailedItems.map((item) => (
                 <li key={item.id} className="flex items-center space-x-4">
                   <div className="relative w-16 h-16 rounded-md overflow-hidden border shrink-0">
-                    {((item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') || (item.images && item.images.length > 0 && item.images[0])) ? (
+                    {((item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') || (item.images && item.images.length > 0 && item.images[0] && typeof item.images[0] === 'string')) ? (
                       <Image 
                         src={
                           (item.mainImage && typeof item.mainImage === 'string' && item.mainImage.trim() !== '') 

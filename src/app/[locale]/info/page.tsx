@@ -103,7 +103,7 @@ export default function UsefulInfoPage() {
 
             return (
               <Card key={article.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
-                {imageUrlToDisplay && (
+                {imageUrlToDisplay && imageUrlToDisplay.trim() !== '' && (
                   <div className="relative w-full h-48 rounded-t-lg overflow-hidden">
                     <Image 
                       src={imageUrlToDisplay} 

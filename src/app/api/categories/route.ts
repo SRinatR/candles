@@ -2,21 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// Схема валидации для переводов
-const translationSchema = z.object({
-  locale: z.enum(['en', 'ru', 'uz']),
-  name: z.string().min(1, 'Название обязательно'),
-  description: z.string().optional()
-});
-
 // Схема валидации для создания/обновления категории
 const categorySchema = z.object({
-  name: z.string().min(1, 'Название категории обязательно'),
-  slug: z.string().min(1, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Slug может содержать только строчные буквы, цифры и дефисы'),
-  description: z.string().optional(),
-  image: z.string().optional(),
-  isActive: z.boolean().default(true),
-  translations: z.array(translationSchema).min(1, 'Необходим хотя бы один перевод')
+  name: z.record(z.string(), z.string().min(1, 'Название обязательно')),
+  slug: z.string().min(1, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Slug может содержать только строчные буквы, цифры и дефисы')
 });
 
 // GET /api/categories - Получить все категории
@@ -40,8 +29,9 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { name: { path: ['uz'], string_contains: search } },
+        { name: { path: ['ru'], string_contains: search } },
+        { name: { path: ['en'], string_contains: search } }
       ];
     }
     
@@ -52,22 +42,16 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         include: {
-          translations: true,
           products: includeProducts ? {
-            where: { isActive: true },
             select: {
               id: true,
               sku: true,
-              price: true,
-              stock: true,
-              isActive: true
+              price: true
             }
           } : false,
           _count: {
             select: {
-              products: {
-                where: { isActive: true }
-              }
+              products: true
             }
           }
         },
@@ -81,12 +65,8 @@ export async function GET(request: NextRequest) {
       id: category.id,
       name: category.name,
       slug: category.slug,
-      description: category.description,
-      image: category.image,
-      isActive: category.isActive,
       productsCount: category._count.products,
       products: includeProducts ? category.products : undefined,
-      translations: category.translations,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt
     }));
@@ -116,18 +96,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = categorySchema.parse(body);
     
-    // Проверка уникальности названия и slug
-    const [existingName, existingSlug] = await Promise.all([
-      prisma.category.findUnique({ where: { name: validatedData.name } }),
-      prisma.category.findUnique({ where: { slug: validatedData.slug } })
-    ]);
-    
-    if (existingName) {
-      return NextResponse.json(
-        { error: 'Категория с таким названием уже существует' },
-        { status: 400 }
-      );
-    }
+    // Проверка уникальности slug
+    const existingSlug = await prisma.category.findUnique({ 
+      where: { slug: validatedData.slug } 
+    });
     
     if (existingSlug) {
       return NextResponse.json(
@@ -136,23 +108,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Создание категории с переводами
-    const { translations, ...categoryData } = validatedData;
-    
+    // Создание категории
     const category = await prisma.category.create({
-      data: {
-        ...categoryData,
-        translations: {
-          create: translations
-        }
-      },
+      data: validatedData,
       include: {
-        translations: true,
         _count: {
           select: {
-            products: {
-              where: { isActive: true }
-            }
+            products: true
           }
         }
       }

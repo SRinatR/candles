@@ -517,7 +517,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableScents.map(scent => (
-                                    <SelectItem key={scent.id} value={scent.id}>{scent.name}</SelectItem>
+                                    <SelectItem key={scent.id} value={scent.id}>{scent.name?.en || scent.name?.ru || scent.name?.uz || scent.slug || 'Scent'}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>
@@ -537,7 +537,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableMaterials.map(material => (
-                                    <SelectItem key={material.id} value={material.id}>{material.name}</SelectItem>
+                                    <SelectItem key={material.id} value={material.id}>{material.name?.en || material.name?.ru || material.name?.uz || material.slug || 'Material'}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>

@@ -162,13 +162,19 @@ export default function WishlistPage() {
       <CardContent className="p-0 flex flex-col h-full">
         <div className="relative overflow-hidden">
           <div className="aspect-square w-full">
-            <Image
-              src={item.image}
-              alt={item.name}
-              width={300}
-              height={300}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            {item.image && typeof item.image === 'string' && item.image.trim() !== '' ? (
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={300}
+                height={300}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-muted-foreground text-sm">No image</span>
+              </div>
+            )}
           </div>
           
           {/* Gradient overlay */}
@@ -278,13 +284,19 @@ export default function WishlistPage() {
         <div className="flex items-start gap-6">
           <div className="relative group flex-shrink-0">
             <div className="w-24 h-24">
-              <Image
-                src={item.image}
-                alt={item.name}
-                width={96}
-                height={96}
-                className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-300 group-hover:scale-105"
-              />
+              {item.image && typeof item.image === 'string' && item.image.trim() !== '' ? (
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover rounded-xl shadow-md transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center rounded-xl">
+                  <span className="text-muted-foreground text-xs">No image</span>
+                </div>
+              )}
             </div>
             {item.discount > 0 && (
               <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs shadow-lg border-0">

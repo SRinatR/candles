@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, UserPlus, Eye, EyeOff } from "lucide-react"; // Added Eye, EyeOff
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import React, { useEffect, useState } from 'react'; // Added useState
 
 
@@ -28,7 +28,7 @@ type ManagerFormValues = z.infer<typeof managerSchema>;
 export default function NewManagerPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { isAdmin, addManager, isLoading: isAdminAuthLoading } = useAdminAuth(); // Renamed isLoading to avoid conflict
+  const { isAdmin, addManager, isLoading: isAdminAuthLoading } = useUnifiedAuth(); // Renamed isLoading to avoid conflict
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<ManagerFormValues>({

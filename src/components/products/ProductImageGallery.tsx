@@ -29,16 +29,18 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
           <Card className="overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-shadow group">
             <CardContent className="p-0">
               <div className="relative w-full overflow-hidden">
-                <Image
-                  src={selectedImage}
-                  alt={altText}
-                  width={600}
-                  height={600}
-                  className="object-contain w-full h-auto transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  priority // Prioritize loading the main image
-                  data-ai-hint="product photo"
-                />
+                {selectedImage && (
+                   <Image
+                     src={selectedImage}
+                     alt={altText}
+                     width={600}
+                     height={600}
+                     className="object-contain w-full h-auto transition-transform duration-300 group-hover:scale-105"
+                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                     priority // Prioritize loading the main image
+                     data-ai-hint="product photo"
+                   />
+                 )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-2">
                     <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,14 +57,16 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
             <DialogTitle>{altText} - Full Size Image</DialogTitle>
           </VisuallyHidden>
           <div className="relative w-full h-[80vh] flex items-center justify-center">
-            <Image
-              src={selectedImage}
-              alt={altText}
-              fill
-              className="object-contain"
-              sizes="90vw"
-              priority
-            />
+            {selectedImage && (
+              <Image
+                src={selectedImage}
+                alt={altText}
+                fill
+                className="object-contain"
+                sizes="90vw"
+                priority
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -79,15 +83,17 @@ export function ProductImageGallery({ images, altText }: ProductImageGalleryProp
               aria-label={`View image ${index + 1} of ${validImages.length} - ${altText}`}
             >
               <div className="relative w-full">
-                <Image
-                  src={image}
-                  alt={`${altText} - thumbnail ${index + 1}`}
-                  width={150}
-                  height={150}
-                  className="object-cover w-full h-auto"
-                  sizes="10vw"
-                  data-ai-hint="product thumbnail"
-                />
+                {image && (
+                   <Image
+                     src={image}
+                     alt={`${altText} - thumbnail ${index + 1}`}
+                     width={150}
+                     height={150}
+                     className="object-cover w-full h-auto"
+                     sizes="10vw"
+                     data-ai-hint="product thumbnail"
+                   />
+                 )}
               </div>
             </button>
           ))}

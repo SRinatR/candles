@@ -129,27 +129,30 @@ export default function HomePage() {
           {dictionary?.homepage?.categoriesTitle || 'Product Categories'}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {displayedCategories.map((category, index) => (
+          {displayedCategories.map((category, index) => {
+            const categoryName = category.name?.[locale] || category.name?.en || category.name?.uz || category.slug || 'Category';
+            return (
             <Link
               key={category.id}
-              href={`/${locale}/products?category=${encodeURIComponent(category.name.toLowerCase().replace(/\s+/g, '-'))}`}
+              href={`/${locale}/products?category=${encodeURIComponent(category.slug || categoryName.toLowerCase().replace(/\s+/g, '-'))}`}
               className="group relative aspect-square rounded-lg overflow-hidden bg-muted hover:scale-105 transition-all shadow-md hover:shadow-lg"
             >
               <Image
                 src={category.image || 'https://placehold.co/400x400/E5E7EB/9CA3AF?text=No+Image'}
-                alt={dictionary?.categories?.[category.name.toLowerCase().replace(/\s+/g, '-')] || category.name}
+                alt={dictionary?.categories?.[category.slug] || categoryName}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-300"
-                data-ai-hint={`Category: ${category.name}`}
+                data-ai-hint={`Category: ${categoryName}`}
               />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
                 <h3 className="text-white font-medium text-sm md:text-base text-center leading-tight">
-                  {dictionary?.categories?.[category.name.toLowerCase().replace(/\s+/g, '-')] || category.name}
+                  {dictionary?.categories?.[category.slug] || categoryName}
                 </h3>
               </div>
             </Link>
-          ))}
+            );
+           })}
         </div>
       </section>
 

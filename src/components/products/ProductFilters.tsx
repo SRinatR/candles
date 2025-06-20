@@ -243,7 +243,7 @@ export function ProductFilters({ dictionary, categoriesData, allProducts, onAppl
                     }
                   }}
                 />
-                <Label htmlFor={`cat-${category.slug}-${onApplyFilters ? 'mobile' : 'desktop'}`} className="font-normal text-sm">{category.name}</Label>
+                <Label htmlFor={`cat-${category.slug}-${onApplyFilters ? 'mobile' : 'desktop'}`} className="font-normal text-sm">{category.name?.[locale] || category.name?.en || category.name?.uz || category.slug}</Label>
               </div>
             ))}
           </AccordionContent>

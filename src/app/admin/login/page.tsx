@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Logo } from "@/components/icons/Logo";
 import React, { useState, useEffect } from "react";
 import { Mail, KeyRound, ShieldAlert, Eye, EyeOff, Smartphone, Monitor } from "lucide-react";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import type { AdminLocale } from "@/admin/lib/i18n-config-admin";
 import { i18nAdmin } from "@/admin/lib/i18n-config-admin";
 import { getAdminDictionary } from "@/admin/lib/getAdminDictionary";
@@ -22,7 +22,7 @@ import type enAdminMessages from '@/admin/dictionaries/en.json';
 type AdminLoginDictionary = typeof enAdminMessages.adminLoginPage;
 
 export default function AdminLoginPage() {
-  const { login, isLoading, currentAdminUser } = useAdminAuth();
+  const { loginAdmin, isLoading, currentUser: currentAdminUser } = useUnifiedAuth();
   const router = useRouter();
   const { toast } = useToast(); // Keep for other potential toasts, though login errors are now from context
   const isMobile = useIsMobile();
@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
         toast({ title: dict.loginErrorTitle, description: dict.loginErrorDescRequired, variant: "destructive" });
         return;
     }
-    await login(email, password); // login function in AdminAuthContext handles its own toasts & redirect
+    await loginAdmin(email, password); // loginAdmin function handles its own toasts & redirect
   };
   
   if (isLoading || currentAdminUser || !dict || !isClient) {

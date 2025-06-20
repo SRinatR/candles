@@ -6,82 +6,100 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Начинаем заполнение базы данных...');
 
-  // Создание пользователей
-  console.log('👥 Создание пользователей...');
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const managerPassword = await bcrypt.hash('manager123', 10);
-  const userPassword = await bcrypt.hash('user123', 10);
-
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@askim-candles.uz' },
-    update: {},
+  // Создание Super Admin (единственный в системе)
+  console.log('👑 Создание Super Admin...');
+  const superAdminPassword = await bcrypt.hash('superadmin123', 12);
+  
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'superadmin@askimcandles.com' },
+    update: {
+      // Обновляем только пароль, если пользователь уже существует
+      password: superAdminPassword,
+    },
     create: {
-      email: 'admin@askim-candles.uz',
-      name: 'Администратор',
-      password: adminPassword,
+      id: 'super-admin-001', // Фиксированный ID для Super Admin
+      email: 'superadmin@askimcandles.com',
+      name: 'Super Administrator',
+      password: superAdminPassword,
       role: 'ADMIN',
-      isBlocked: false
+      status: 'ACTIVE'
     }
   });
 
+  console.log('✅ Super Admin создан:', {
+    id: superAdmin.id,
+    email: superAdmin.email,
+    name: superAdmin.name,
+    role: superAdmin.role
+  });
+
+  // Создание тестового менеджера (можно удалить в продакшене)
+  console.log('👥 Создание тестового менеджера...');
+  const managerPassword = await bcrypt.hash('manager123', 10);
+  
   const manager = await prisma.user.upsert({
-    where: { email: 'manager@askim-candles.uz' },
+    where: { email: 'manager@askimcandles.com' },
     update: {},
     create: {
-      email: 'manager@askim-candles.uz',
-      name: 'Менеджер',
+      email: 'manager@askimcandles.com',
+      name: 'Test Manager',
       password: managerPassword,
       role: 'MANAGER',
-      isBlocked: false
+      status: 'ACTIVE'
     }
   });
 
-  const user = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
-    update: {},
-    create: {
-      email: 'user@example.com',
-      name: 'Тестовый пользователь',
-      password: userPassword,
-      role: 'USER',
-      isBlocked: false
-    }
+  console.log('✅ Тестовый менеджер создан:', {
+    id: manager.id,
+    email: manager.email,
+    name: manager.name,
+    role: manager.role
   });
 
-  console.log(`✅ Создано пользователей: ${[admin, manager, user].length}`);
+  console.log(`✅ Создано пользователей: ${[superAdmin, manager].length}`);
 
   // Создание категорий
   console.log('📂 Создание категорий...');
   const categories = [
     {
-      name: 'Корпоративные наборы',
-      slug: 'corporate-sets',
-      description: 'Эксклюзивные наборы для корпоративных клиентов.',
-      image: 'https://placehold.co/400x400/F37E92/FFFFFF?text=Corporate+Sets'
+      name: {
+        uz: 'Korporativ to\'plamlar',
+        ru: 'Корпоративные наборы',
+        en: 'Corporate Sets'
+      },
+      slug: 'corporate-sets'
     },
     {
-      name: 'Свадебные комплименты',
-      slug: 'wedding-favors',
-      description: 'Изящные комплименты для гостей на свадьбу.',
-      image: 'https://placehold.co/400x400/FFD2DA/162044?text=Wedding+Favors'
+      name: {
+        uz: 'To\'y sovg\'alari',
+        ru: 'Свадебные комплименты',
+        en: 'Wedding Favors'
+      },
+      slug: 'wedding-favors'
     },
     {
-      name: 'Аромасвечи',
-      slug: 'scented-candles',
-      description: 'Ароматические свечи ручной работы с уникальными запахами.',
-      image: 'https://placehold.co/400x400/162044/FFFFFF?text=Scented+Candles'
+      name: {
+        uz: 'Xushbo\'y shamlar',
+        ru: 'Аромасвечи',
+        en: 'Scented Candles'
+      },
+      slug: 'scented-candles'
     },
     {
-      name: 'Вкусный дом',
-      slug: 'tasty-home',
-      description: 'Товары для создания уюта и приятной атмосферы в доме.',
-      image: 'https://placehold.co/400x400/B2C9ED/162044?text=Tasty+Home'
+      name: {
+        uz: 'Mazali uy',
+        ru: 'Вкусный дом',
+        en: 'Tasty Home'
+      },
+      slug: 'tasty-home'
     },
     {
-      name: 'Гипсовый рай',
-      slug: 'gypsum-paradise',
-      description: 'Элегантные изделия из гипса для декора.',
-      image: 'https://placehold.co/400x400/F37E92/FFFFFF?text=Gypsum+Paradise'
+      name: {
+        uz: 'Gips jannat',
+        ru: 'Гипсовый рай',
+        en: 'Gypsum Paradise'
+      },
+      slug: 'gypsum-paradise'
     }
   ];
 
@@ -100,19 +118,68 @@ async function main() {
   // Создание материалов
   console.log('🧱 Создание материалов...');
   const materials = [
-    { name: 'Соевый воск' },
-    { name: 'Пчелиный воск' },
-    { name: 'Парафин' },
-    { name: 'Кокосовый воск' },
-    { name: 'Гипс' },
-    { name: 'Керамика' },
-    { name: 'Стекло' }
+    {
+      name: {
+        uz: 'Soya mumi',
+        ru: 'Соевый воск',
+        en: 'Soy Wax'
+      },
+      slug: 'soy-wax'
+    },
+    {
+      name: {
+        uz: 'Ari mumi',
+        ru: 'Пчелиный воск',
+        en: 'Beeswax'
+      },
+      slug: 'beeswax'
+    },
+    {
+      name: {
+        uz: 'Parafin',
+        ru: 'Парафин',
+        en: 'Paraffin'
+      },
+      slug: 'paraffin'
+    },
+    {
+      name: {
+        uz: 'Kokos mumi',
+        ru: 'Кокосовый воск',
+        en: 'Coconut Wax'
+      },
+      slug: 'coconut-wax'
+    },
+    {
+      name: {
+        uz: 'Gips',
+        ru: 'Гипс',
+        en: 'Gypsum'
+      },
+      slug: 'gypsum'
+    },
+    {
+      name: {
+        uz: 'Keramika',
+        ru: 'Керамика',
+        en: 'Ceramic'
+      },
+      slug: 'ceramic'
+    },
+    {
+      name: {
+        uz: 'Shisha',
+        ru: 'Стекло',
+        en: 'Glass'
+      },
+      slug: 'glass'
+    }
   ];
 
   const createdMaterials = [];
   for (const materialData of materials) {
     const material = await prisma.material.upsert({
-      where: { name: materialData.name },
+      where: { slug: materialData.slug },
       update: {},
       create: materialData
     });
@@ -124,22 +191,92 @@ async function main() {
   // Создание ароматов
   console.log('🌸 Создание ароматов...');
   const scents = [
-    { name: 'Лаванда' },
-    { name: 'Ваниль' },
-    { name: 'Роза' },
-    { name: 'Жасмин' },
-    { name: 'Сандал' },
-    { name: 'Цитрус' },
-    { name: 'Мята' },
-    { name: 'Корица' },
-    { name: 'Эвкалипт' },
-    { name: 'Без аромата' }
+    {
+      name: {
+        uz: 'Lavanda',
+        ru: 'Лаванда',
+        en: 'Lavender'
+      },
+      slug: 'lavender'
+    },
+    {
+      name: {
+        uz: 'Vanil',
+        ru: 'Ваниль',
+        en: 'Vanilla'
+      },
+      slug: 'vanilla'
+    },
+    {
+      name: {
+        uz: 'Atirgul',
+        ru: 'Роза',
+        en: 'Rose'
+      },
+      slug: 'rose'
+    },
+    {
+      name: {
+        uz: 'Yasemin',
+        ru: 'Жасмин',
+        en: 'Jasmine'
+      },
+      slug: 'jasmine'
+    },
+    {
+      name: {
+        uz: 'Sandal',
+        ru: 'Сандал',
+        en: 'Sandalwood'
+      },
+      slug: 'sandalwood'
+    },
+    {
+      name: {
+        uz: 'Sitrus',
+        ru: 'Цитрус',
+        en: 'Citrus'
+      },
+      slug: 'citrus'
+    },
+    {
+      name: {
+        uz: 'Yalpiz',
+        ru: 'Мята',
+        en: 'Mint'
+      },
+      slug: 'mint'
+    },
+    {
+      name: {
+        uz: 'Darchini',
+        ru: 'Корица',
+        en: 'Cinnamon'
+      },
+      slug: 'cinnamon'
+    },
+    {
+      name: {
+        uz: 'Evkalipt',
+        ru: 'Эвкалипт',
+        en: 'Eucalyptus'
+      },
+      slug: 'eucalyptus'
+    },
+    {
+      name: {
+        uz: 'Hidsiz',
+        ru: 'Без аромата',
+        en: 'Unscented'
+      },
+      slug: 'unscented'
+    }
   ];
 
   const createdScents = [];
   for (const scentData of scents) {
     const scent = await prisma.scent.upsert({
-      where: { name: scentData.name },
+      where: { slug: scentData.slug },
       update: {},
       create: scentData
     });
@@ -153,146 +290,75 @@ async function main() {
   const products = [
     {
       sku: 'ASKM-LAV-001',
+      name: {
+        uz: 'Lavanda Rohari Shami',
+        ru: 'Свеча "Лавандовое Блаженство"',
+        en: 'Lavender Bliss Candle'
+      },
+      description: {
+        uz: 'Tinchlik va dam olish uchun lavanda hidli sham. Tabiiy soya mumidan tayyorlangan.',
+        ru: 'Ароматическая свеча с успокаивающим ароматом лаванды. Изготовлена из натурального соевого воска.',
+        en: 'Aromatic candle with calming lavender scent. Made from natural soy wax.'
+      },
       price: 25000,
       costPrice: 15000,
       dimensions: '8x8x10 см',
       burningTime: '40 часов',
-      stock: 50,
       categoryId: createdCategories.find(c => c.slug === 'scented-candles')!.id,
-      materialId: createdMaterials.find(m => m.name === 'Соевый воск')!.id,
-      scentId: createdScents.find(s => s.name === 'Лаванда')!.id,
-      translations: [
-        {
-          locale: 'uz',
-          name: 'Lavanda Rohari Shami',
-          description: 'Tinchlik va dam olish uchun lavanda hidli sham. Tabiiy soya mumidan tayyorlangan.'
-        },
-        {
-          locale: 'ru',
-          name: 'Свеча "Лавандовое Блаженство"',
-          description: 'Ароматическая свеча с успокаивающим ароматом лаванды. Изготовлена из натурального соевого воска.'
-        },
-        {
-          locale: 'en',
-          name: 'Lavender Bliss Candle',
-          description: 'Aromatic candle with calming lavender scent. Made from natural soy wax.'
-        }
-      ],
-      images: [
-        {
-          url: '/products/candle1.svg',
-          isMain: true,
-          order: 0
-        }
-      ],
-      attributes: [
-        { key: 'Фитиль', value: 'Хлопковый' },
-        { key: 'Упаковка', value: 'Подарочная коробка' }
-      ]
+      materialId: createdMaterials.find(m => m.slug === 'soy-wax')!.id,
+      scentId: createdScents.find(s => s.slug === 'lavender')!.id,
+      images: ['/products/candle1.svg']
     },
     {
       sku: 'ASKM-VAN-002',
+      name: {
+        uz: 'Vanil Shirinligi Shami',
+        ru: 'Свеча "Ванильная Сладость"',
+        en: 'Vanilla Sweetness Candle'
+      },
+      description: {
+        uz: 'Issiq va shirinlik beruvchi vanil hidli sham. Premium sifatli soya mumidan.',
+        ru: 'Теплая и сладкая ароматическая свеча с ванилью. Премиум качество из соевого воска.',
+        en: 'Warm and sweet aromatic candle with vanilla scent. Premium quality soy wax.'
+      },
       price: 28000,
       costPrice: 18000,
       dimensions: '9x9x11 см',
       burningTime: '45 часов',
-      stock: 35,
       categoryId: createdCategories.find(c => c.slug === 'scented-candles')!.id,
-      materialId: createdMaterials.find(m => m.name === 'Соевый воск')!.id,
-      scentId: createdScents.find(s => s.name === 'Ваниль')!.id,
-      translations: [
-        {
-          locale: 'uz',
-          name: 'Vanil Shirinligi Shami',
-          description: 'Issiq va shirinlik beruvchi vanil hidli sham. Premium sifatli soya mumidan.'
-        },
-        {
-          locale: 'ru',
-          name: 'Свеча "Ванильная Сладость"',
-          description: 'Теплая и сладкая ароматическая свеча с ванилью. Премиум качество из соевого воска.'
-        },
-        {
-          locale: 'en',
-          name: 'Vanilla Sweetness Candle',
-          description: 'Warm and sweet aromatic candle with vanilla scent. Premium quality soy wax.'
-        }
-      ],
-      images: [
-        {
-          url: '/products/candle2.svg',
-          isMain: true,
-          order: 0
-        }
-      ],
-      attributes: [
-        { key: 'Фитиль', value: 'Деревянный' },
-        { key: 'Упаковка', value: 'Эко-упаковка' }
-      ]
+      materialId: createdMaterials.find(m => m.slug === 'soy-wax')!.id,
+      scentId: createdScents.find(s => s.slug === 'vanilla')!.id,
+      images: ['/products/candle2.svg']
     },
     {
       sku: 'ASKM-CORP-003',
+      name: {
+        uz: 'Korporativ Sovgalar Toplami',
+        ru: 'Корпоративный Набор Премиум',
+        en: 'Corporate Premium Gift Set'
+      },
+      description: {
+        uz: 'Biznes hamkorlar uchun maxsus tayyorlangan hashamatli shamlar toplami.',
+        ru: 'Роскошный набор свечей, специально созданный для деловых партнеров и корпоративных подарков.',
+        en: 'Luxury candle set specially designed for business partners and corporate gifts.'
+      },
       price: 150000,
       costPrice: 90000,
       dimensions: '30x20x15 см',
       burningTime: '200 часов',
-      stock: 10,
       categoryId: createdCategories.find(c => c.slug === 'corporate-sets')!.id,
-      materialId: createdMaterials.find(m => m.name === 'Соевый воск')!.id,
-      scentId: createdScents.find(s => s.name === 'Сандал')!.id,
-      translations: [
-        {
-          locale: 'uz',
-          name: 'Korporativ Sovgalar Toplami',
-          description: 'Biznes hamkorlar uchun maxsus tayyorlangan hashamatli shamlar toplami.'
-        },
-        {
-          locale: 'ru',
-          name: 'Корпоративный Набор Премиум',
-          description: 'Роскошный набор свечей, специально созданный для деловых партнеров и корпоративных подарков.'
-        },
-        {
-          locale: 'en',
-          name: 'Corporate Premium Gift Set',
-          description: 'Luxury candle set specially designed for business partners and corporate gifts.'
-        }
-      ],
-      images: [
-        {
-          url: '/products/gypsum1.svg',
-          isMain: true,
-          order: 0
-        }
-      ],
-      attributes: [
-        { key: 'Количество свечей', value: '5 штук' },
-        { key: 'Упаковка', value: 'Деревянная коробка' },
-        { key: 'Персонализация', value: 'Возможна' }
-      ]
+      materialId: createdMaterials.find(m => m.slug === 'soy-wax')!.id,
+      scentId: createdScents.find(s => s.slug === 'sandalwood')!.id,
+      images: ['/products/gypsum1.svg']
     }
   ];
 
   const createdProducts = [];
   for (const productData of products) {
-    const { translations, images, attributes, ...productFields } = productData;
-    
-    const product = await prisma.product.create({
-      data: {
-        ...productFields,
-        translations: {
-          create: translations
-        },
-        images: {
-          create: images
-        },
-        attributes: {
-          create: attributes
-        }
-      },
-      include: {
-        translations: true,
-        images: true,
-        attributes: true
-      }
+    const product = await prisma.product.upsert({
+      where: { sku: productData.sku },
+      update: {},
+      create: productData
     });
     
     createdProducts.push(product);
@@ -302,7 +368,7 @@ async function main() {
 
   console.log('🎉 Заполнение базы данных завершено!');
   console.log('\n📊 Статистика:');
-  console.log(`👥 Пользователи: ${[admin, manager, user].length}`);
+  console.log(`👥 Пользователи: ${[superAdmin, manager].length}`);
   console.log(`📂 Категории: ${createdCategories.length}`);
   console.log(`🧱 Материалы: ${createdMaterials.length}`);
   console.log(`🌸 Ароматы: ${createdScents.length}`);

@@ -15,7 +15,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import Image from "next/image";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 import { logAdminAction } from '@/admin/lib/admin-logger';
 import type { AdminLocale } from '@/admin/lib/i18n-config-admin';
 import { i18nAdmin } from '@/admin/lib/i18n-config-admin';
@@ -33,7 +33,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDrafts, setShowDrafts] = useState(false);
-  const { currentAdminUser } = useAdminAuth();
+  const { currentUser: currentAdminUser } = useUnifiedAuth();
   const [adminLocale, setAdminLocale] = useState<AdminLocale>('en');
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -312,7 +312,7 @@ export default function AdminProductsPage() {
                       <TableCell className="align-middle px-2 py-3">
                         <div className="flex justify-center">
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-200 group cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50">
-                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) ? (
+                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string')) ? (
                               <Image
                                 src={
                                   (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') 
@@ -334,7 +334,7 @@ export default function AdminProductsPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl"></div>
                             {/* Hover Preview - Large Size */}
-                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) && (
+                            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string')) && (
                               <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out pointer-events-none transform group-hover:scale-100 scale-90">
                                 <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-2xl shadow-2xl backdrop-blur-sm p-6 max-w-sm">
                                   <div className="relative overflow-hidden rounded-xl bg-white shadow-inner">

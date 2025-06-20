@@ -57,21 +57,32 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
       <Link href={`/${locale}/products/${product.id}`} className="block group h-full flex flex-col">
         <CardHeader className="p-0">
           <div className="overflow-hidden relative">
-            {((product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') || (product.images && product.images.length > 0 && product.images[0])) ? (
-              <Image
-                src={(product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') ? product.mainImage : (product.images[0] || '')}
-                alt={productName}
-                width={400}
-                height={400}
-                className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
-                data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
-              />
-            ) : (
-              <div className="w-full h-[400px] bg-muted flex items-center justify-center">
-                <span className="text-muted-foreground text-sm">No image</span>
-              </div>
-            )}
+            {(() => {
+              // Determine the image source with proper validation
+              let imageSrc = '';
+              
+              if (product.mainImage && typeof product.mainImage === 'string' && product.mainImage.trim() !== '') {
+                imageSrc = product.mainImage;
+              } else if (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '') {
+                imageSrc = product.images[0];
+              }
+              
+              return imageSrc ? (
+                <Image
+                  src={imageSrc}
+                  alt={productName}
+                  width={400}
+                  height={400}
+                  className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
+                  data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+                />
+              ) : (
+                <div className="w-full h-[400px] bg-muted flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">No image</span>
+                </div>
+              );
+            })()}
           </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col"> {/* Modified: Added flex flex-col */}

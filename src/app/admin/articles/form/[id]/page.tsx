@@ -20,7 +20,7 @@ import type { Article, Locale } from "@/lib/types";
 import { slugify } from "@/lib/utils";
 import { ImageUploadArea } from '@/components/admin/ImageUploadArea';
 import { logAdminAction } from "@/admin/lib/admin-logger";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useUnifiedAuth } from "@/hooks/useUnifiedAuth";
 
 const ARTICLES_STORAGE_KEY = "askimAdminArticles";
 
@@ -55,7 +55,7 @@ export default function ArticleFormPage({ params }: { params: Promise<{ id: stri
   const { toast } = useToast();
   const router = useRouter();
   const routeParams = use(params);
-  const { currentAdminUser } = useAdminAuth();
+  const { currentUser: currentAdminUser } = useUnifiedAuth();
   
   const articleId = routeParams.id as string;
   const isEditing = articleId !== "new";

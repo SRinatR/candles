@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, KeyRound, User as UserIcon, CheckCircle, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
+import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
 import { Progress } from '@/components/ui/progress';
 import type { Locale } from '@/lib/i1n-config';
 
@@ -38,7 +38,7 @@ export default function RegisterPage() {
   const locale = params.locale as Locale || 'uz';
   const dictionary = getRegisterDictionary(locale);
 
-  const { registerStep1, registerStep2, confirmAccount, isLoading, registrationData } = useAuth();
+  const { registerStep1, registerStep2, confirmAccount, isLoading, registrationData } = useUnifiedAuth();
   
   // Determine initial step based on registrationData from context
   const getInitialStep = () => {
@@ -66,7 +66,7 @@ export default function RegisterPage() {
     if (success) {
       setCurrentStep(2);
     }
-    // Toasts for errors are handled in AuthContext
+    // Toasts for errors are handled in useUnifiedAuth
   };
 
   const handleStep2Submit = async (e: React.FormEvent) => {
@@ -78,7 +78,7 @@ export default function RegisterPage() {
   };
   
   const handleConfirm = async () => {
-    await confirmAccount(); // AuthContext shows toasts and redirects
+    await confirmAccount(); // useUnifiedAuth shows toasts and redirects
   };
 
   const goBack = () => {

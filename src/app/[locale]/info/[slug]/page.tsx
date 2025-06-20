@@ -103,7 +103,7 @@ export default function ArticleSlugPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {imageUrlToDisplay && (
+      {imageUrlToDisplay && imageUrlToDisplay.trim() !== '' && (
         <div className="relative w-full h-64 md:h-96 my-8 rounded-lg overflow-hidden shadow-lg">
           <Image
             src={imageUrlToDisplay}
