@@ -180,7 +180,7 @@ export default function AdminManageCategoriesPage() {
     return mockProducts.filter(product => product.category === categoryName).length;
   }, []);
 
-  const toggleCategoryStatus = async (categoryId: string, currentStatus: boolean) => {
+  const toggleCategoryStatus = async (categoryId: number, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'PUT',
@@ -600,7 +600,7 @@ export default function AdminManageCategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">{dictionary.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{typeof dictionary.title === 'object' ? (dictionary.title.ru || dictionary.title.en || dictionary.title.uz || 'Категории') : dictionary.title}</h1>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={handleOpenAddDialog}>
@@ -839,12 +839,12 @@ export default function AdminManageCategoriesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{dictionary.existingTitle}</CardTitle>
-          <CardDescription>{dictionary.existingDescription}</CardDescription>
+          <CardTitle>{typeof dictionary.existingTitle === 'object' ? (dictionary.existingTitle.ru || dictionary.existingTitle.en || dictionary.existingTitle.uz || 'Категории') : dictionary.existingTitle}</CardTitle>
+          <CardDescription>{typeof dictionary.existingDescription === 'object' ? (dictionary.existingDescription.ru || dictionary.existingDescription.en || dictionary.existingDescription.uz || '') : dictionary.existingDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           {allCategories.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{dictionary.noCustomYet || "No categories added yet."}</p>
+            <p className="text-muted-foreground text-sm">{typeof dictionary.noCustomYet === 'object' ? (dictionary.noCustomYet.ru || dictionary.noCustomYet.en || dictionary.noCustomYet.uz || "No categories added yet.") : (dictionary.noCustomYet || "No categories added yet.")}</p>
           ) : (
             <div className="space-y-2">
               {allCategories.map(category => (
@@ -853,13 +853,13 @@ export default function AdminManageCategoriesPage() {
                     {category.image && (
                       <img 
                         src={category.image} 
-                        alt={category.name}
+                        alt={typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name}
                         className="w-12 h-12 object-cover rounded-md"
                       />
                     )}
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-medium">{category.name}</h3>
+                        <h3 className="font-medium">{typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name}</h3>
                         <Badge variant={category.isActive ? "default" : "secondary"}>
                           {category.isActive ? "Активна" : "Неактивна"}
                         </Badge>
@@ -870,7 +870,7 @@ export default function AdminManageCategoriesPage() {
                       <p className="text-xs text-muted-foreground mt-1">Slug: {category.slug}</p>
                       <div className="flex items-center space-x-2 mt-2">
                         <Badge variant="outline" className="text-xs">
-                          Товаров: {getCategoryProductCount(category.name)}
+                          Товаров: {getCategoryProductCount(typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name)}
                         </Badge>
                       </div>
                     </div>
@@ -916,18 +916,18 @@ export default function AdminManageCategoriesPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Подтвердите удаление</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {checkIfCategoryInUse(category.name) 
-                              ? `Категория "${category.name}" используется в товарах. Удаление может повлиять на отображение товаров.`
-                              : `Вы уверены, что хотите удалить категорию "${category.name}"? Это действие нельзя отменить.`
+                            {checkIfCategoryInUse(typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name) 
+                              ? `Категория "${typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name}" используется в товарах. Удаление может повлиять на отображение товаров.`
+                              : `Вы уверены, что хотите удалить категорию "${typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name}"? Это действие нельзя отменить.`
                             }
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                              <AlertDialogCancel>Отмена</AlertDialogCancel>
                              <AlertDialogAction
-                               onClick={() => handleDeleteAttribute(category.name)}
+                               onClick={() => handleDeleteAttribute(typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name)}
                                className="bg-red-600 hover:bg-red-700"
-                               disabled={checkIfCategoryInUse(category.name)}
+                               disabled={checkIfCategoryInUse(typeof category.name === 'object' ? (category.name.ru || category.name.en || category.name.uz || 'Category') : category.name)}
                              >
                                Удалить
                              </AlertDialogAction>
@@ -978,7 +978,7 @@ export default function AdminManageCategoriesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Подтвердите редактирование</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы хотите отредактировать категорию "{pendingEditCategory?.name}"? Откроется форма редактирования.
+              Вы хотите отредактировать категорию "{typeof pendingEditCategory?.name === 'object' ? (pendingEditCategory.name.ru || pendingEditCategory.name.en || pendingEditCategory.name.uz || 'Category') : pendingEditCategory?.name}"? Откроется форма редактирования.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1006,7 +1006,7 @@ export default function AdminManageCategoriesPage() {
             <AlertDialogTitle>Подтвердите сохранение</AlertDialogTitle>
             <AlertDialogDescription>
               {editingCategory 
-                ? `Вы уверены, что хотите сохранить изменения в категории "${editingCategory.name}"?`
+                ? `Вы уверены, что хотите сохранить изменения в категории "${typeof editingCategory.name === 'object' ? (editingCategory.name.ru || editingCategory.name.en || editingCategory.name.uz || 'Category') : editingCategory.name}"?`
                 : 'Вы уверены, что хотите создать новую категорию с указанными данными?'
               }
             </AlertDialogDescription>

@@ -4,8 +4,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { SessionProvider } from 'next-auth/react';
+import { Providers } from '../providers';
 import { useUnifiedAuth } from '@/hooks/useUnifiedAuth';
+import { useAdminPreferences } from '@/hooks/useAdminPreferences';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetTrigger } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -45,7 +46,7 @@ const navItems: NavItem[] = [
     href: '#!', labelKey: 'products', icon: Package, managerOrAdmin: true, isAccordion: true,
     subItems: [
       { href: '/admin/products', labelKey: 'allProducts', icon: Package, managerOrAdmin: true },
-      { href: '/admin/products?draft=true', labelKey: 'drafts', icon: FileText, managerOrAdmin: true },
+      { href: '/admin/products/drafts', labelKey: 'drafts', icon: FileText, managerOrAdmin: true },
     ]
   },
   { href: '/admin/articles', labelKey: 'articles', icon: ArticlesIcon, managerOrAdmin: true },
@@ -73,30 +74,24 @@ const navItems: NavItem[] = [
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { currentUser: currentAdminUser, logout, isLoading: isLoadingAuth, isAdmin, isManager } = useUnifiedAuth();
+  const { preferences, isLoading: isLoadingPreferences, updateTheme, updateLanguage } = useAdminPreferences();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [dictionary, setDictionary] = useState<AdminLayoutStrings | null>(null);
-  const [currentLocale, setCurrentLocale] = useState<AdminLocale>(i18nAdmin.defaultLocale);
-  const [darkMode, setDarkMode] = useState(false);
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
+  
+  // Получаем текущие настройки из серверных данных
+  const currentLocale = (preferences?.language as AdminLocale) || i18nAdmin.defaultLocale;
+  const darkMode = preferences?.theme === 'dark';
 
   useEffect(() => {
     setIsClient(true); // Indicates component has mounted on the client
     if (typeof window !== 'undefined') {
       const storedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
       setIsSidebarCollapsed(storedCollapsed);
-
-      const storedLocale = localStorage.getItem('admin-lang') as AdminLocale | null;
-      const initialLocale = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
-      setCurrentLocale(initialLocale);
-
-      const isDark = localStorage.getItem('admin-theme') === 'dark' ||
-                     (!('admin-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      setDarkMode(isDark);
-      document.documentElement.classList.toggle('dark', isDark);
     }
   }, []);
 
@@ -123,16 +118,21 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     loadDictionary();
   }, [currentLocale, isClient]);
   
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('admin-theme', newMode ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', newMode);
+  const toggleDarkMode = async () => {
+    try {
+      const newTheme = darkMode ? 'light' : 'dark';
+      await updateTheme(newTheme);
+    } catch (error) {
+      console.error('Failed to update theme:', error);
+    }
   };
 
-  const changeLanguage = (newLocale: AdminLocale) => {
-    setCurrentLocale(newLocale);
-    localStorage.setItem('admin-lang', newLocale);
+  const changeLanguage = async (newLocale: AdminLocale) => {
+    try {
+      await updateLanguage(newLocale);
+    } catch (error) {
+      console.error('Failed to update language:', error);
+    }
   };
 
   useEffect(() => {
@@ -141,8 +141,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [isClient, isLoadingAuth, currentAdminUser, pathname, router]);
 
-  if (!isClient || isLoadingAuth) {
-    // Allow login page to render even if dictionary or auth is loading
+  if (!isClient || isLoadingAuth || isLoadingPreferences) {
+    // Allow login page to render even if dictionary, auth or preferences are loading
     if (pathname === '/admin/login') return <>{children}</>;
     return <AdminDashboardSkeleton />;
   }
@@ -474,9 +474,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <Providers>
       <AdminLayoutContent>{children}</AdminLayoutContent>
-    </SessionProvider>
+    </Providers>
   );
 }
 

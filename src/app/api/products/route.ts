@@ -9,11 +9,13 @@ const productSchema = z.object({
   description: z.record(z.string(), z.string().min(1, 'Описание обязательно')),
   price: z.number().positive('Цена должна быть положительной'),
   costPrice: z.number().positive().optional(),
+  stock: z.number().int().min(0, 'Количество не может быть отрицательным').default(0),
+  isActive: z.boolean().default(true),
   dimensions: z.string().optional(),
   burningTime: z.string().optional(),
-  categoryId: z.string().min(1, 'Категория обязательна'),
-  materialId: z.string().optional(),
-  scentId: z.string().optional(),
+  categoryId: z.number().int().positive('Категория обязательна'),
+  materialId: z.number().int().positive().optional(),
+  scentId: z.number().int().positive().optional(),
   images: z.array(z.string().min(1, 'URL изображения не может быть пустым')).optional()
 });
 
@@ -30,10 +32,64 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const locale = searchParams.get('locale') || 'uz';
     const includeTranslations = searchParams.get('includeTranslations') === 'true';
+    const draftsOnly = searchParams.get('draftsOnly') === 'true';
     
     const skip = (page - 1) * limit;
     
-    // Построение фильтров
+    // Если запрашиваются только черновики, работаем с ProductDraft
+    if (draftsOnly) {
+      const [drafts, total] = await Promise.all([
+        prisma.productDraft.findMany({
+          skip,
+          take: limit,
+          include: {
+            user: true
+          },
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.productDraft.count()
+      ]);
+      
+      // Форматируем черновики как продукты
+      const formattedDrafts = drafts.map(draft => {
+        const data = draft.data as any;
+        return {
+          id: draft.id,
+          sku: data.sku || '',
+          name: data.name || { uz: '', ru: '', en: '' },
+          description: data.description || { uz: '', ru: '', en: '' },
+          price: data.price || 0,
+          costPrice: data.costPrice || 0,
+          stock: data.stock || 0,
+          isActive: false,
+          isDraft: true,
+          category: data.category || '',
+          categoryId: data.categoryId,
+          material: data.material || null,
+          materialId: data.materialId,
+          scent: data.scent || null,
+          scentId: data.scentId,
+          dimensions: data.dimensions,
+          burningTime: data.burningTime,
+          images: data.images || [],
+          mainImage: data.images && data.images.length > 0 ? data.images[0] : null,
+          createdAt: draft.createdAt,
+          updatedAt: draft.updatedAt
+        };
+      });
+      
+      return NextResponse.json({
+        products: formattedDrafts,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    }
+    
+    // Построение фильтров для обычных продуктов
     const where: any = {};
     
     if (categoryId) where.categoryId = categoryId;
@@ -87,6 +143,8 @@ export async function GET(request: NextRequest) {
           description: product.description,
           price: product.price,
           costPrice: product.costPrice,
+          stock: product.stock,
+          isActive: product.isActive,
           category: product.category?.name || null,
           categoryId: product.categoryId,
           material: product.material?.name || null,
@@ -97,6 +155,7 @@ export async function GET(request: NextRequest) {
           burningTime: product.burningTime,
           images: product.images || [],
           mainImage: mainImage,
+          isDraft: false,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt
         };
@@ -115,6 +174,8 @@ export async function GET(request: NextRequest) {
           description: description,
           price: product.price,
           costPrice: product.costPrice,
+          stock: product.stock,
+          isActive: product.isActive,
           category: categoryName,
           categoryId: product.categoryId,
           material: materialName,
@@ -125,6 +186,7 @@ export async function GET(request: NextRequest) {
           burningTime: product.burningTime,
           images: product.images || [],
           mainImage: mainImage,
+          isDraft: false,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt
         };
@@ -206,6 +268,8 @@ export async function POST(request: NextRequest) {
         description: validatedData.description,
         price: validatedData.price,
         costPrice: validatedData.costPrice,
+        stock: validatedData.stock,
+        isActive: validatedData.isActive,
         dimensions: validatedData.dimensions,
         burningTime: validatedData.burningTime,
         categoryId: validatedData.categoryId,

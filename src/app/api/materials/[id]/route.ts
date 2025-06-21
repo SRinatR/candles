@@ -15,11 +15,17 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
+    const materialId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(materialId)) {
+      return Response.json({ error: 'Invalid material ID' }, { status: 400 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const material = await prisma.material.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: materialId },
       include: {
         products: includeProducts ? {
           where: { isActive: true },
@@ -89,12 +95,18 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params;
+    const materialId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(materialId)) {
+      return Response.json({ error: 'Invalid material ID' }, { status: 400 });
+    }
+    
     const body = await request.json();
     const validatedData = updateMaterialSchema.parse(body);
     
     // Проверка существования материала
     const existingMaterial = await prisma.material.findUnique({
-      where: { id: resolvedParams.id }
+      where: { id: materialId }
     });
     
     if (!existingMaterial) {
@@ -109,7 +121,7 @@ export async function PUT(
       const nameExists = await prisma.material.findFirst({
         where: {
           name: validatedData.name,
-          id: { not: resolvedParams.id }
+          id: { not: materialId }
         }
       });
       
@@ -123,7 +135,7 @@ export async function PUT(
     
     // Обновление материала
     const updatedMaterial = await prisma.material.update({
-      where: { id: resolvedParams.id },
+      where: { id: materialId },
       data: validatedData,
       include: {
         _count: {
@@ -164,9 +176,15 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params;
+    const materialId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(materialId)) {
+      return Response.json({ error: 'Invalid material ID' }, { status: 400 });
+    }
+    
     // Проверка существования материала
     const existingMaterial = await prisma.material.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: materialId },
       include: {
         _count: {
           select: {
@@ -196,7 +214,7 @@ export async function DELETE(
     
     // Удаление материала
     await prisma.material.delete({
-      where: { id: resolvedParams.id }
+      where: { id: materialId }
     });
     
     return NextResponse.json(

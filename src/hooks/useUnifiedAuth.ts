@@ -11,28 +11,7 @@ const ADMIN_USERS_STORAGE_KEY = 'adminUsers';
 const SIMULATED_USERS_STORAGE_KEY = 'scentSationalSimulatedUsers';
 const ADMIN_LOGS_STORAGE_KEY = 'adminLogs';
 
-// Helper functions for localStorage
-const getStoredAdmins = (): AdminUser[] => {
-  if (typeof window === 'undefined') return [];
-  const admins = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
-  return admins ? JSON.parse(admins) : [];
-};
-
-const saveStoredAdmins = (admins: AdminUser[]) => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(admins));
-};
-
-const getStoredUsers = (): Record<string, SimulatedUser> => {
-  if (typeof window === 'undefined') return {};
-  const users = localStorage.getItem(SIMULATED_USERS_STORAGE_KEY);
-  return users ? JSON.parse(users) : {};
-};
-
-const saveStoredUsers = (users: Record<string, SimulatedUser>) => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(SIMULATED_USERS_STORAGE_KEY, JSON.stringify(users));
-};
+// Database-only authentication via NextAuth.js - no localStorage
 
 const logAdminAction = (action: string, adminEmail: string, details?: string) => {
   if (typeof window === 'undefined') return;
@@ -90,34 +69,7 @@ export const useUnifiedAuth = () => {
   const userType = (session?.user as any)?.userType || 'user';
   const isPredefined = (session?.user as any)?.isPredefined || false;
 
-  // Admin-specific data
-  const [dynamicallyAddedManagers, setDynamicallyAddedManagers] = useState<AdminUser[]>([]);
-  const [predefinedUsers] = useState<AdminUser[]>([
-    {
-      id: 'admin-1',
-      email: 'admin@askimcandles.com',
-      name: 'Super Admin',
-      role: 'ADMIN',
-      isPredefined: true,
-      isBlocked: false,
-    },
-    {
-      id: 'manager-1',
-      email: 'manager@askimcandles.com',
-      name: 'Store Manager',
-      role: 'MANAGER',
-      isPredefined: true,
-      isBlocked: false,
-    },
-  ]);
-
-  // Load dynamic managers on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedAdmins = getStoredAdmins();
-      setDynamicallyAddedManagers(storedAdmins);
-    }
-  }, []);
+  // No localStorage - all data comes from database via NextAuth.js
 
   // Login functions
   const loginUser = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -194,233 +146,71 @@ export const useUnifiedAuth = () => {
     }
   }, [toast, router]);
 
-  // Registration functions
+  // Registration functions - now handled by database
+  const registerUser = async (userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }) => {
+    // This should be handled by API routes that interact with the database
+    // For now, return error to indicate this needs to be implemented
+    return { success: false, error: 'Registration should be handled by API routes with database' };
+  };
+
   const registerStep1 = useCallback(async (email: string, password: string, confirmPassword: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Registration Error',
-        description: 'Passwords do not match',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-
-    const users = getStoredUsers();
-    if (users[email.toLowerCase()]) {
-      toast({
-        title: 'Registration Failed',
-        description: 'An account with this email already exists',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-
-    setRegistrationData({
-      email: email.toLowerCase(),
-      password,
-      id: Date.now().toString(),
-    });
-    
-    setIsLoading(false);
-    return true;
-  }, [toast]);
-
-  const registerStep2 = useCallback(async (firstName: string, lastName: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    if (!registrationData?.email || !registrationData?.password) {
-      toast({
-        title: 'Registration Error',
-        description: 'Previous registration data is missing',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-
-    const updatedRegData = {
-      ...registrationData,
-      firstName,
-      lastName,
-      name: `${firstName} ${lastName}`,
-      isRegistered: true,
-      isConfirmed: false,
-    };
-    
-    setRegistrationData(updatedRegData);
-    
-    const users = getStoredUsers();
-    users[updatedRegData.email!] = updatedRegData as SimulatedUser;
-    saveStoredUsers(users);
-    
-    setIsLoading(false);
-    return true;
-  }, [registrationData, toast]);
-
-  const confirmAccount = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true);
-    
-    if (!registrationData?.email || !registrationData?.isRegistered) {
-      toast({
-        title: 'Confirmation Error',
-        description: 'No pending registration found',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      return false;
-    }
-
-    const users = getStoredUsers();
-    const userToConfirm = users[registrationData.email];
-    
-    if (userToConfirm) {
-      userToConfirm.isConfirmed = true;
-      users[registrationData.email] = userToConfirm;
-      saveStoredUsers(users);
-      setRegistrationData(null);
-      
-      toast({
-        title: 'Account Confirmed',
-        description: 'You can now login',
-      });
-      
-      setIsLoading(false);
-      return true;
-    }
-    
+    // This should be handled by API routes that interact with the database
     toast({
-      title: 'Confirmation Error',
-      description: 'Could not find user to confirm',
+      title: 'Error',
+      description: 'Registration should be handled by API routes with database',
       variant: 'destructive',
     });
-    setIsLoading(false);
     return false;
-  }, [registrationData, toast]);
+  }, [toast]);
 
-  // Admin management functions
-  const addManager = useCallback(async (managerData: Omit<AdminUser, 'id' | 'isPredefined'>): Promise<boolean> => {
-    if (!isAdmin) return false;
-    
-    const existingAdmins = getStoredAdmins();
-    const allUsers = [...predefinedUsers, ...existingAdmins];
-    
-    if (allUsers.some(user => user.email === managerData.email)) {
-      toast({
-        title: 'Error',
-        description: 'A user with this email already exists',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
-    const newManager: AdminUser = {
-      ...managerData,
-      id: Date.now().toString(),
-      isPredefined: false,
-      isBlocked: false,
-    };
-
-    const updatedAdmins = [...existingAdmins, newManager];
-    saveStoredAdmins(updatedAdmins);
-    setDynamicallyAddedManagers(updatedAdmins);
-    
-    logAdminAction('ADD_MANAGER', currentUser?.email || '', `Added manager: ${newManager.email}`);
-    
+  const confirmRegistration = useCallback(async (profileData: {
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }): Promise<boolean> => {
+    // This should be handled by API routes that interact with the database
     toast({
-      title: 'Manager Added',
-      description: `Manager ${newManager.name} has been added successfully`,
+      title: 'Error',
+      description: 'Registration should be handled by API routes with database',
+      variant: 'destructive',
     });
-    
-    return true;
-  }, [isAdmin, predefinedUsers, currentUser?.email, toast]);
+    return false;
+  }, [toast]);
 
-  const toggleBlockManagerStatus = useCallback((managerId: string) => {
-    if (!isAdmin) return;
-    
-    const existingAdmins = getStoredAdmins();
-    const updatedAdmins = existingAdmins.map(admin => 
-      admin.id === managerId ? { ...admin, isBlocked: !admin.isBlocked } : admin
-    );
-    
-    saveStoredAdmins(updatedAdmins);
-    setDynamicallyAddedManagers(updatedAdmins);
-    
-    const manager = updatedAdmins.find(admin => admin.id === managerId);
-    if (manager) {
-      logAdminAction(
-        manager.isBlocked ? 'BLOCK_MANAGER' : 'UNBLOCK_MANAGER',
-        currentUser?.email || '',
-        `${manager.isBlocked ? 'Blocked' : 'Unblocked'} manager: ${manager.email}`
-      );
-      
-      toast({
-        title: manager.isBlocked ? 'Manager Blocked' : 'Manager Unblocked',
-        description: `${manager.name} has been ${manager.isBlocked ? 'blocked' : 'unblocked'}`,
-      });
-    }
-  }, [isAdmin, currentUser?.email, toast]);
+  // Admin management functions - now handled by database via API routes
+  const addManager = useCallback(async (managerData: {
+    email: string;
+    name: string;
+    password: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    // This should be handled by API routes that interact with the database
+    return { success: false, error: 'Manager management should be handled by API routes with database' };
+  }, []);
 
-  const updateManagerDetails = useCallback((managerId: string, updates: Partial<AdminUser>) => {
-    if (!isAdmin) return;
-    
-    const existingAdmins = getStoredAdmins();
-    
-    // Check for email conflicts if email is being updated
-    if (updates.email) {
-      const allUsers = [...predefinedUsers, ...existingAdmins];
-      const emailExists = allUsers.some(user => user.email === updates.email && user.id !== managerId);
-      
-      if (emailExists) {
-        toast({
-          title: 'Update Failed',
-          description: 'A user with this email already exists',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-    
-    const updatedAdmins = existingAdmins.map(admin => 
-      admin.id === managerId ? { ...admin, ...updates } : admin
-    );
-    
-    saveStoredAdmins(updatedAdmins);
-    setDynamicallyAddedManagers(updatedAdmins);
-    
-    const manager = updatedAdmins.find(admin => admin.id === managerId);
-    if (manager) {
-      logAdminAction('UPDATE_MANAGER', currentUser?.email || '', `Updated manager: ${manager.email}`);
-      
-      toast({
-        title: 'Manager Updated',
-        description: `${manager.name} has been updated successfully`,
-      });
-    }
-  }, [isAdmin, predefinedUsers, currentUser?.email, toast]);
+  const updateManager = useCallback(async (managerId: string, updateData: {
+    name?: string;
+    email?: string;
+    status?: 'ACTIVE' | 'BLOCKED';
+  }): Promise<{ success: boolean; error?: string }> => {
+    // This should be handled by API routes that interact with the database
+    return { success: false, error: 'Manager management should be handled by API routes with database' };
+  }, []);
 
-  const deleteManager = useCallback((managerId: string) => {
-    if (!isAdmin) return;
-    
-    const existingAdmins = getStoredAdmins();
-    const managerToDelete = existingAdmins.find(admin => admin.id === managerId);
-    
-    if (!managerToDelete) return;
-    
-    const updatedAdmins = existingAdmins.filter(admin => admin.id !== managerId);
-    saveStoredAdmins(updatedAdmins);
-    setDynamicallyAddedManagers(updatedAdmins);
-    
-    logAdminAction('DELETE_MANAGER', currentUser?.email || '', `Deleted manager: ${managerToDelete.email}`);
-    
-    toast({
-      title: 'Manager Deleted',
-      description: `${managerToDelete.name} has been deleted`,
-    });
-  }, [isAdmin, currentUser?.email, toast]);
+  const deleteManager = useCallback(async (managerId: string): Promise<{ success: boolean; error?: string }> => {
+    // This should be handled by API routes that interact with the database
+    return { success: false, error: 'Manager management should be handled by API routes with database' };
+  }, []);
+
+  const getAllManagers = useCallback((): AdminUser[] => {
+    // This should be handled by API routes that interact with the database
+    return [];
+  }, []);
 
   // Logout function
   const logout = useCallback(async () => {
@@ -444,43 +234,32 @@ export const useUnifiedAuth = () => {
   }, [userType, currentUser?.email, toast, router]);
 
   return {
-    // Session info
-    currentUser,
+    // Session data
+    session,
     isAuthenticated,
-    isLoading: status === 'loading' || isLoading,
-    
-    // User type checks
     isAdmin,
     isManager,
     isAdminOrManager,
     userType,
     isPredefined,
+    currentUser,
+    isLoading: status === 'loading' || isLoading,
     
-    // Session details
-    sessionStartTime,
-    sessionUserAgent,
-    
-    // Auth functions
-    login: loginUser,
+    // Authentication functions
+    loginUser,
     loginAdmin,
     logout,
     
-    // Registration functions
+    // Registration functions (now handled by API routes)
+    registerUser,
     registerStep1,
-    registerStep2,
-    confirmAccount,
+    confirmRegistration,
     registrationData,
-    setRegistrationData,
     
-    // Admin management
-    predefinedUsers,
-    dynamicallyAddedManagers,
+    // Admin management functions (now handled by API routes)
     addManager,
-    toggleBlockManagerStatus,
-    updateManagerDetails,
+    updateManager,
     deleteManager,
-    
-    // Legacy compatibility
-    currentAdminUser: userType === 'admin' ? currentUser : null,
+    getAllManagers,
   };
 };

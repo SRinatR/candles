@@ -11,8 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose 
 import { Input } from '@/components/ui/input';
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import type { Locale } from '@/lib/i1n-config';
-import { i18n } from '@/lib/i1n-config';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -20,27 +19,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Locale } from '../../../i18n';
+import { locales } from '../../../i18n';
 
 interface HeaderProps {
   locale: Locale;
-  dictionary: {
-    home: string;
-    products: string;
-    about: string;
-    usefulInfo: string;
-    cart: string;
-    account: string;
-    login: string;
-    logout: string;
-    searchPlaceholder: string;
-    mainMenuTitle: string;
-    langUz: string;
-    langRu: string;
-    langEn: string;
-  };
 }
 
-export function Header({ locale, dictionary }: HeaderProps) {
+export function Header({ locale }: HeaderProps) {
+  const t = useTranslations('navigation');
   const pathname = usePathname();
   const { cartCount } = useCart();
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
@@ -66,11 +53,11 @@ export function Header({ locale, dictionary }: HeaderProps) {
     return null;
   }
 
-  const navLinks = [
-    { href: '/', label: dictionary.home },
-    { href: '/products', label: dictionary.products },
-    { href: '/about', label: dictionary.about },
-    { href: '/info', label: dictionary.usefulInfo, icon: BookOpen },
+  const navigationItems = [
+    { href: '/', label: t('home') },
+    { href: '/products', label: t('products') },
+    { href: '/about', label: t('about') },
+    { href: '/info', label: t('usefulInfo'), icon: BookOpen },
   ];
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -109,16 +96,16 @@ export function Header({ locale, dictionary }: HeaderProps) {
   }
 
   const LanguageSwitcher = () => {
-    const getLangName = (loc: Locale) => {
-      if (loc === 'uz') return dictionary.langUz;
-      if (loc === 'ru') return dictionary.langRu;
-      return dictionary.langEn;
-    }
+    const getLanguageLabel = (loc: Locale) => {
+      if (loc === 'uz') return t('langUz');
+      if (loc === 'ru') return t('langRu');
+      return t('langEn');
+    };
 
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Change language" title={getLangName(locale)}>
+          <Button variant="ghost" size="icon" aria-label="Change language" title={getLanguageLabel(locale)}>
             <Globe className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
@@ -132,7 +119,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                   locale === loc ? "font-semibold text-primary" : ""
                 )}
               >
-                {getLangName(loc)}
+                {getLanguageLabel(loc)}
               </Link>
             </DropdownMenuItem>
           ))}
@@ -166,7 +153,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
         
         <div className="flex items-center space-x-1 sm:space-x-2">
           <form onSubmit={handleSearch} className="hidden sm:flex items-center relative">
-            <Input type="search" name="search" placeholder={dictionary.searchPlaceholder} className="h-9 pr-10 w-40 sm:w-48 lg:w-64" /> {/* Increased width */}
+            <Input type="search" name="search" placeholder={t('searchPlaceholder')} className="h-9 pr-10 w-40 sm:w-48 lg:w-64" /> {/* Increased width */}
             <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9">
               <Search className="h-4 w-4" />
               <span className="sr-only">Search</span>
@@ -176,15 +163,15 @@ export function Header({ locale, dictionary }: HeaderProps) {
           {isClientMounted && !isLoadingAuth && (
             <>
               {isAuthenticated ? (
-                <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex" title={userName || dictionary.account}>
+                <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex" title={userName || t('account')}>
                   <Link href={accountLink}>
                     <User className="h-5 w-5" />
                   </Link>
                 </Button>
               ) : (
-                 <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex px-2" title={dictionary.login}>
+                 <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex px-2" title={t('login')}>
                    <Link href={`/${locale}/login`}>
-                     <LogIn className="mr-1 h-4 w-4" /> {dictionary.login}
+                     <LogIn className="mr-1 h-4 w-4" /> {t('login')}
                    </Link>
                 </Button>
               )}
@@ -197,7 +184,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
             <Link 
               href={`/${locale}/cart`} 
               className="relative" 
-              aria-label={isClientMounted ? `${dictionary.cart}, ${cartCount} items` : dictionary.cart}
+              aria-label={isClientMounted ? `${t('cart')}, ${cartCount} items` : t('cart')}
             >
               <ShoppingBag className="h-5 w-5" />
               {isClientMounted && cartCount > 0 && (
@@ -222,7 +209,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                    <Link href={`/${locale}/`} onClick={() => setIsMobileMenuOpen(false)}>
                       <Logo className="h-7 w-auto" />
                    </Link>
-                   <SheetTitle className="sr-only">{dictionary.mainMenuTitle}</SheetTitle>
+                   <SheetTitle className="sr-only">{t('mainMenuTitle')}</SheetTitle>
                    <SheetClose asChild>
                       <Button variant="ghost" size="icon">
                          <X className="h-6 w-6" />
@@ -233,7 +220,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                 
                 <div className="flex-1 overflow-y-auto px-4 space-y-4 py-4"> 
                   <form onSubmit={handleSearch} className="flex items-center relative">
-                    <Input type="search" name="search" placeholder={dictionary.searchPlaceholder} className="h-10 pr-12 w-full" />
+                    <Input type="search" name="search" placeholder={t('searchPlaceholder')} className="h-10 pr-12 w-full" />
                     <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 h-10 w-10">
                       <Search className="h-5 w-5" />
                       <span className="sr-only">Search</span>
@@ -271,7 +258,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                                 locale === loc ? "font-semibold text-primary bg-primary/10 border-primary/50" : "text-foreground/80 border-transparent"
                               )}
                             >
-                              {loc === 'uz' ? dictionary.langUz : loc === 'ru' ? dictionary.langRu : dictionary.langEn}
+                              {getLanguageLabel(loc)}
                             </Link>
                           ))}
                         </div>
@@ -290,14 +277,14 @@ export function Header({ locale, dictionary }: HeaderProps) {
                             className="flex items-center space-x-2 text-base font-medium text-foreground/80 transition-colors hover:text-foreground p-2 rounded-md hover:bg-muted"
                           >
                             <User className="h-5 w-5" />
-                            <span className="truncate">{userName || dictionary.account}</span>
+                            <span className="truncate">{userName || t('account')}</span>
                           </Link>
                           <Button variant="outline" 
                             onClick={handleLogout}
                             className="w-full text-base"
                           >
                             <LogOut className="mr-2 h-5 w-5" />
-                            <span>{dictionary.logout}</span>
+                            <span>{t('logout')}</span>
                           </Button>
                         </>
                       ) : (
@@ -307,7 +294,7 @@ export function Header({ locale, dictionary }: HeaderProps) {
                           className="flex items-center space-x-2 text-base font-medium text-foreground/80 transition-colors hover:text-foreground p-2 rounded-md hover:bg-muted"
                         >
                           <LogIn className="h-5 w-5" />
-                          <span>{dictionary.login}</span>
+                          <span>{t('login')}</span>
                         </Link>
                       )}
                     </>

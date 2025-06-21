@@ -1,9 +1,35 @@
 
-# Project Brief: Askim candles App Development
+# Askim Candles - Project Brief
 
-## 1. Project Overview
+## Обзор проекта
+Askim Candles - это многоязычная e-commerce платформа для продажи свечей ручной работы с полноценной административной панелью. Проект построен на современном стеке технологий с использованием Next.js 15, TypeScript, Tailwind CSS 4.x, Prisma ORM и PostgreSQL.
 
-**Project Name:** Askim candles (formerly ScentSational Showcase)
+## Основные цели
+- Создание современного интернет-магазина свечей с высокой производительностью
+- Поддержка трех языков: узбекский (uz), русский (ru), английский (en)
+- Административная панель для управления товарами, заказами, пользователями и контентом
+- Интеграция с NextAuth для аутентификации
+- Система управления базой данных через Prisma ORM
+- SEO-оптимизация и адаптивный дизайн
+
+## Целевая аудитория
+- Покупатели свечей ручной работы
+- Корпоративные клиенты для подарочных наборов
+- Организаторы свадеб и мероприятий
+- Любители ароматерапии и домашнего уюта
+
+## Ключевые особенности
+- Многоязычность с поддержкой i18n и динамической локализацией
+- Адаптивный дизайн с Tailwind CSS 4.x и темной/светлой темой
+- Полноценная система управления контентом через админ-панель
+- NextAuth интеграция с Google OAuth и credentials провайдером
+- PostgreSQL база данных с Prisma ORM (24 модели)
+- Comprehensive API маршруты для всех операций CRUD
+- Ролевая система (ADMIN, MANAGER, USER) с middleware защитой
+- Система логирования действий администраторов в реальном времени
+- Загрузка и управление изображениями с оптимизацией
+- SEO оптимизация и производительность
+- Готовность к production развертыванию
 
 **My Role:** App Prototyper (Firebase Studio AI Coding Partner, "Cursor")
 
@@ -14,22 +40,25 @@
 ## 2. Core App Features (from PRD & User Requests):
 
 *   **Main Site (i18n: UZ (default), RU, EN):**
-    *   Product Catalog (browse, details, filter, sort). Price range filter is dynamic. Scent/Material filters are dynamic.
-    *   Shopping Cart & Checkout (forced login before checkout).
-    *   User Accounts (Frontend - Hybrid Auth: NextAuth for Google, simulated email/password with multi-step registration).
-    *   Localized content for key pages. Prices displayed in UZS.
-    *   Compact mobile language switcher.
+    *   Product Catalog with advanced filtering, sorting, and search capabilities powered by database.
+    *   Shopping Cart & Checkout with session persistence and order processing.
+    *   User Accounts with NextAuth (Google OAuth + credentials provider) and database user management.
+    *   Multilingual content with database-driven translations for products and articles.
+    *   Responsive design with mobile-optimized interface and language switching.
+    *   SEO optimization with Next.js metadata and structured data.
 *   **Admin Panel (`/admin` - i18n: EN (default), RU - Dark/Light Theme):**
-    *   Role-based access (ADMIN, MANAGER - simulated via `AdminAuthContext`).
-    *   Dashboard with statistics (UI stubs with mock values, "Recent Activity" from simulated logs).
-    *   **Product Management:** UI for listing (with image display), adding, editing products (client-side simulated). Forms include image upload (drag-and-drop, main image selection - Data URL based) and fields for scent, material, dimensions, burningTime.
-    *   **User/Manager Management (Admin Only):** UI for listing managers and form for adding new managers (client-side simulated via `localStorage`).
-    *   **Clients:** UI for listing mock clients with search and simulated block/unblock.
-    *   **Logs (Admin Only):** UI for displaying simulated admin action logs from `localStorage`, with a "Clear All Logs" function.
-    *   Orders, Discounts, Content, Settings sections (mostly stubs).
+    *   Role-based access (ADMIN, MANAGER) with NextAuth integration and database persistence.
+    *   Dashboard with statistics and real-time activity logs from database.
+    *   **Product Management:** Full CRUD operations with Prisma ORM. Forms include image upload, multilingual support, and comprehensive product attributes (scent, material, dimensions, burningTime).
+    *   **User Management (Admin Only):** Real user management with role assignment, account status control, and database persistence.
+    *   **Client Management:** Database-driven client management with search and account control.
+    *   **Admin Logs:** Real-time admin activity logging with database storage and filtering capabilities.
+    *   **Content Management:** Article and page management with multilingual support.
+    *   **Attribute Management:** Dynamic category, material, and scent management.
+    *   Orders, Discounts, Settings sections with database integration.
     *   Collapsible sidebar, theme/language toggles, mobile access restriction, version display.
-*   Payment Processing: Stripe integration (future goal).
-*   **Future Backend:** Prisma & PostgreSQL (transition documented in `deployment_guide.md`).
+*   Payment Processing: Planned integration with local payment providers.
+*   **Current Backend:** Prisma ORM with PostgreSQL database fully implemented and operational.
 
 ## 3. Style Guidelines (from PRD):
 

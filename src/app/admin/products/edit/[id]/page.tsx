@@ -65,8 +65,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [availableMaterials, setAvailableMaterials] = useState<string[]>([]);
-  const [availableScents, setAvailableScents] = useState<string[]>([]);
+  const [availableMaterials, setAvailableMaterials] = useState<any[]>([]);
+  const [availableScents, setAvailableScents] = useState<any[]>([]);
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -199,6 +199,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     return <div>Product not found</div>;
   }
 
+  if (!dict) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <FormProvider {...formMethods}>
     <div className="space-y-6">
@@ -305,8 +309,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <SelectValue placeholder={dict.categoryPlaceholder} />
                             </SelectTrigger>
                             <SelectContent>
-                            {availableCategories.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            {availableCategories.map((cat, index) => (
+                                <SelectItem key={`category-${index}-${cat}`} value={cat}>{cat}</SelectItem>
                             ))}
                             </SelectContent>
                         </Select>
@@ -326,9 +330,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                         <SelectValue placeholder={dict.scentPlaceholder} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableScents.map(scent => (
-                                        <SelectItem key={scent} value={scent}>{scent}</SelectItem>
-                                        ))}
+                                        {availableScents.map((scent, index) => {
+                                const scentName = typeof scent === 'object' ? (
+                                    scent.name?.ru || scent.name?.en || scent.name?.uz || 
+                                    (typeof scent.name === 'string' ? scent.name : 'Scent')
+                                ) : scent;
+                                const scentValue = typeof scent === 'object' ? scentName : scent;
+                                return (
+                                    <SelectItem key={`scent-${index}-${scentValue}`} value={scentValue}>{scentName}</SelectItem>
+                                );
+                            })}
                                     </SelectContent>
                                     </Select>
                                 )}
@@ -346,9 +357,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                         <SelectValue placeholder={dict.materialPlaceholder} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableMaterials.map(material => (
-                                        <SelectItem key={material} value={material}>{material}</SelectItem>
-                                        ))}
+                                        {availableMaterials.map((material, index) => {
+                            const materialName = typeof material === 'object' ? (
+                                material.name?.ru || material.name?.en || material.name?.uz || 
+                                (typeof material.name === 'string' ? material.name : 'Material')
+                            ) : material;
+                            const materialValue = typeof material === 'object' ? materialName : material;
+                            return (
+                                <SelectItem key={`material-${index}-${materialValue}`} value={materialValue}>{materialName}</SelectItem>
+                            );
+                        })}
                                     </SelectContent>
                                     </Select>
                                 )}

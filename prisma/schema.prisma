@@ -22,6 +22,7 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   BLOCKED
+  PENDING
 }
 
 // Статус заказов
@@ -57,6 +58,21 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // Дополнительные поля профиля
+  emailVerified   Boolean?  @default(false)
+  twoFactorEnabled Boolean  @default(false)
+  isBlocked       Boolean   @default(false)
+  lastLoginAt    DateTime?
+  loginAttempts  Int       @default(0)
+  
+  // Контактная информация
+  phone       String?
+  avatar      String?
+  
+  // Рабочая информация
+  department  String?
+  position    String?
+  
   // Связи
   orders      Order[]
   managers    Manager[]
@@ -71,9 +87,12 @@ model User {
 
 // Категории товаров
 model Category {
-  id          String    @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   name        Json
   slug        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
@@ -86,7 +105,7 @@ model Category {
 
 // Материалы
 model Material {
-  id        String    @id @default(uuid())
+  id        Int       @id @default(autoincrement())
   name      Json
   slug      String    @unique
   createdAt DateTime  @default(now())
@@ -101,7 +120,7 @@ model Material {
 
 // Ароматы
 model Scent {
-  id        String    @id @default(uuid())
+  id        Int       @id @default(autoincrement())
   name      Json
   slug      String    @unique
   createdAt DateTime  @default(now())
@@ -116,13 +135,15 @@ model Scent {
 
 // Продукты
 model Product {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        Json
   description Json
   sku         String   @unique
   price       Int
   costPrice   Int
+  stock       Int      @default(0)
   isActive    Boolean  @default(true)
+  status      String   @default("ACTIVE")
   dimensions  String?
   burningTime String?
   images      String[]
@@ -130,13 +151,13 @@ model Product {
   updatedAt   DateTime @updatedAt
   
   // Связи с категориями и атрибутами
-  categoryId  String
+  categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   
-  scentId     String?
+  scentId     Int?
   scent       Scent?   @relation(fields: [scentId], references: [id])
   
-  materialId  String?
+  materialId  Int?
   material    Material? @relation(fields: [materialId], references: [id])
   
   // Многоязычные поля (для совместимости)
@@ -154,7 +175,7 @@ model Product {
 // Переводы продуктов
 model ProductTranslation {
   id          String @id @default(cuid())
-  productId   String
+  productId   Int
   locale      String // 'en', 'ru', 'uz'
   name        String
   description String
@@ -168,7 +189,7 @@ model ProductTranslation {
 // Изображения продуктов
 model ProductImage {
   id        String  @id @default(cuid())
-  productId String
+  productId Int
   url       String
   isMain    Boolean @default(false)
   order     Int     @default(0)
@@ -181,7 +202,7 @@ model ProductImage {
 // Дополнительные атрибуты продуктов
 model ProductAttribute {
   id        String @id @default(cuid())
-  productId String
+  productId Int
   key       String
   value     String
   
@@ -193,7 +214,7 @@ model ProductAttribute {
 // Переводы категорий
 model CategoryTranslation {
   id          String @id @default(cuid())
-  categoryId  String
+  categoryId  Int
   locale      String // 'en', 'ru', 'uz'
   name        String
   description String?
@@ -207,7 +228,7 @@ model CategoryTranslation {
 // Переводы материалов
 model MaterialTranslation {
   id         String @id @default(cuid())
-  materialId String
+  materialId Int
   locale     String // 'en', 'ru', 'uz'
   name       String
   
@@ -220,7 +241,7 @@ model MaterialTranslation {
 // Переводы ароматов
 model ScentTranslation {
   id      String @id @default(cuid())
-  scentId String
+  scentId Int
   locale  String // 'en', 'ru', 'uz'
   name    String
   
@@ -361,7 +382,9 @@ model ManagerProfile {
   userId    String   @unique
   department String?
   hireDate   DateTime?
-  // Добавляйте уникальные поля для менеджеров здесь
+  // UI preferences
+  theme     String?  @default("light") // "light" | "dark"
+  language  String?  @default("en")    // "en" | "ru"
   
   @@map("manager_profiles")
 }
@@ -372,14 +395,16 @@ model AdminProfile {
   user      User     @relation(fields: [userId], references: [id])
   userId    String   @unique
   accessLevel String?
-  // Добавляйте уникальные поля для админов здесь
+  // UI preferences
+  theme     String?  @default("light") // "light" | "dark"
+  language  String?  @default("en")    // "en" | "ru"
   
   @@map("admin_profiles")
 }
 
 // Черновики товаров
 model ProductDraft {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   data        Json     // Все поля формы товара (draft)

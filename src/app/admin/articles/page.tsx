@@ -89,7 +89,10 @@ export default function AdminArticlesPage() {
     setArticles(updatedArticles);
     localStorage.setItem(ARTICLES_STORAGE_KEY, JSON.stringify(updatedArticles));
     if (currentAdminUser?.email) {
-      logAdminAction(currentAdminUser.email, "Article Deleted (Simulated)", { articleId, articleTitle });
+      logAdminAction({ 
+        action: "Article Deleted (Simulated)",
+        details: JSON.stringify({ articleId, articleTitle, adminEmail: currentAdminUser.email })
+      });
     }
     toast({
       title: "Article Deleted (Simulated)",

@@ -48,7 +48,7 @@ interface ScentTranslation {
 
 interface Scent {
   id: string;
-  name: string;
+  name: { en: string; ru: string; uz: string };
   isActive: boolean;
   productsCount?: number;
   createdAt?: string;
@@ -189,9 +189,10 @@ export default function AdminManageScentsPage() {
         );
         setAllScents(updatedScents);
         localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
+        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || 'Scent';
         toast({ 
           title: scent.isActive ? "Аромат деактивирован" : "Аромат активирован", 
-          description: `${scent.name} ${scent.isActive ? 'деактивирован' : 'активирован'}` 
+          description: `${scentName} ${scent.isActive ? 'деактивирован' : 'активирован'}` 
         });
       } else {
         const errorData = await response.json();
@@ -247,7 +248,10 @@ export default function AdminManageScentsPage() {
     }
 
     const isDuplicate = allScents.some(
-      (scent) => scent.name.toLowerCase() === trimmedNewName.toLowerCase() && scent.name !== editingAttributeName
+      (scent) => {
+        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
+        return scentName.toLowerCase() === trimmedNewName.toLowerCase() && scentName !== editingAttributeName;
+      }
     );
 
     if (isDuplicate) {
@@ -279,8 +283,16 @@ export default function AdminManageScentsPage() {
         }
 
         const updatedScent = await response.json();
+        
+        // Create proper name object from translations
+        const nameObject = {
+          ru: newScentTranslations.find(t => t.locale === 'ru')?.name || '',
+          en: newScentTranslations.find(t => t.locale === 'en')?.name || '',
+          uz: newScentTranslations.find(t => t.locale === 'uz')?.name || ''
+        };
+        
         const updatedScents = allScents.map(scent => 
-          scent.id === editingScent.id ? { ...scent, name: trimmedNewName } : scent
+          scent.id === editingScent.id ? { ...scent, name: nameObject } : scent
         );
         setAllScents(updatedScents);
         localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
@@ -345,43 +357,46 @@ export default function AdminManageScentsPage() {
           });
           
           setNewScentTranslations(translations);
-          setEditingAttributeName(scent.name);
+          setEditingAttributeName(scent.name?.ru || scent.name?.en || scent.name?.uz || '');
           setEditingScent(scent);
           setIsEditDialogOpen(true);
         } else {
           // Fallback к простому редактированию
-          setNewScentName(scent.name);
+          const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
+          setNewScentName(scentName);
           setNewScentTranslations([
-            { locale: 'ru', name: scent.name },
-            { locale: 'en', name: '' },
-            { locale: 'uz', name: '' }
+            { locale: 'ru', name: scent.name?.ru || '' },
+            { locale: 'en', name: scent.name?.en || '' },
+            { locale: 'uz', name: scent.name?.uz || '' }
           ]);
-          setEditingAttributeName(scent.name);
+          setEditingAttributeName(scentName);
           setEditingScent(scent);
           setIsEditDialogOpen(true);
         }
       } else {
         // Fallback к простому редактированию
-        setNewScentName(scent.name);
+        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
+        setNewScentName(scentName);
         setNewScentTranslations([
-          { locale: 'ru', name: scent.name },
-          { locale: 'en', name: '' },
-          { locale: 'uz', name: '' }
+          { locale: 'ru', name: scent.name?.ru || '' },
+          { locale: 'en', name: scent.name?.en || '' },
+          { locale: 'uz', name: scent.name?.uz || '' }
         ]);
-        setEditingAttributeName(scent.name);
+        setEditingAttributeName(scentName);
         setEditingScent(scent);
         setIsEditDialogOpen(true);
       }
     } catch (error) {
       console.error('Error loading scent for edit:', error);
       // Fallback к простому редактированию
-      setNewScentName(scent.name);
+      const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
+      setNewScentName(scentName);
       setNewScentTranslations([
-        { locale: 'ru', name: scent.name },
+        { locale: 'ru', name: scent.name?.ru || '' },
         { locale: 'en', name: '' },
         { locale: 'uz', name: '' }
       ]);
-      setEditingAttributeName(scent.name);
+      setEditingAttributeName(scent.name?.ru || scent.name?.en || scent.name?.uz || '');
       setEditingScent(scent);
       setIsEditDialogOpen(true);
     }
@@ -411,7 +426,7 @@ export default function AdminManageScentsPage() {
         localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedAttributes));
         toast({ 
           title: dictionary?.deleteSuccessTitle || "Scent Deleted", 
-          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', scent.name) 
+          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', scent.name?.ru || scent.name?.en || scent.name?.uz || 'Scent') 
         });
       } else {
         const errorData = await response.json();
@@ -570,9 +585,9 @@ export default function AdminManageScentsPage() {
           ) : (
             <ul className="space-y-2">
               {allScents.map(attr => (
-                <li key={attr.id || attr.name} className="flex items-center justify-between p-3 border rounded-md text-sm hover:bg-muted/50 transition-colors">
+                <li key={attr.id || (attr.name?.ru || attr.name?.en || attr.name?.uz || 'scent')} className="flex items-center justify-between p-3 border rounded-md text-sm hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2">
-                    <span>{attr.name}</span>
+                    <span>{attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent'}</span>
                     <div className="flex items-center gap-1">
                       <Switch
                         checked={attr.isActive}
@@ -609,8 +624,8 @@ export default function AdminManageScentsPage() {
                           <AlertDialogTitle>{alertStrings.confirmDeleteTitle}</AlertDialogTitle>
                           <AlertDialogDescription>
                             {isAttributeInUse(attr) 
-                              ? alertStrings.confirmDeleteScentInUse.replace('{attributeName}', attr.name)
-                              : alertStrings.confirmDeleteGeneral.replace('{name}', attr.name)
+                              ? alertStrings.confirmDeleteScentInUse.replace('{attributeName}', attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent')
+                              : alertStrings.confirmDeleteGeneral.replace('{name}', attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent')
                             }
                           </AlertDialogDescription>
                         </AlertDialogHeader>

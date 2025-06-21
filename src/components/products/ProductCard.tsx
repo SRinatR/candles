@@ -38,8 +38,14 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
   // Use provided dictionary or fallback to default
   const currentDictionary = dictionary || defaultProductCardDictionary;
   
-  const productName = product.name[locale] || product.name.en || "Product";
-  const productDescription = product.description[locale] || product.description.en || "";
+  // Enhanced fallback logic to handle empty objects and missing translations
+  const getLocalizedText = (textObj: any, fallbackText: string = "") => {
+    if (!textObj || typeof textObj !== 'object') return fallbackText;
+    return textObj[locale] || textObj.en || textObj.uz || fallbackText;
+  };
+  
+  const productName = getLocalizedText(product.name, "Product Name Not Available");
+  const productDescription = getLocalizedText(product.description, "");
 
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -74,12 +80,33 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
                   width={400}
                   height={400}
                   className="object-cover w-full h-auto group-hover:scale-105 transition-transform duration-300"
-                  data-ai-hint={`${product.category.toLowerCase().replace(' ', '-')} product`}
+                  data-ai-hint={`${product.category?.name || 'product'} product`}
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-[400px] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                          <svg class="w-16 h-16 text-muted-foreground/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                          <span class="text-muted-foreground text-sm font-medium">Image Not Available</span>
+                          <span class="text-muted-foreground/60 text-xs mt-1">${productName}</span>
+                        </div>
+                      `;
+                    }
+                  }}
                 />
               ) : (
-                <div className="w-full h-[400px] bg-muted flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">No image</span>
+                <div className="w-full h-[400px] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-lg">
+                  <svg className="w-16 h-16 text-muted-foreground/40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                  <span className="text-muted-foreground text-sm font-medium">Image Not Available</span>
+                  <span className="text-muted-foreground/60 text-xs mt-1">{productName}</span>
                 </div>
               );
             })()}

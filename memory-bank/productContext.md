@@ -1,55 +1,157 @@
 
-# Product Context: Askim candles
+# Product Context: Askim Candles
 
-## 1. Why This Project Exists
+## 1. Project Overview
 
-Askim candles aims to provide an online platform for customers to discover and purchase unique, handcrafted scented products and home decor items. It caters to individuals seeking artisanal quality and a personalized shopping experience for items that enhance their living spaces and well-being. A key part of the project is also an administrative panel for store owners/managers to manage the shop's operations. The main focus of the business is on **corporate clients**.
+Askim Candles is a comprehensive e-commerce platform specializing in handcrafted scented candles and home decor items. The project consists of a customer-facing multilingual website and a sophisticated admin panel for business management. Built with Next.js 15, TypeScript, and modern web technologies, it emphasizes corporate clients while serving individual customers.
 
-## 2. Problems It Solves
+## 2. Business Objectives
 
-*   Provides a dedicated marketplace for a niche set of products (candles, wax figures, gypsum items, corporate sets, wedding favors).
-*   Offers a curated selection, potentially differentiating from larger, less specialized e-commerce sites.
-*   Allows artisans or a small business to reach a wider customer base, with a special emphasis on B2B/corporate orders.
-*   Simplifies the purchasing process for these specialized items.
-*   Provides tools for store administrators/managers to manage products (including detailed attributes like SKU, cost price, active status, scent, material, dimensions, burning time, and images), orders, users, content, discounts, and other store aspects efficiently.
+- **Primary Market**: Corporate clients seeking custom candle sets and bulk orders
+- **Secondary Market**: Individual customers looking for artisanal home decor
+- **Geographic Focus**: Uzbekistan market with UZS pricing
+- **Product Categories**: Candles, wax figures, gypsum items, corporate gift sets, wedding favors
+- **Differentiation**: Curated artisanal products with personalized B2B services
 
-## 3. How It Should Work
+## 3. Technical Implementation Status
 
-### A. Customer-Facing Application (Localized: UZ default, RU, EN):
+### A. Database & Backend (PostgreSQL + Prisma)
 
-1.  **Discovery & Browsing:** Users land on the homepage, see featured **active** products, categories (including "Корпоративные наборы"). Navigate to product listings (showing only **active** products), use filters (category, dynamic price range from active products, dynamic scent from active products, dynamic material from active products) and sorting.
-2.  **Product Details & Cart:** View individual product pages with images, detailed attributes (SKU, scent, material, dimensions, burningTime), add to cart. Prices in UZS. (Inactive products still accessible via direct URL).
-3.  **Checkout & Account:** Streamlined checkout, (mock) payment. Registered users manage profile, (mock) addresses, (mock) order history. Forced login before checkout.
-4.  **Authentication:** Hybrid - NextAuth (Google), client-simulated (email/password with multi-step registration & confirmation and password visibility).
-5.  **Language Selection:** Users can switch site language using a functional switcher (desktop dropdown, compact mobile horizontal list).
-6.  **"Полезное" (Useful Info) Section:** Header contains a link to an `/info` page listing articles. Articles are managed in admin panel (multilingual text & images).
+**Implemented Models:**
+- User management with roles (USER, ADMIN, MANAGER) and status tracking
+- Product catalog with multilingual support (ProductTranslation)
+- Category and Material hierarchies with translations
+- Order management with status tracking and payment integration
+- Review system with rating capabilities
+- Admin logging and session management
+- Article/content management system
+- Image and tag management
+- Manager and Admin profile systems
 
-### B. Admin Panel (`/admin` path - Localized: EN default, RU - Dark/Light Theme available):
+**API Endpoints:**
+- `/api/products` - Product CRUD with filtering, pagination, search
+- `/api/admin/users` - User management with role-based access
+- `/api/categories` - Category management
+- `/api/materials` - Material management
+- `/api/articles` - Content management
+- `/api/auth/[...nextauth]` - Authentication handling
+- `/api/upload` - Image upload functionality
 
-1.  **Login:** Separate login for admin/manager roles (simulated email/password via `AdminAuthContext` with password visibility).
-2.  **Dashboard:** View key statistics (UI stubs with mock values, "Recent Activity" from simulated logs).
-3.  **Product Management:** Add, view, edit, delete products. Filter and search.
-    *   Forms include fields for multilingual name & description, SKU, price, cost price, category (dynamic list), stock, scent (dynamic list), material (dynamic list), dimensions, burningTime, and an `isActive` toggle.
-    *   Image management with drag-and-drop upload, previews, and main image selection (Data URL based).
-    *   Product list displays main image, ID, SKU, cost price, and Active status with a toggle.
-4.  **Order Management (Sales):** View orders, filter, update status. (UI stubs with more structure).
-5.  **User Management (Management - Admin Only):**
-    *   View registered site users (requires backend).
-    *   Manage admin panel roles: UI for listing managers (predefined & dynamically "added" via localStorage) and form for "adding" new managers by Admin (client-side simulated, with password visibility).
-    *   Block/unblock accounts (requires backend).
-6.  **Client Management:** View list of mock clients, client-side search, simulated block/unblock. (UI implemented).
-7.  **Attribute Management (Admin Only):** Full CRUD for Categories, Materials, Scents via `localStorage`. Warning modals for deleting/renaming in-use attributes.
-8.  **Article Management (Admin Only):** CRUD for articles (multilingual text, shared or per-language images) via `localStorage`.
-9.  **Discount Management:** Create/manage promo codes. (UI stubs exist).
-10. **Content Management:** Edit homepage content, banners, info pages. (UI stubs exist).
-11. **Store Settings (Admin Only):** Configure store parameters. (UI stubs exist).
-12. **Logs (Admin Only):** View simulated admin action logs from `localStorage`. Allow clearing all logs. Client-side filtering and sorting implemented.
-13. **Additional Sections:** Marketing, Reports, Finances (UI stubs with more structure).
-14. **Language and Theme Selection:** Admins can switch language (EN/RU) and theme (Light/Dark).
-15. **Mobile Access Restriction:** Panel (except login) is not usable on mobile; prompts to use desktop.
-16. **Version Display:** Footer shows simulated app version and last update date.
+### B. Authentication System (NextAuth.js)
 
-## 4. User Experience Goals
+**Providers:**
+- Google OAuth integration
+- Credentials provider for email/password
+- Role-based access control (USER, ADMIN, MANAGER)
+- Session management with database persistence
 
-*   **Main Site:** Elegant, calming, intuitive, visually appealing, trustworthy, responsive. Prices in UZS. Focus on attracting corporate clients through relevant categories and information.
-*   **Admin Panel:** Modern, professional (Turo/MoscowDreamCars style), efficient, task-oriented, clear, readable, responsive, informative, customizable (theme/language). Dark theme uses corporate-derived palette.
+**Security Features:**
+- Protected admin routes with middleware
+- Role verification for sensitive operations
+- Secure session handling
+
+### C. Customer-Facing Website
+
+**Internationalization (i18n):**
+- Supported locales: UZ (default), RU, EN
+- Dynamic locale routing (`/[locale]`)
+- Database-driven translations for products and content
+- Locale-specific dictionaries
+
+**Core Features:**
+- Product browsing with advanced filtering
+- Category-based navigation
+- Shopping cart functionality
+- User authentication and profiles
+- Responsive design with Tailwind CSS
+- SEO optimization with Next.js metadata
+
+### D. Admin Panel (`/admin`)
+
+**Dashboard:**
+- Key metrics display (sales, users, orders)
+- Recent activity logs
+- Trend indicators and analytics
+
+**Management Modules:**
+- **Products**: Full CRUD with image management, multilingual support
+- **Users**: Role management, account status control
+- **Orders**: Status tracking, order processing
+- **Categories/Materials**: Attribute management
+- **Articles**: Content management for "Полезное" section
+- **Settings**: Store configuration
+- **Reports**: Sales and analytics (planned)
+
+**Admin Features:**
+- Role-based access (Admin vs Manager permissions)
+- Activity logging system
+- Dark/Light theme support
+- Mobile-responsive design
+- Bulk operations support
+
+## 4. Current Development Status
+
+### Completed Modules:
+- ✅ Database schema and Prisma setup
+- ✅ NextAuth authentication system
+- ✅ Basic API routes structure
+- ✅ Admin panel layout and navigation
+- ✅ User management system
+- ✅ Product management foundation
+- ✅ Internationalization framework
+- ✅ Core UI components (Shadcn/ui)
+
+### In Development:
+- 🔄 Product catalog frontend
+- 🔄 Shopping cart implementation
+- 🔄 Order processing system
+- 🔄 Payment integration
+- 🔄 Image upload and management
+
+### Planned Features:
+- 📋 Advanced reporting and analytics
+- 📋 Email notification system
+- 📋 Inventory management
+- 📋 Discount and promotion system
+- 📋 Customer review system
+- 📋 SEO optimization
+- 📋 Performance monitoring
+
+## 5. User Experience Goals
+
+### Customer Site:
+- **Design**: Elegant, calming aesthetic reflecting artisanal quality
+- **Performance**: Fast loading, optimized images, smooth navigation
+- **Accessibility**: WCAG compliant, keyboard navigation, screen reader support
+- **Mobile**: Fully responsive, touch-friendly interface
+- **Trust**: Secure checkout, clear pricing (UZS), transparent policies
+
+### Admin Panel:
+- **Efficiency**: Streamlined workflows, bulk operations, keyboard shortcuts
+- **Clarity**: Clear data presentation, intuitive navigation, consistent UI
+- **Customization**: Theme selection, language preferences, dashboard configuration
+- **Reliability**: Error handling, data validation, backup systems
+- **Scalability**: Support for growing product catalogs and user bases
+
+## 6. Key Performance Indicators (KPIs)
+
+### Business Metrics:
+- Monthly recurring revenue (MRR)
+- Average order value (AOV)
+- Customer acquisition cost (CAC)
+- Corporate client retention rate
+- Conversion rate by traffic source
+
+### Technical Metrics:
+- Page load times (<3s)
+- API response times (<500ms)
+- Database query performance
+- Error rates and uptime (99.9%)
+- Mobile performance scores
+
+### User Experience Metrics:
+- User session duration
+- Cart abandonment rate
+- Admin task completion time
+- Customer satisfaction scores
+- Return customer percentage

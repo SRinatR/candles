@@ -5,6 +5,22 @@
 *   **Technical Foundation:**
     *   **React 19.1 Compatibility:** Full compatibility with React 19.1 features and improvements.
     *   **TypeScript Compilation:** All TypeScript errors resolved, clean build achieved with exit code 0.
+    *   **✅ API Endpoints Fixed:** Resolved multiple admin API console errors
+        *   Fixed missing NextRequest/NextResponse imports in admin users API
+        *   **✅ Fixed getUserStats API:** Added missing NextRequest/NextResponse imports to `/api/admin/users/stats/route.ts` - resolved "Не удалось загрузить статистику" error
+        *   **✅ Fixed User Stats API isBlocked Field Error:** Resolved PrismaClientValidationError for non-existent `isBlocked` field by adding the field to User model in Prisma schema, applying migration `20250621083125_add_is_blocked_field`, and restoring full functionality to user statistics API without removing any features
+        *   **✅ Fixed Category Status Toggle:** Resolved "Failed to update category status" console error by adding missing `isActive`, `description`, and `image` fields to Category model in Prisma schema, applying database migration, and fixing seed.ts imports
+        *   **✅ Fixed AdminLog Metadata Field Error:** Resolved PrismaClientValidationError for non-existent metadata field in AdminLog model by removing references to `metadata` and `updatedAt` fields from Prisma queries and storing metadata as JSON within the `details` field
+        *   Corrected Prisma schema mismatch (removed non-existent isBlocked field)
+        *   Fixed TypeError: Invalid URL error in logAdminAction function
+        *   Resolved PrismaClientKnownRequestError by correcting table names in raw SQL queries
+        *   Updated all logAdminAction calls to use correct LogEntry object format
+        *   Updated admin logs stats and export functionality to properly handle metadata stored in details field
+        *   All admin API endpoints now function without console errors
+    *   **✅ NextAuth SessionProvider Error Fixed:** Resolved "useSession must be wrapped in SessionProvider" runtime error by properly configuring SessionProvider in admin layout through Providers component, updating NEXTAUTH_URL and PORT from 3000 to 9002.
+    *   **✅ Admin Logs Access Fixed:** Resolved "Access Denied" issue on admin logs page by fixing authentication checks and variable references.
+    *   **✅ Runtime Error Fixed:** Resolved critical React rendering error on admin/products page where Product name object {en, ru, uz} was being passed directly to React child.
+    *   **✅ React Translation Object Rendering Error Fixed:** Resolved "Objects are not valid as a React child" error in admin product edit page by enhancing type checking and fallback logic for scent and material name extraction to prevent translation objects from being rendered directly.
     *   **✅ User Profile Form Fixed:** Resolved TypeScript errors in profile page - newsletter field type mismatch and SubmitHandler typing issues corrected.
     *   **Tailwind CSS 4.x Support FULLY WORKING (2025-01-27):** 
         *   **PostCSS Configuration:** Fixed postcss.config.mjs with proper Tailwind 4.x syntax
@@ -19,7 +35,8 @@
     *   **Build System:** Development server running successfully, Tailwind styles properly generated.
 
 *   **Main Site Foundation (Fully Functional):**
-    *   **i18n System:** Path-based localization (`/[locale]/...`) for UZ (default), RU, EN fully implemented.
+    *   **✅ Next-intl Migration Completed (2025-01-27):** Successfully migrated from custom i18n system to professional next-intl library with useTranslations hooks, NextIntlClientProvider, and proper server-side configuration.
+    *   **i18n System:** Path-based localization (`/[locale]/...`) for UZ (default), RU, EN fully implemented with next-intl.
     *   **Product Catalog:** Complete with browsing, filtering, sorting, and detail pages.
     *   **Dynamic Filtering:** Categories, Scent/Material filters dynamically generated from active product data. Price range filter with dynamic min/max calculation.
     *   **Product Sorting:** UI for sorting by relevance, price, name, newest - functionality verified for mock data.

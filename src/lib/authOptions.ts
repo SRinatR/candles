@@ -19,7 +19,7 @@ const getUserByEmail = async (email: string) => {
         name: true,
         password: true,
         role: true,
-        isBlocked: true
+        status: true
       }
     });
   } catch (error) {
@@ -28,22 +28,23 @@ const getUserByEmail = async (email: string) => {
   }
 };
 
-const createUserFromOAuth = async (email: string, name: string, image?: string) => {
+const createUserFromOAuth = async (email: string, name: string) => {
   try {
     return await prisma.user.create({
       data: {
-        email,
-        name,
-        role: 'USER',
-        isBlocked: false
-      },
+          email,
+          name,
+          password: '', // OAuth users don't have password
+          role: 'USER',
+          status: 'ACTIVE'
+        },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isBlocked: true
-      }
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true
+        }
     });
   } catch (error) {
     console.error('Error creating OAuth user:', error);
@@ -51,18 +52,7 @@ const createUserFromOAuth = async (email: string, name: string, image?: string) 
   }
 };
 
-// Fallback to localStorage for development (when database is not available)
-const getStoredUsers = (): Record<string, SimulatedUser> => {
-  if (typeof window === 'undefined') return {};
-  const users = localStorage.getItem('scentSationalSimulatedUsers');
-  return users ? JSON.parse(users) : {};
-};
-
-const getStoredAdmins = (): AdminUser[] => {
-  if (typeof window === 'undefined') return [];
-  const admins = localStorage.getItem('adminUsers');
-  return admins ? JSON.parse(admins) : [];
-};
+// Database-only authentication - no localStorage fallbacks
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -92,7 +82,7 @@ export const authOptions: NextAuthOptions = {
           try {
             const dbUser = await getUserByEmail(email);
             
-            if (dbUser && !dbUser.isBlocked && (dbUser.role === 'ADMIN' || dbUser.role === 'MANAGER')) {
+            if (dbUser && dbUser.status === 'ACTIVE' && (dbUser.role === 'ADMIN' || dbUser.role === 'MANAGER')) {
               // Verify password
               const isValidPassword = dbUser.password 
                 ? await bcrypt.compare(password, dbUser.password)
@@ -115,28 +105,13 @@ export const authOptions: NextAuthOptions = {
             console.error('Database authentication error:', error);
           }
 
-          // Fallback to localStorage for development
-          const storedAdmins = getStoredAdmins();
-          const dynamicAdmin = storedAdmins.find(
-            admin => admin.email === email && admin.password === password && !admin.isBlocked
-          );
-          
-          if (dynamicAdmin) {
-            return {
-              id: dynamicAdmin.id,
-              email: dynamicAdmin.email,
-              name: dynamicAdmin.name,
-              role: dynamicAdmin.role,
-              userType: 'admin',
-              isPredefined: false,
-            } as User & { role: string; userType: string; isPredefined: boolean };
-          }
+          // No fallback - database only
         } else {
           // Try database first for regular users
           try {
             const dbUser = await getUserByEmail(email);
             
-            if (dbUser && !dbUser.isBlocked && dbUser.role === 'USER') {
+            if (dbUser && dbUser.status === 'ACTIVE' && dbUser.role === 'USER') {
               // Verify password
               const isValidPassword = dbUser.password 
                 ? await bcrypt.compare(password, dbUser.password)
@@ -156,18 +131,7 @@ export const authOptions: NextAuthOptions = {
             console.error('Database authentication error for user:', error);
           }
 
-          // Fallback to localStorage for development
-          const users = getStoredUsers();
-          const user = users[email];
-          
-          if (user && user.password === password && user.isConfirmed) {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-              userType: 'user',
-            } as User & { userType: string };
-          }
+          // No fallback - database only
         }
 
         return null;
@@ -198,8 +162,7 @@ export const authOptions: NextAuthOptions = {
               // Create new user in database
               dbUser = await createUserFromOAuth(
                 user.email!,
-                user.name || '',
-                user.image
+                user.name || ''
               );
             }
             

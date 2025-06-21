@@ -26,41 +26,10 @@ import { useParams } from "next/navigation";
 import type { Locale } from '@/lib/i1n-config';
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getDictionary } from "@/lib/getDictionary";
+import { useTranslations } from 'next-intl';
 import { Separator } from "@/components/ui/separator";
 
-type AddressesPageDictionary = {
-  manageAddressesTitle: string;
-  manageAddressesDesc: string;
-  addNewAddressButton: string;
-  noAddressesYet: string;
-  editAddressTitle: string;
-  addAddressTitle: string;
-  streetAddressLabel: string;
-  cityLabel: string;
-  stateProvinceLabel: string;
-  zipPostalCodeLabel: string;
-  countryLabel: string;
-  setDefaultAddressLabel: string;
-  cancelButton: string;
-  saveChangesButton: string;
-  addAddressFormButton: string;
-  defaultBadge: string;
-  setDefaultButton: string;
-  editButtonLabel: string;
-  deleteButtonLabel: string;
-  confirmDeleteTitle: string;
-  confirmDeleteDesc: string;
-  deleteConfirmButton: string;
-  addressDeletedToast: string;
-  addressDeletedDescToast: string;
-  defaultAddressSetToast: string;
-  defaultAddressDescToast: string;
-  addressUpdatedToast: string;
-  addressUpdatedDescToast: string;
-  addressAddedToast: string;
-  addressAddedDescToast: string;
-};
+// Type removed - using next-intl useTranslations hook instead
 
 // Enhanced address validation schema
 const addressSchema = z.object({
@@ -123,8 +92,8 @@ export default function AccountAddressesPage() {
   const { toast } = useToast();
   const params = useParams();
   const locale = (params?.locale as Locale) || 'uz';
-  const [dictionary, setDictionary] = useState<AddressesPageDictionary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('accountAddressesPage');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Mock addresses data - в реальном приложении будет загружаться из API
   const [addresses, setAddresses] = useState<Address[]>([
@@ -157,26 +126,7 @@ export default function AccountAddressesPage() {
     },
   });
 
-  // Load dictionary
-  useEffect(() => {
-    const loadDictionary = async () => {
-      try {
-        setIsLoading(true);
-        const dict = await getDictionary(locale);
-        setDictionary(dict.accountAddressesPage);
-      } catch (error) {
-        console.error('Failed to load dictionary:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load page content. Please refresh.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadDictionary();
-  }, [locale, toast]);
+  // Remove dictionary loading as it's handled by next-intl
 
   // Memoized computed values
   const defaultAddress = useMemo(() => 
@@ -225,13 +175,11 @@ export default function AccountAddressesPage() {
       }))
     );
     
-    if (dictionary) {
-      toast({
-        title: dictionary.defaultAddressSetToast,
-        description: dictionary.defaultAddressDescToast,
-      });
-    }
-  }, [dictionary, toast]);
+    toast({
+      title: t('defaultAddressSetToast'),
+      description: t('defaultAddressDescToast'),
+    });
+  }, [toast, t]);
 
   const handleDelete = useCallback((addressId: string) => {
     const addressToDelete = addresses.find(addr => addr.id === addressId);
@@ -257,16 +205,13 @@ export default function AccountAddressesPage() {
       return filteredAddresses;
     });
 
-    if (dictionary) {
-      toast({
-        title: dictionary.addressDeletedToast,
-        description: dictionary.addressDeletedDescToast,
-      });
-    }
-  }, [addresses, dictionary, toast]);
+    toast({
+      title: t('addressDeletedToast'),
+      description: t('addressDeletedDescToast'),
+    });
+  }, [addresses, toast, t]);
 
   const onSubmit: SubmitHandler<AddressFormData> = useCallback(async (data) => {
-    if (!dictionary) return;
     
     try {
       setIsSubmitting(true);
@@ -297,8 +242,8 @@ export default function AccountAddressesPage() {
         );
         
         toast({
-          title: dictionary.addressUpdatedToast,
-          description: dictionary.addressUpdatedDescToast,
+          title: t('addressUpdatedToast'),
+          description: t('addressUpdatedDescToast'),
         });
       } else {
         // Add new address
@@ -316,8 +261,8 @@ export default function AccountAddressesPage() {
         });
         
         toast({
-          title: dictionary.addressAddedToast,
-          description: dictionary.addressAddedDescToast,
+          title: t('addressAddedToast'),
+          description: t('addressAddedDescToast'),
         });
       }
       
@@ -331,33 +276,14 @@ export default function AccountAddressesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [dictionary, isEditing, editingAddress, toast, handleCancel]);
+  }, [isEditing, editingAddress, toast, handleCancel, t]);
 
   // Loading state
   if (isLoading) {
     return <AddressSkeleton />;
   }
 
-  // Dictionary not loaded
-  if (!dictionary) {
-    return (
-      <div className="space-y-6">
-        <Card className="shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center text-center">
-              <div className="space-y-2">
-                <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto" />
-                <p className="text-muted-foreground">Failed to load page content.</p>
-                <Button onClick={() => window.location.reload()} variant="outline">
-                  Refresh Page
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   // Form view
   if (isFormVisible) {
@@ -379,7 +305,7 @@ export default function AccountAddressesPage() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  {isEditing ? dictionary.editAddressTitle : dictionary.addAddressTitle}
+                  {isEditing ? t('editAddressTitle') : t('addAddressTitle')}
                 </CardTitle>
               </CardHeader>
               
@@ -390,7 +316,7 @@ export default function AccountAddressesPage() {
                   name="street"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">{dictionary.streetAddressLabel}</FormLabel>
+                      <FormLabel className="text-sm font-medium">{t('streetAddressLabel')}</FormLabel>
                       <FormControl>
                         <Input 
                           {...field} 
@@ -410,7 +336,7 @@ export default function AccountAddressesPage() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.cityLabel}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{t('cityLabel')}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -428,7 +354,7 @@ export default function AccountAddressesPage() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.stateProvinceLabel}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{t('stateProvinceLabel')}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -449,7 +375,7 @@ export default function AccountAddressesPage() {
                     name="zipCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.zipPostalCodeLabel}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{t('zipPostalCodeLabel')}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -467,7 +393,7 @@ export default function AccountAddressesPage() {
                     name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{dictionary.countryLabel}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{t('countryLabel')}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -500,7 +426,7 @@ export default function AccountAddressesPage() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium cursor-pointer">
-                          {dictionary.setDefaultAddressLabel}
+                          {t('setDefaultAddressLabel')}
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
                           This address will be used as your default shipping address.
@@ -519,7 +445,7 @@ export default function AccountAddressesPage() {
                   disabled={isSubmitting}
                   className="transition-colors duration-200"
                 >
-                  {dictionary.cancelButton}
+                  {t('cancelButton')}
                 </Button>
                 <Button 
                   type="submit" 
@@ -532,7 +458,7 @@ export default function AccountAddressesPage() {
                       Saving...
                     </div>
                   ) : (
-                    isEditing ? dictionary.saveChangesButton : dictionary.addAddressFormButton
+                    isEditing ? t('saveChangesButton') : t('addAddressFormButton')
                   )}
                 </Button>
               </CardFooter>
@@ -549,15 +475,15 @@ export default function AccountAddressesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{dictionary.manageAddressesTitle}</h2>
-          <p className="text-muted-foreground leading-relaxed">{dictionary.manageAddressesDesc}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">{t('manageAddressesTitle')}</h2>
+          <p className="text-muted-foreground leading-relaxed">{t('manageAddressesDesc')}</p>
         </div>
         <Button 
           onClick={handleAddNew} 
           className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors duration-200 shadow-sm"
         >
           <PlusCircle className="mr-2 h-4 w-4" /> 
-          {dictionary.addNewAddressButton}
+          {t('addNewAddressButton')}
         </Button>
       </div>
       
@@ -568,13 +494,13 @@ export default function AccountAddressesPage() {
             <div className="flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
               <Home className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">{dictionary.noAddressesYet}</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('noAddressesYet')}</h3>
             <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
               Add your first address to enable faster checkout and delivery.
             </p>
             <Button onClick={handleAddNew} size="lg" className="shadow-sm">
               <PlusCircle className="mr-2 h-4 w-4" /> 
-              {dictionary.addNewAddressButton}
+              {t('addNewAddressButton')}
             </Button>
           </CardContent>
         </Card>
@@ -595,7 +521,7 @@ export default function AccountAddressesPage() {
                       {address.isDefault && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
-                          {dictionary.defaultBadge}
+                          {t('defaultBadge')}
                         </Badge>
                       )}
                     </div>
@@ -614,7 +540,7 @@ export default function AccountAddressesPage() {
                         onClick={() => handleSetDefault(address.id)}
                         className="text-xs transition-colors duration-200 hover:bg-accent/50"
                       >
-                        {dictionary.setDefaultButton}
+                        {t('setDefaultButton')}
                       </Button>
                     )}
                     
@@ -622,7 +548,7 @@ export default function AccountAddressesPage() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEdit(address)}
-                      aria-label={dictionary.editButtonLabel}
+                      aria-label={t('editButtonLabel')}
                       className="transition-colors duration-200 hover:bg-accent/50"
                     >
                       <Edit className="h-4 w-4" />
@@ -633,7 +559,7 @@ export default function AccountAddressesPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          aria-label={dictionary.deleteButtonLabel}
+                          aria-label={t('deleteButtonLabel')}
                           disabled={addresses.length === 1}
                           className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors duration-200 disabled:opacity-50"
                         >
@@ -644,19 +570,19 @@ export default function AccountAddressesPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            {dictionary.confirmDeleteTitle}
+                            {t('confirmDeleteTitle')}
                           </AlertDialogTitle>
                           <AlertDialogDescription className="leading-relaxed">
-                            {dictionary.confirmDeleteDesc}
+                            {t('confirmDeleteDesc')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>{dictionary.cancelButton}</AlertDialogCancel>
+                          <AlertDialogCancel>{t('cancelButton')}</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleDelete(address.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {dictionary.deleteConfirmButton}
+                            {t('deleteConfirmButton')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

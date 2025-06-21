@@ -11,9 +11,9 @@ const updateProductSchema = z.object({
   burningTime: z.string().optional(),
   stock: z.number().int().min(0, 'Количество не может быть отрицательным').optional(),
   isActive: z.boolean().optional(),
-  categoryId: z.string().min(1, 'Категория обязательна').optional(),
-  materialId: z.string().optional(),
-  scentId: z.string().optional(),
+  categoryId: z.number().int().positive('Категория обязательна').optional(),
+  materialId: z.number().int().positive().optional(),
+  scentId: z.number().int().positive().optional(),
   translations: z.array(z.object({
     locale: z.enum(['en', 'ru', 'uz']),
     name: z.string().min(1, 'Название обязательно'),
@@ -53,7 +53,7 @@ export async function GET(
         material: true,
         scent: true,
         translations: true,
-        images: {
+        productImages: {
           orderBy: { order: 'asc' }
         },
         attributes: true
@@ -111,7 +111,7 @@ export async function GET(
           };
           return acc;
         }, {} as Record<string, { name: string; description: string }>),
-        images: product.images,
+        images: product.productImages,
         attributes: product.attributes,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
@@ -144,7 +144,7 @@ export async function GET(
           id: product.scent.id,
           name: product.scent.name
         } : null,
-        images: product.images,
+        images: product.productImages,
         attributes: product.attributes,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
@@ -317,7 +317,7 @@ export async function PUT(
         material: true,
         scent: true,
         translations: true,
-        images: true,
+        productImages: true,
         attributes: true
       }
     });

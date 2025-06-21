@@ -1,22 +1,17 @@
 
-import { NextResponse, type NextRequest } from 'next/server';
-import { i18n } from './lib/i1n-config';
-import type { Locale } from './lib/i1n-config';
+import createMiddleware from 'next-intl/middleware';
+import { NextRequest } from 'next/server';
 
-function getLocale(request: NextRequest): Locale {
-  // Implement your locale detection logic here if needed (e.g., from headers, cookies)
-  // For now, we'll just use the defaultLocale or the one in the path
-  const pathname = request.nextUrl.pathname;
-  const pathnameLocale = i18n.locales.find(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-
-  if (pathnameLocale) return pathnameLocale;
+const intlMiddleware = createMiddleware({
+  // A list of all locales that are supported
+  locales: ['uz', 'ru', 'en'],
+ 
+  // Used when no locale matches
+  defaultLocale: 'uz',
   
-  // If no locale in path, try to get from cookie or accept-language header (more advanced)
-  // For simplicity, fallback to default
-  return i18n.defaultLocale;
-}
+  // Always use locale prefix
+  localePrefix: 'always'
+});
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -28,30 +23,11 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.includes('.') // Typically files like .png, .ico, .js, .css
   ) {
-    return NextResponse.next();
+    return;
   }
 
-  // Check if there is any supported locale in the pathname
-  const pathnameIsMissingLocale = i18n.locales.every(
-    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  );
-
-  // Redirect if there is no locale
-  if (pathnameIsMissingLocale) {
-    const locale = getLocale(request); // Use detected or default locale
-
-    // Construct the new URL with the locale prefix
-    // Ensures that paths like /products become /uz/products
-    // And / becomes /uz
-    const newUrl = new URL(
-      `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
-      request.url
-    );
-    
-    return NextResponse.redirect(newUrl);
-  }
-
-  return NextResponse.next();
+  // Handle internationalization for all other paths
+  return intlMiddleware(request);
 }
 
 export const config = {

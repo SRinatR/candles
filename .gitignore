@@ -53,7 +53,14 @@ package-lock.json
 /public/products/*
 !/public/products/candle1.svg
 !/public/products/candle2.svg
+!/public/products/candle3.svg
+!/public/products/candle4.svg
+!/public/products/candle5.svg
+!/public/products/candle6.svg
 !/public/products/gypsum1.svg
+!/public/products/gypsum2.svg
+!/public/products/glass1.svg
+!/public/products/wedding1.svg
 # Keep sample SVG files for reference
 
 # logs

@@ -9,16 +9,16 @@ import { CategoryGridSkeleton } from '@/components/products/CategoryCardSkeleton
 import type { ProductCardDictionary } from '@/components/products/ProductCard';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { getDictionary } from '@/lib/getDictionary';
-import type { Locale } from '@/lib/i1n-config';
+import { useTranslations } from 'next-intl';
+import type { Locale } from '@/i18n';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import type { Product, Category } from '@/lib/types';
 
 export default function HomePage() {
   const params = useParams();
-  const locale = params.locale as Locale;
-  const [dictionary, setDictionary] = useState<any>(null);
+  const locale = (params?.locale as Locale) || 'uz'; // Added optional chaining and fallback
+  const t = useTranslations('homepage');
   const [activeProducts, setActiveProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,13 +27,10 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [dictionaryData, productsRes, categoriesRes] = await Promise.all([
-          getDictionary(locale),
+        const [productsRes, categoriesRes] = await Promise.all([
           fetch('/api/products?isActive=true&limit=6&locale=' + locale),
           fetch('/api/categories?limit=5')
         ]);
-        
-        setDictionary(dictionaryData);
         
         if (productsRes.ok && categoriesRes.ok) {
           const productsData = await productsRes.json();
@@ -53,17 +50,18 @@ export default function HomePage() {
   }, [locale]);
   const featuredProducts = activeProducts.slice(0, 4);
 
-  const productCardStrings: ProductCardDictionary = dictionary?.productCard || {
-    addToCart: "Add to Cart (Default Fallback)",
-    addedToCartTitle: "Added to cart (Default Fallback)",
-    addedToCartDesc: "{productName} has been added (Default Fallback).",
-    outOfStock: "Out of Stock (Default Fallback)"
+  // Get product card translations
+  const productCardStrings: ProductCardDictionary = {
+    addToCart: t('productCard.addToCart'),
+    addedToCartTitle: t('productCard.addedToCartTitle'),
+    addedToCartDesc: t('productCard.addedToCartDesc'),
+    outOfStock: t('productCard.outOfStock')
   };
 
   // Filter categories to a maximum of 5 for the homepage grid
   const displayedCategories = categories.slice(0, 5);
 
-  if (loading || !dictionary) {
+  if (loading) {
     return (
       <div className="space-y-12">
         {/* Hero Section Skeleton */}
@@ -101,6 +99,16 @@ export default function HomePage() {
     );
   }
 
+  // Get homepage translations
+  const heroTitleMain = t('heroTitle.main');
+  const heroTitleHighlight = t('heroTitle.highlight');
+  const heroSubtitle = t('heroSubtitle');
+  const shopAllButton = t('shopAllButton');
+  const categoriesTitle = t('categoriesTitle');
+  const featuredTitle = t('featuredTitle');
+  const featuredSubtitle = t('featuredSubtitle');
+  const viewAllProducts = t('viewAllProducts');
+
   return (
     <div className="space-y-12">
       {/* Hero Section */}
@@ -110,14 +118,14 @@ export default function HomePage() {
         </div>
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">
-            {dictionary?.homepage?.heroTitle?.main || 'Perfect'} <span className="text-primary">{dictionary?.homepage?.heroTitle?.highlight || 'Fragrance'}</span>
+            {heroTitleMain} <span className="text-primary">{heroTitleHighlight}</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            {dictionary?.homepage?.heroSubtitle || 'Discover our amazing collection of handcrafted candles.'}
+            {heroSubtitle}
           </p>
           <Button size="lg" asChild className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-md hover:shadow-lg transition-all transform hover:scale-105">
             <Link href={`/${locale}/products`}>
-              {dictionary?.homepage?.shopAllButton || 'Shop All'} <ArrowRight className="ml-2 h-5 w-5" />
+              {shopAllButton} <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
         </div>
@@ -126,11 +134,14 @@ export default function HomePage() {
       {/* Categories Section */}
       <section>
         <h2 className="text-3xl font-semibold tracking-tight text-center mb-8">
-          {dictionary?.homepage?.categoriesTitle || 'Product Categories'}
+          {categoriesTitle}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {displayedCategories.map((category, index) => {
             const categoryName = category.name?.[locale] || category.name?.en || category.name?.uz || category.slug || 'Category';
+            const dictionaryCategoryName = dictionary?.categories?.[category.slug];
+            const displayName = typeof dictionaryCategoryName === 'string' ? dictionaryCategoryName : categoryName;
+            
             return (
             <Link
               key={category.id}
@@ -139,7 +150,7 @@ export default function HomePage() {
             >
               <Image
                 src={category.image || 'https://placehold.co/400x400/E5E7EB/9CA3AF?text=No+Image'}
-                alt={dictionary?.categories?.[category.slug] || categoryName}
+                alt={displayName}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-300"
                 data-ai-hint={`Category: ${categoryName}`}
@@ -147,7 +158,7 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
                 <h3 className="text-white font-medium text-sm md:text-base text-center leading-tight">
-                  {dictionary?.categories?.[category.slug] || categoryName}
+                  {displayName}
                 </h3>
               </div>
             </Link>
@@ -160,10 +171,10 @@ export default function HomePage() {
       <section>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-semibold tracking-tight mb-4">
-            {dictionary?.homepage?.featuredTitle || 'Featured Products'}
+            {featuredTitle}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {dictionary?.homepage?.featuredSubtitle || 'Discover our most popular handcrafted candles.'}
+            {featuredSubtitle}
           </p>
         </div>
         
@@ -176,7 +187,7 @@ export default function HomePage() {
         <div className="text-center mt-8">
           <Button variant="outline" size="lg" asChild>
             <Link href={`/${locale}/products`}>
-              {dictionary?.homepage?.viewAllProducts || 'View All Products'} <ArrowRight className="ml-2 h-4 w-4" />
+              {viewAllProducts} <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>

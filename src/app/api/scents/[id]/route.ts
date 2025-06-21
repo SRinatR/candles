@@ -15,11 +15,17 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
+    const scentId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(scentId)) {
+      return Response.json({ error: 'Invalid scent ID' }, { status: 400 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const scent = await prisma.scent.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: scentId },
       include: {
         products: includeProducts ? {
           where: { isActive: true },
@@ -89,12 +95,18 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params;
+    const scentId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(scentId)) {
+      return Response.json({ error: 'Invalid scent ID' }, { status: 400 });
+    }
+    
     const body = await request.json();
     const validatedData = updateScentSchema.parse(body);
     
     // Проверка существования аромата
     const existingScent = await prisma.scent.findUnique({
-      where: { id: resolvedParams.id }
+      where: { id: scentId }
     });
     
     if (!existingScent) {
@@ -109,7 +121,7 @@ export async function PUT(
       const nameExists = await prisma.scent.findFirst({
         where: {
           name: validatedData.name,
-          id: { not: resolvedParams.id }
+          id: { not: scentId }
         }
       });
       
@@ -123,7 +135,7 @@ export async function PUT(
     
     // Обновление аромата
     const updatedScent = await prisma.scent.update({
-      where: { id: resolvedParams.id },
+      where: { id: scentId },
       data: validatedData,
       include: {
         _count: {
@@ -164,9 +176,15 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params;
+    const scentId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(scentId)) {
+      return Response.json({ error: 'Invalid scent ID' }, { status: 400 });
+    }
+    
     // Проверка существования аромата
     const existingScent = await prisma.scent.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: scentId },
       include: {
         _count: {
           select: {
@@ -196,7 +214,7 @@ export async function DELETE(
     
     // Удаление аромата
     await prisma.scent.delete({
-      where: { id: resolvedParams.id }
+      where: { id: scentId }
     });
     
     return NextResponse.json(

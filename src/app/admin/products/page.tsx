@@ -32,7 +32,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showDrafts, setShowDrafts] = useState(false);
+  // Removed showDrafts state - drafts now have separate page
   const { currentUser: currentAdminUser } = useUnifiedAuth();
   const [adminLocale, setAdminLocale] = useState<AdminLocale>('en');
   const [dict, setDict] = useState<AdminProductsPageDict | null>(null);
@@ -89,13 +89,7 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
-  // Handle URL parameter for draft mode
-  useEffect(() => {
-    const draftParam = searchParams.get('draft');
-    if (draftParam === 'true') {
-      setShowDrafts(true);
-    }
-  }, [searchParams]);
+  // Removed draft URL parameter handling - drafts now have separate page
 
   // Отслеживание изменений языка в localStorage
   useEffect(() => {
@@ -136,8 +130,8 @@ export default function AdminProductsPage() {
         const sku = product.sku || '';
         const isDraft = (product as any).isDraft || false;
         
-        // Фильтр по типу (черновик или обычный товар)
-        const typeMatch = showDrafts ? isDraft : !isDraft;
+        // Показываем только обычные товары (не черновики)
+        const typeMatch = !isDraft;
         
         // Фильтр по поисковому запросу
         const searchMatch = searchTerm === '' || (
@@ -148,11 +142,10 @@ export default function AdminProductsPage() {
         
         return typeMatch && searchMatch;
     });
-  }, [products, searchTerm, showDrafts, adminLocale, dict]);
+  }, [products, searchTerm, adminLocale, dict]);
 
-  const handleDeleteProduct = async (productId: string, productNameObj: Product['name']) => {
+  const handleDeleteProduct = async (productId: string, productName: string) => {
     if (!dict) return;
-    const productName = productNameObj[adminLocale] || productNameObj.en;
     
     try {
       const response = await fetch(`/api/products/${productId}`, {
@@ -168,7 +161,10 @@ export default function AdminProductsPage() {
       setProducts(prev => prev.filter(p => p.id !== productId));
       
       if (currentAdminUser?.email && dict) {
-        logAdminAction(currentAdminUser.email, dict.logProductDeleted, { productId, productName });
+        logAdminAction({ 
+          action: dict.logProductDeleted,
+          details: JSON.stringify({ productId, productName, adminEmail: currentAdminUser.email })
+        });
       }
       
       toast({
@@ -219,7 +215,10 @@ export default function AdminProductsPage() {
       
       if (currentAdminUser?.email && dict) {
         const logAction = newStatus ? dict.logProductActivated : dict.logProductDeactivated;
-        logAdminAction(currentAdminUser.email, logAction, { productId, productName });
+        logAdminAction({ 
+          action: logAction,
+          details: JSON.stringify({ productId, productName, adminEmail: currentAdminUser.email })
+        });
       }
       
       toast({
@@ -240,6 +239,10 @@ export default function AdminProductsPage() {
     return <AdminTableSkeleton rows={8} columns={6} title="Products" />;
   }
 
+  if (!dict) {
+    return <AdminTableSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -249,11 +252,18 @@ export default function AdminProductsPage() {
             {dict.description}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/products/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> {dict.addNewButton}
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/products/drafts">
+              Черновики
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/products/new">
+              <PlusCircle className="mr-2 h-4 w-4" /> {dict.addNewButton}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -272,15 +282,8 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="show-drafts"
-                checked={showDrafts}
-                onCheckedChange={setShowDrafts}
-              />
-              <label htmlFor="show-drafts" className="text-sm font-medium cursor-pointer">
-                {showDrafts ? "Черновики" : "Товары"}
-              </label>
+            <div className="text-sm text-muted-foreground">
+              Отображаются только опубликованные товары
             </div>
           </div>
         </CardHeader>
@@ -295,7 +298,7 @@ export default function AdminProductsPage() {
                     <TableHead className="px-2">{dict.skuHeader}</TableHead>
                     <TableHead className="px-2">{dict.nameHeader.replace('{locale}', adminLocale.toUpperCase())}</TableHead>
                     <TableHead className="px-2">{dict.categoryHeader}</TableHead>
-                    <TableHead className="text-center px-2">Тип</TableHead>
+                    <TableHead className="text-center px-2">Статус</TableHead>
                     <TableHead className="text-right px-2">{dict.priceHeader}</TableHead>
                     <TableHead className="text-right px-2">{dict.costPriceHeader}</TableHead>
                     <TableHead className="text-center px-2">{dict.stockHeader}</TableHead>
@@ -367,7 +370,7 @@ export default function AdminProductsPage() {
                                       </div>
                                       {product.category && (
                                         <p className="text-xs text-gray-600 mt-1 font-medium">
-                                          {product.category}
+                                          {typeof product.category === 'object' ? (product.category[adminLocale] || product.category.en || 'Category') : product.category}
                                         </p>
                                       )}
                                     </div>
@@ -390,12 +393,12 @@ export default function AdminProductsPage() {
                       </TableCell>
                       <TableCell className="align-middle px-2 py-3">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                          {product.category}
+                          {typeof product.category === 'object' ? (product.category[adminLocale] || product.category.en || 'Category') : product.category}
                         </span>
                       </TableCell>
                       <TableCell className="text-center align-middle px-2 py-3">
-                        <Badge variant={(product as any).isDraft ? "outline" : "secondary"} className="text-xs px-2">
-                          {(product as any).isDraft ? "Черновик" : "Товар"}
+                        <Badge variant="secondary" className="text-xs px-2">
+                          Опубликован
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right align-middle px-2 py-3">
@@ -437,7 +440,7 @@ export default function AdminProductsPage() {
                             variant="outline"
                             size="sm"
                             className="text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive h-8 px-3 py-1 text-xs min-w-[70px]"
-                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            onClick={() => handleDeleteProduct(product.id, product.name[adminLocale] || product.name.en)}
                             title={`${dict.deleteAction} ${product.name[adminLocale] || product.name.en}`}
                             >
                             <Trash2 className="mr-1 h-3 w-3" /> {dict.deleteButton}

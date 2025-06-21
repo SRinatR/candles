@@ -180,7 +180,10 @@ export default function ArticleFormPage({ params }: { params: Promise<{ id: stri
 
     localStorage.setItem(ARTICLES_STORAGE_KEY, JSON.stringify(articles));
     if(currentAdminUser?.email) {
-        logAdminAction(currentAdminUser.email, articleAction + " (Simulated)", { articleId: finalArticleData.id, articleTitle: data.title_en});
+        logAdminAction({ 
+          action: articleAction + " (Simulated)",
+          details: JSON.stringify({ articleId: finalArticleData.id, articleTitle: data.title_en, adminEmail: currentAdminUser.email })
+        });
     }
     toast({
       title: `${articleAction} (Simulated)`,

@@ -56,7 +56,7 @@ export interface AdminUser {
   name: string;
   role: AdminRole;
   password?: string;
-  isBlocked?: boolean; // Added for blocking status
+  status?: 'ACTIVE' | 'BLOCKED'; // User status
   isPredefined?: boolean; // To distinguish hardcoded users
 }
 
@@ -87,7 +87,7 @@ export interface MockAdminClient {
   registrationDate: string;
   totalOrders: number;
   totalSpent: number;
-  isBlocked: boolean;
+  status: 'ACTIVE' | 'BLOCKED';
 }
 
 export interface Article {

@@ -5,8 +5,11 @@ import '../globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Providers } from '../providers';
-import { getDictionary } from '@/lib/getDictionary';
-import type { Locale } from '@/lib/i1n-config';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { locales } from '../../../i18n';
+import type { Locale } from '../../../i18n';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,13 +24,21 @@ const geistMono = Geist_Mono({
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: Locale }>; // Изменено: добавлен Promise
+  params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
-  const { locale } = await params; // Изменено: добавлен await и деструктуризация
-  const dictionary = await getDictionary(locale);
+  const { locale } = await params;
+  
+  // Validate locale
+  if (!locales.includes(locale as any)) {
+    notFound();
+  }
+  
+  const messages = await getMessages();
+  const metadata = messages.metadata as any;
+  
   return {
-    title: dictionary.metadata.title,
-    description: dictionary.metadata.description,
+    title: metadata.title,
+    description: metadata.description,
   };
 }
 
@@ -36,10 +47,17 @@ export default async function LocaleLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>; // Изменено: добавлен Promise
+  params: Promise<{ locale: Locale }>;
 }>) {
-  const { locale } = await params; // Изменено: добавлен await и деструктуризация
-  const dictionary = await getDictionary(locale);
+  const { locale } = await params;
+  
+  // Validate locale
+  if (!locales.includes(locale as any)) {
+    notFound();
+  }
+  
+  const messages = await getMessages();
+  
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -47,11 +65,13 @@ export default async function LocaleLayout({
         suppressHydrationWarning={true}
       >
         <Providers>
-          <Header locale={locale} dictionary={dictionary.navigation} />
-          <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-            {children}
-          </main>
-          <Footer locale={locale} dictionary={dictionary.footer} />
+          <NextIntlClientProvider messages={messages}>
+            <Header locale={locale} />
+            <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+              {children}
+            </main>
+            <Footer locale={locale} />
+          </NextIntlClientProvider>
         </Providers>
       </body>
     </html>

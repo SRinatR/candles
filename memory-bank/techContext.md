@@ -1,4 +1,28 @@
-# Tech Context: Askim candles
+# Technical Context - Askim Candles
+
+## Технологический стек
+
+### Frontend
+- **Next.js 15** - React фреймворк с App Router и Turbopack
+- **TypeScript** - Типизированный JavaScript с строгой типизацией
+- **Tailwind CSS 4.x** - Utility-first CSS фреймворк с новой архитектурой @theme
+- **Radix UI** - Компоненты пользовательского интерфейса
+- **React Hook Form** - Управление формами
+- **Zod** - Валидация схем и типов
+- **Lucide React** - Иконки
+
+### Backend
+- **Next.js API Routes** - Серверные API эндпоинты
+- **Prisma ORM** - Объектно-реляционное отображение с PostgreSQL
+- **PostgreSQL** - Реляционная база данных
+- **NextAuth.js** - Аутентификация с поддержкой OAuth и credentials
+- **bcryptjs** - Хеширование паролей
+
+### Инструменты разработки
+- **ESLint** - Линтер кода
+- **TypeScript** - Проверка типов
+- **Prisma Studio** - GUI для базы данных
+- **Git** - Контроль версий
 
 ## 1. Core Technologies
 

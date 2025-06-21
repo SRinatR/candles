@@ -26,11 +26,17 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
+    const categoryId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(categoryId)) {
+      return Response.json({ error: 'Invalid category ID' }, { status: 400 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const includeProducts = searchParams.get('includeProducts') === 'true';
     
     const category = await prisma.category.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: categoryId },
       include: {
         translations: true,
         products: includeProducts ? {
@@ -105,12 +111,18 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params;
+    const categoryId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(categoryId)) {
+      return Response.json({ error: 'Invalid category ID' }, { status: 400 });
+    }
+    
     const body = await request.json();
     const validatedData = updateCategorySchema.parse(body);
     
     // Проверка существования категории
     const existingCategory = await prisma.category.findUnique({
-      where: { id: resolvedParams.id }
+      where: { id: categoryId }
     });
     
     if (!existingCategory) {
@@ -128,7 +140,7 @@ export async function PUT(
         prisma.category.findFirst({
           where: {
             name: validatedData.name,
-            id: { not: resolvedParams.id }
+            id: { not: categoryId }
           }
         }).then(result => ({ type: 'name', exists: !!result }))
       );
@@ -139,7 +151,7 @@ export async function PUT(
         prisma.category.findFirst({
           where: {
             slug: validatedData.slug,
-            id: { not: resolvedParams.id }
+            id: { not: categoryId }
           }
         }).then(result => ({ type: 'slug', exists: !!result }))
       );
@@ -160,7 +172,7 @@ export async function PUT(
     const { translations, ...categoryData } = validatedData;
     
     const updatedCategory = await prisma.category.update({
-      where: { id: resolvedParams.id },
+      where: { id: categoryId },
       data: {
         ...categoryData,
         ...(translations && {
@@ -210,9 +222,15 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params;
+    const categoryId = parseInt(resolvedParams.id, 10);
+    
+    if (isNaN(categoryId)) {
+      return Response.json({ error: 'Invalid category ID' }, { status: 400 });
+    }
+    
     // Проверка существования категории
     const existingCategory = await prisma.category.findUnique({
-      where: { id: resolvedParams.id },
+      where: { id: categoryId },
       include: {
         _count: {
           select: {
@@ -242,7 +260,7 @@ export async function DELETE(
     
     // Удаление категории
     await prisma.category.delete({
-      where: { id: resolvedParams.id }
+      where: { id: categoryId }
     });
     
     return NextResponse.json(

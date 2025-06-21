@@ -48,7 +48,7 @@ interface MaterialTranslation {
 
 interface Material {
   id: string;
-  name: string;
+  name: { en: string; ru: string; uz: string };
   isActive: boolean;
   productsCount?: number;
   createdAt?: string;
@@ -216,9 +216,10 @@ export default function AdminManageMaterialsPage() {
         localStorage.setItem('materials', JSON.stringify(
           allMaterials.map(m => m.id === material.id ? updatedMaterial : m)
         ));
+        const materialName = material.name?.ru || material.name?.en || material.name?.uz || 'Material';
         toast({
           title: dictionary?.statusUpdated || "Status updated",
-          description: `${material.name} ${!material.isActive ? dictionary?.activated || 'activated' : dictionary?.deactivated || 'deactivated'}`,
+          description: `${materialName} ${!material.isActive ? dictionary?.activated || 'activated' : dictionary?.deactivated || 'deactivated'}`,
         });
       } else {
         throw new Error('Failed to update material status');
@@ -254,7 +255,10 @@ export default function AdminManageMaterialsPage() {
     }
 
     const isDuplicate = allMaterials.some(
-      (material) => material.name.toLowerCase() === trimmedNewName.toLowerCase() && material.name !== editingAttributeName
+      (material) => {
+        const materialName = material.name?.ru || material.name?.en || material.name?.uz || '';
+        return materialName.toLowerCase() === trimmedNewName.toLowerCase() && materialName !== editingAttributeName;
+      }
     );
 
     if (isDuplicate) {
@@ -353,11 +357,12 @@ export default function AdminManageMaterialsPage() {
     } catch (error) {
       console.error('Error loading material for edit:', error);
       // Fallback к простому редактированию
-      setNewMaterialName(material.name);
+      const materialName = material.name?.ru || material.name?.en || material.name?.uz || '';
+      setNewMaterialName(materialName);
       setNewMaterialTranslations([
-        { locale: 'ru', name: material.name },
-        { locale: 'en', name: '' },
-        { locale: 'uz', name: '' }
+        { locale: 'ru', name: material.name?.ru || '' },
+        { locale: 'en', name: material.name?.en || '' },
+        { locale: 'uz', name: material.name?.uz || '' }
       ]);
       setEditingAttributeName(material.id);
       setEditingMaterial(material);
@@ -379,7 +384,7 @@ export default function AdminManageMaterialsPage() {
         localStorage.setItem('materials', JSON.stringify(updatedMaterials));
         toast({ 
           title: dictionary?.deleteSuccessTitle || "Material Deleted", 
-          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', material.name) 
+          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', material.name?.ru || material.name?.en || material.name?.uz || 'Material') 
         });
       } else {
         throw new Error('Failed to delete material');
@@ -434,7 +439,7 @@ export default function AdminManageMaterialsPage() {
                       )}
                     </div>
                     <div>
-                      <span className="font-medium">{material.name}</span>
+                      <span className="font-medium">{material.name?.ru || material.name?.en || material.name?.uz || 'Material'}</span>
                       {material.productsCount !== undefined && (
                         <Badge variant="secondary" className="ml-2">
                           {material.productsCount} {dictionary?.productsUsing || 'products'}
@@ -452,7 +457,7 @@ export default function AdminManageMaterialsPage() {
                           variant="outline" 
                           size="sm" 
                           className="text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
-                          disabled={checkIfMaterialInUse(material.name)}
+                          disabled={checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '')}
                         >
                           <Trash2 className="mr-1 h-3 w-3" /> {dictionary.deleteButton || "Delete"}
                         </Button>
@@ -461,9 +466,9 @@ export default function AdminManageMaterialsPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>{alertStrings.confirmDeleteTitle}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {checkIfMaterialInUse(material.name) 
-                              ? alertStrings.confirmDeleteMaterialInUse.replace('{attributeName}', material.name)
-                              : alertStrings.confirmDeleteGeneral.replace('{name}', material.name)
+                            {checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '') 
+                              ? alertStrings.confirmDeleteMaterialInUse.replace('{attributeName}', material.name?.ru || material.name?.en || material.name?.uz || 'Material')
+                              : alertStrings.confirmDeleteGeneral.replace('{name}', material.name?.ru || material.name?.en || material.name?.uz || 'Material')
                             }
                           </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -472,7 +477,7 @@ export default function AdminManageMaterialsPage() {
                           <AlertDialogAction 
                             onClick={() => handleDeleteAttribute(material)} 
                             className="bg-destructive hover:bg-destructive/90"
-                            disabled={checkIfMaterialInUse(material.name)}
+                            disabled={checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '')}
                           >
                             {alertStrings.deleteConfirmButton}
                           </AlertDialogAction>

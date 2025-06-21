@@ -16,54 +16,13 @@ import { useParams } from 'next/navigation';
 import type { Locale } from '@/lib/i1n-config';
 import type { Product } from '@/lib/types'; // Ensure Product type is imported
 
-import enMessages from '@/dictionaries/en.json';
-import ruMessages from '@/dictionaries/ru.json';
-import uzMessages from '@/dictionaries/uz.json';
-
-type Dictionary = typeof enMessages;
-type CartPageDictionary = Dictionary['cartPage'];
-
-
-const dictionaries: Record<Locale, Dictionary> = {
-  en: enMessages,
-  ru: ruMessages,
-  uz: uzMessages,
-};
-
-const getCartDictionary = (locale: Locale): CartPageDictionary => {
-  const dict = dictionaries[locale] || dictionaries.en;
-  return dict.cartPage || { // Fallback to ensure dict.cartPage is never undefined
-    home: "Home",
-    shoppingCartBreadcrumb: "Shopping Cart",
-    yourCartTitle: "Your Shopping Cart",
-    itemRemoved: "Item Removed",
-    itemRemovedDesc: "{productName} has been removed from your cart.",
-    cartCleared: "Cart Cleared",
-    cartClearedDesc: "All items have been removed from your cart.",
-    price: "Price:",
-    quantityFor: "Quantity for {productName}",
-    remove: "Remove {productName} from cart",
-    clearCart: "Clear Cart",
-    orderSummary: "Order Summary",
-    subtotal: "Subtotal",
-    shipping: "Shipping",
-    free: "Free",
-    taxes: "Taxes",
-    calculatedAtCheckout: "Calculated at checkout",
-    total: "Total",
-    proceedToCheckout: "Proceed to Checkout",
-    continueShopping: "Continue Shopping",
-    emptyCartTitle: "Your Cart is Empty",
-    emptyCartSubtitle: "Looks like you haven't added anything yet.",
-    startShopping: "Start Shopping"
-  };
-};
+import { useTranslations } from 'next-intl';
 
 
 export default function CartPage() {
   const params = useParams();
   const locale = params.locale as Locale || 'uz';
-  const dictionary = getCartDictionary(locale);
+  const t = useTranslations('cartPage');
 
   const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
   const { toast } = useToast();
@@ -72,16 +31,16 @@ export default function CartPage() {
     const productName = productNameObj[locale] || productNameObj.en || "Product";
     removeFromCart(productId);
     toast({
-      title: dictionary.itemRemoved,
-      description: dictionary.itemRemovedDesc.replace('{productName}', productName),
+      title: t('itemRemoved'),
+      description: t('itemRemovedDesc').replace('{productName}', productName),
     });
   };
 
   const handleClearCart = () => {
     clearCart();
     toast({
-      title: dictionary.cartCleared,
-      description: dictionary.cartClearedDesc,
+      title: t('cartCleared'),
+      description: t('cartClearedDesc'),
     });
   }
 
@@ -89,10 +48,10 @@ export default function CartPage() {
     return (
       <div className="text-center py-12">
         <ShoppingCart className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
-        <h1 className="text-3xl font-semibold mb-4">{dictionary.emptyCartTitle}</h1>
-        <p className="text-muted-foreground mb-8">{dictionary.emptyCartSubtitle}</p>
+        <h1 className="text-3xl font-semibold mb-4">{t('emptyCartTitle')}</h1>
+        <p className="text-muted-foreground mb-8">{t('emptyCartSubtitle')}</p>
         <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-          <Link href={`/${locale}/products`}>{dictionary.startShopping}</Link>
+          <Link href={`/${locale}/products`}>{t('startShopping')}</Link>
         </Button>
       </div>
     );
@@ -103,16 +62,16 @@ export default function CartPage() {
        <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/${locale}/`}>{dictionary.home}</BreadcrumbLink>
+            <BreadcrumbLink href={`/${locale}/`}>{t('home')}</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator><Slash /></BreadcrumbSeparator>
           <BreadcrumbItem>
-            <BreadcrumbPage>{dictionary.shoppingCartBreadcrumb}</BreadcrumbPage>
+            <BreadcrumbPage>{t('shoppingCartBreadcrumb')}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <h1 className="text-3xl font-bold tracking-tight">{dictionary.yourCartTitle}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t('yourCartTitle')}</h1>
       
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
@@ -141,7 +100,7 @@ export default function CartPage() {
               </div>
               <div className="flex-grow space-y-1">
                 <Link href={`/${locale}/products/${item.id}`} className="text-lg font-medium hover:text-primary">{itemName}</Link>
-                <p className="text-sm text-muted-foreground">{dictionary.price} {item.price.toLocaleString('en-US')} UZS</p>
+                <p className="text-sm text-muted-foreground">{t('price')} {item.price.toLocaleString('en-US')} UZS</p>
                  {item.stock < 5 && item.stock > 0 && (
                   <p className="text-xs text-destructive">Only {item.stock} left in stock!</p>
                 )}
@@ -157,10 +116,10 @@ export default function CartPage() {
                   value={item.quantity}
                   onChange={e => updateQuantity(item.id, parseInt(e.target.value))}
                   className="w-20 h-9 text-center"
-                  aria-label={dictionary.quantityFor.replace('{productName}', itemName)}
+                  aria-label={t('quantityFor').replace('{productName}', itemName)}
                   disabled={item.stock === 0}
                 />
-                <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id, item.name)} aria-label={dictionary.remove.replace('{productName}', itemName)}>
+                <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id, item.name)} aria-label={t('remove').replace('{productName}', itemName)}>
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </Button>
               </div>
@@ -171,7 +130,7 @@ export default function CartPage() {
           {cartItems.length > 0 && (
              <div className="flex justify-end pt-4">
                <Button variant="outline" onClick={handleClearCart} className="text-destructive border-destructive hover:bg-destructive/10">
-                 <Trash2 className="mr-2 h-4 w-4" /> {dictionary.clearCart}
+                 <Trash2 className="mr-2 h-4 w-4" /> {t('clearCart')}
                </Button>
              </div>
            )}
@@ -179,36 +138,36 @@ export default function CartPage() {
 
         <Card className="lg:sticky lg:top-24 p-6 shadow-md">
           <CardHeader className="p-0 pb-4">
-            <CardTitle className="text-2xl">{dictionary.orderSummary}</CardTitle>
+            <CardTitle className="text-2xl">{t('orderSummary')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-0">
             <div className="flex justify-between text-muted-foreground">
-              <span>{dictionary.subtotal}</span>
+              <span>{t('subtotal')}</span>
               <span>{cartTotal.toLocaleString('en-US')} UZS</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>{dictionary.shipping}</span>
-              <span>{dictionary.free}</span>
+              <span>{t('shipping')}</span>
+              <span>{t('free')}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>{dictionary.taxes}</span>
-              <span>{dictionary.calculatedAtCheckout}</span>
+              <span>{t('taxes')}</span>
+              <span>{t('calculatedAtCheckout')}</span>
             </div>
             <Separator className="my-3" />
             <div className="flex justify-between text-xl font-semibold">
-              <span>{dictionary.total}</span>
+              <span>{t('total')}</span>
               <span>{cartTotal.toLocaleString('en-US')} UZS</span>
             </div>
           </CardContent>
           <CardFooter className="flex-col space-y-4 p-0 pt-6">
             <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>
               <Link href={`/${locale}/checkout`}>
-                <CreditCard className="mr-2 h-5 w-5" /> {dictionary.proceedToCheckout}
+                <CreditCard className="mr-2 h-5 w-5" /> {t('proceedToCheckout')}
               </Link>
             </Button>
             <Button variant="outline" className="w-full" asChild>
               <Link href={`/${locale}/products`}>
-                <ArrowLeft className="mr-2 h-5 w-5" /> {dictionary.continueShopping}
+                <ArrowLeft className="mr-2 h-5 w-5" /> {t('continueShopping')}
               </Link>
             </Button>
           </CardFooter>

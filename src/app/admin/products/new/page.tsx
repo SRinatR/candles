@@ -16,7 +16,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, FileText } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { ImageUploadArea } from '@/components/admin/ImageUploadArea';
 import React, { useEffect, useState, useCallback } from "react"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -196,77 +196,56 @@ export default function NewProductPage() {
     return errors;
   };
 
-  const onSubmitDraft: SubmitHandler<ProductFormValues> = async (data) => {
-    console.log('onSubmitDraft called with data:', data);
-    
+  const onSubmitDraft = async () => {
     try {
-      // Для черновика используем менее строгую валидацию
-      const draftData = {
-        ...data,
+      // Получаем данные формы
+      const formData = formMethods.getValues();
+      
+      // Подготавливаем данные для сохранения как черновик
+      const draftPayload = {
+        name: formData.name || '',
+        description: formData.description || '',
+        price: formData.price || 0,
+        costPrice: formData.costPrice || 0,
+        stock: formData.stock || 0,
+        sku: formData.sku || '',
+        categoryId: formData.categoryId || '',
+        materialId: formData.materialId || null,
+        scentId: formData.scentId || null,
+        dimensions: formData.dimensions || '',
+        burningTime: formData.burningTime || null,
+        images: formData.images || [],
         isDraft: true
       };
       
-      // Валидируем с помощью draftProductSchema
-      const validatedData = draftProductSchema.parse(draftData);
+      console.log('Saving as draft:', draftPayload);
       
-      // Подготовка данных для API
-      const translations = [
-        { locale: 'en' as const, name: validatedData.name_en || '', description: validatedData.description_en || '' },
-        { locale: 'ru' as const, name: validatedData.name_ru || '', description: validatedData.description_ru || '' },
-        { locale: 'uz' as const, name: validatedData.name_uz || '', description: validatedData.description_uz || '' }
-      ];
-
-      const productData = {
-        sku: validatedData.sku || Math.floor(Math.random() * 99999 + 1).toString(),
-        price: validatedData.price ? Number(validatedData.price) : 0,
-        costPrice: validatedData.costPrice ? Number(validatedData.costPrice) : undefined,
-        dimensions: validatedData.dimensions || undefined,
-        burningTime: validatedData.burningTime || undefined,
-        stock: validatedData.stock ? Number(validatedData.stock) : 0,
-        isActive: false, // Черновики всегда неактивны
-        isDraft: true,
-        categoryId: validatedData.category || null,
-        materialId: validatedData.material || undefined,
-        scentId: validatedData.scent || undefined,
-        translations,
-        images: validatedData.images && validatedData.images.length > 0 ? validatedData.images.map((url, index) => ({
-          url,
-          isMain: url === validatedData.mainImageId,
-          order: index
-        })) : []
-      };
-
-      console.log('Sending draft product data:', productData);
-
-      const response = await fetch('/api/products', {
+      // Отправляем запрос на сохранение черновика
+      const response = await fetch('/api/products/drafts/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(productData),
+        body: JSON.stringify(draftPayload),
       });
-
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка при сохранении черновика');
+        throw new Error('Failed to save draft');
       }
-
-      const createdProduct = await response.json();
-      console.log('Draft saved successfully:', createdProduct);
       
-      toast({
-        title: "Черновик сохранен",
-        description: "Товар сохранен как черновик. Вы можете продолжить редактирование позже.",
-      });
+      const result = await response.json();
+      console.log('Draft saved successfully:', result);
       
-      // Перенаправляем на страницу редактирования
-      router.push(`/admin/products/edit/${createdProduct.id}`);
+      // Перенаправляем на страницу черновиков
+      router.push('/admin/products/drafts');
+      
     } catch (error) {
       console.error('Error saving draft:', error);
+      // Можно добавить уведомление об ошибке
       toast({
         title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось сохранить черновик",
-        variant: "destructive"
+        description: "Не удалось сохранить черновик",
+        variant: "destructive",
       });
     }
   };
@@ -495,7 +474,7 @@ export default function NewProductPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {availableCategories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                              <SelectItem key={cat.id} value={cat.id}>{(cat.name as any)?.en || (cat.name as any)?.ru || (cat.name as any)?.uz || cat.slug || 'Category'}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -517,7 +496,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableScents.map(scent => (
-                                    <SelectItem key={scent.id} value={scent.id}>{scent.name?.en || scent.name?.ru || scent.name?.uz || scent.slug || 'Scent'}</SelectItem>
+                                    <SelectItem key={scent.id} value={scent.id}>{(scent.name as any)?.en || (scent.name as any)?.ru || (scent.name as any)?.uz || scent.slug || 'Scent'}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>
@@ -537,7 +516,7 @@ export default function NewProductPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableMaterials.map(material => (
-                                    <SelectItem key={material.id} value={material.id}>{material.name?.en || material.name?.ru || material.name?.uz || material.slug || 'Material'}</SelectItem>
+                                    <SelectItem key={material.id} value={material.id}>{(material.name as any)?.en || (material.name as any)?.ru || (material.name as any)?.uz || material.slug || 'Material'}</SelectItem>
                                     ))}
                                 </SelectContent>
                                 </Select>
@@ -607,12 +586,12 @@ export default function NewProductPage() {
           </div>
           <CardFooter className="mt-6 flex justify-end gap-3">
             <Button 
-              type="button"
-              variant="outline"
+              type="button" 
+              variant="outline" 
+              onClick={onSubmitDraft}
               disabled={isSubmitting}
-              onClick={handleSubmit(onSubmitDraft)}
             >
-              <FileText className="mr-2 h-4 w-4" /> 
+              <Save className="mr-2 h-4 w-4" />
               Сохранить как черновик
             </Button>
             <Button 

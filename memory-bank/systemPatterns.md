@@ -8,24 +8,25 @@
 *   **State Management:**
     *   Client-side state managed with React hooks (`useState`, `useEffect`, `useReducer`).
     *   Shared client-side state for Cart via `CartContext` with localStorage persistence.
-    *   Shared client-side state for main site user email/password authentication via `AuthContext` (simulated, uses `localStorage`).
-    *   Shared client-side state for admin panel authentication via `AdminAuthContext` (simulated, uses `localStorage` for current admin/manager and dynamically added managers).
     *   Session state for social logins (Google) managed by NextAuth.js (`useSession`, `SessionProvider`).
-    *   Admin panel theme (Dark/Light) managed client-side in `AdminLayout` using `localStorage`.
-    *   Admin panel language (EN/RU) preference managed client-side in `AdminLayout` using `localStorage`.
+    *   Admin panel theme (Dark/Light) managed server-side in user profiles (AdminProfile/ManagerProfile) with API endpoints.
+    *   Admin panel language (EN/RU) preference managed server-side in user profiles (AdminProfile/ManagerProfile) with API endpoints.
+    *   Authentication state managed through NextAuth.js with database persistence via Prisma ORM.
 *   **Data Fetching/Mutation (Current):**
-    *   Relies on `mock-data.ts` for products, orders, categories, and mock admin clients. Product data includes extended attributes: SKU, costPrice, isActive, scent, material, dimensions, burningTime.
-    *   User data for main site email/password auth is simulated in `localStorage` via `AuthContext`.
-    *   Admin operations (products, managers, clients, logs, attributes, articles) are simulated client-side with localStorage persistence.
-    *   Dynamic attributes (Categories, Materials, Scents) managed through admin interface and stored in localStorage.
+    *   Database operations handled through Prisma ORM with PostgreSQL backend (24 models including User, Product, Category, Order, Client, Manager, Log, etc.).
+    *   Product data includes extended attributes: SKU, costPrice, isActive, scent, material, dimensions, burningTime.
+    *   Admin operations (products, managers, clients, logs, attributes, articles) use full CRUD operations with database persistence.
+    *   Dynamic attributes (Categories, Materials, Scents) managed through admin interface with database storage.
+    *   Real-time admin logging system with database persistence.
 *   **Data Fetching/Mutation (Planned Backend - Prisma/PostgreSQL):**
     *   Server Actions or Next.js Route Handlers will be used for form submissions and data mutations, interacting with Prisma.
 *   **Internationalization (i18n):**
     *   **Main Site:** Path-based localization (`/[locale]/...`) for UZ (default), RU, EN. Dictionaries are in `src/dictionaries/`. Main e-commerce flow pages and "Useful Info" section are fully localized.
     *   **Admin Panel:** Client-side language preference (EN default, RU). Dictionaries in `src/admin/dictionaries/`. Admin layout and key pages (Dashboard, Login, Attribute pages, Product pages, Sessions) are localized.
-*   **Logging (Admin Panel - Simulated):**
-    *   A client-side logger (`src/admin/lib/admin-logger.ts`) stores admin actions in `localStorage`, capped at 100 entries.
+*   **Logging (Admin Panel - Database):**
+    *   Real-time admin logging system with database persistence via Prisma ORM.
     *   Comprehensive activity tracking for login/logout, product operations, manager actions, attribute changes.
+    *   Admin logs stored in database with proper indexing and querying capabilities.
 *   **AI Integration (Planned/Genkit):**
     *   Genkit flows (`ai.defineFlow`) to wrap prompts (`ai.definePrompt`).
     *   Prompts to use Handlebars templating.
@@ -35,12 +36,11 @@
 *   **Next.js App Router:** Adopted for routing, layouts, and Server Component support with comprehensive file-based routing.
 *   **ShadCN UI:** Chosen for pre-built, customizable UI components, integrated with Tailwind CSS and corporate theming.
 *   **TypeScript:** Used for type safety and improved code maintainability across all components.
-*   **Hybrid Frontend Authentication (Main Site):**
-    *   NextAuth.js for Google Sign-In with session management.
-    *   Client-side simulated email/password system (`AuthContext` with multi-step registration and enhanced UX).
-*   **Admin Panel Authentication (Client-Side Simulated):**
-    *   Separate client-side simulated email/password system (`AdminAuthContext`) for ADMIN/MANAGER roles.
-    *   Role-based access control with strict navigation and page-level protection.
+*   **Authentication System:**
+    *   NextAuth.js integration with database persistence for session management.
+    *   Role-based access control with ADMIN/MANAGER roles stored in database.
+    *   Middleware protection for admin routes with strict navigation and page-level protection.
+    *   Multi-provider support with Google Sign-In and credentials provider.
 *   **Future Backend:** Intention to use Prisma as ORM with PostgreSQL database. Comprehensive `deployment_guide.md` outlines the transition.
 *   **Atomic Design Principles:** Focus on creating small, reusable UI components composed into larger structures.
 *   **Placeholder Content:** `https://placehold.co` for images, with `data-ai-hint` for context.
@@ -71,7 +71,12 @@
 *   **Main Site Product Flow:**
     *   Server Components fetch from `mock-data.ts` → Client Components receive as props → Context manages cart state → LocalStorage persists cart.
 *   **Admin Panel Data Flow:**
-    *   Client Components read from localStorage → Context manages auth state → Forms update localStorage → Logger tracks actions → UI reflects changes.
+    *   Authentication via NextAuth.js with role-based access control.
+    *   Server-side language switching (EN/RU) with database persistence in user profiles.
+    *   Server-side theme management (Dark/Light) with database persistence in user profiles.
+    *   Database integration via Prisma ORM with user preferences stored in AdminProfile/ManagerProfile.
+    *   Client Components fetch from database via API routes → NextAuth manages auth state → Forms submit to API endpoints → Database updates via Prisma → Real-time logging → UI reflects changes.
+    *   Admin logging system simulated client-side, planned server-side implementation.
 *   **Filter/Search Patterns:**
     *   URL params drive filter state → Dynamic calculation of available options → String normalization for robust matching → Real-time UI updates.
 
@@ -97,3 +102,26 @@
 *   **Data Isolation:** Admin and main site authentication systems completely separate.
 
 ## 8. Performance
+
+*   **Code Splitting:** Automatic route-based splitting with Next.js App Router and dynamic imports for heavy components.
+*   **Image Optimization:** Next.js Image component with automatic WebP conversion and responsive sizing.
+*   **Caching Strategy:** Static generation for product pages, dynamic rendering for user-specific content.
+*   **Bundle Optimization:** Tree shaking, minification, and compression in production builds.
+*   **Client-Side Optimization:** React.memo for expensive components, useMemo/useCallback for heavy computations.
+*   **Database Optimization (Planned):** Prisma query optimization, indexing strategy, connection pooling.
+
+## 9. Development Patterns
+
+*   **File Organization:** Feature-based structure with clear separation of concerns.
+*   **Component Patterns:** Consistent prop interfaces, error boundaries, loading states.
+*   **Testing Strategy:** Unit tests for utilities, integration tests for API routes, E2E tests for critical flows.
+*   **Code Quality:** ESLint, Prettier, TypeScript strict mode, pre-commit hooks.
+*   **Documentation:** Inline comments, README files, API documentation.
+
+## 10. Deployment & DevOps
+
+*   **Environment Management:** Separate configs for development, staging, production.
+*   **CI/CD Pipeline:** Automated testing, building, and deployment.
+*   **Monitoring:** Error tracking, performance monitoring, user analytics.
+*   **Backup Strategy:** Database backups, asset backups, disaster recovery.
+*   **Scaling Considerations:** Horizontal scaling, CDN integration, database optimization.
