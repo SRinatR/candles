@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AdminTableSkeleton } from "@/components/admin/AdminTableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, PlusCircle, Edit3, Power, PowerOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { mockProducts } from '@/lib/mock-data';
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { mockProducts } from '@/lib/mock-data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,41 +48,77 @@ interface MaterialTranslation {
 
 interface Material {
   id: string;
-  name: { en: string; ru: string; uz: string };
+  translations: MaterialTranslation[];
   isActive: boolean;
-  productsCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-type AlertDialogStrings = {
-  confirmDeleteTitle: string;
-  confirmDeleteMaterialInUse: string;
-  confirmDeleteGeneral: string;
-  confirmRenameTitle: string;
-  confirmRenameAttributeInUse: string;
-  cancelButton: string;
-  deleteConfirmButton: string;
-  updateButton: string;
-};
+const defaultMaterials: Material[] = [
+  {
+    id: "soy-wax",
+    translations: [
+      { locale: 'en', name: 'Soy Wax' },
+      { locale: 'ru', name: 'Соевый воск' },
+      { locale: 'uz', name: 'Soya mumi' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "beeswax",
+    translations: [
+      { locale: 'en', name: 'Beeswax' },
+      { locale: 'ru', name: 'Пчелиный воск' },
+      { locale: 'uz', name: 'Ari mumi' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "paraffin",
+    translations: [
+      { locale: 'en', name: 'Paraffin' },
+      { locale: 'ru', name: 'Парафин' },
+      { locale: 'uz', name: 'Parafin' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "coconut-wax",
+    translations: [
+      { locale: 'en', name: 'Coconut Wax' },
+      { locale: 'ru', name: 'Кокосовый воск' },
+      { locale: 'uz', name: 'Kokos mumi' }
+    ],
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  }
+];
 
 export default function AdminManageMaterialsPage() {
-  const [allMaterials, setAllMaterials] = useState<Material[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newMaterialName, setNewMaterialName] = useState("");
-  const [newMaterialTranslations, setNewMaterialTranslations] = useState<MaterialTranslation[]>([
-    { locale: 'ru', name: '' },
-    { locale: 'en', name: '' },
-    { locale: 'uz', name: '' }
-  ]);
-  const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dict, setDict] = useState<ManageMaterialsDict | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const { toast } = useToast();
+
+  // Form states
+  const [newMaterialEn, setNewMaterialEn] = useState("");
+  const [newMaterialRu, setNewMaterialRu] = useState("");
+  const [newMaterialUz, setNewMaterialUz] = useState("");
+  const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
+  const [editMaterialEn, setEditMaterialEn] = useState("");
+  const [editMaterialRu, setEditMaterialRu] = useState("");
+  const [editMaterialUz, setEditMaterialUz] = useState("");
+  const [deletingMaterialId, setDeletingMaterialId] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const { toast } = useToast();
-  const [dictionary, setDictionary] = useState<ManageMaterialsDict | null>(null);
-  const [alertStrings, setAlertStrings] = useState<AlertDialogStrings | null>(null);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -90,501 +126,524 @@ export default function AdminManageMaterialsPage() {
     const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
     
     async function loadDictionary() {
-      const fullDict = await getAdminDictionary(localeToLoad);
-      const pageDict = fullDict.adminManageMaterialsPage;
-      setDictionary(pageDict);
-      setAlertStrings({
-        confirmDeleteTitle: pageDict.confirmDeleteTitle || "Confirm Deletion",
-        confirmDeleteMaterialInUse: pageDict.confirmDeleteMaterialInUse || "The material '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this material and may need to be updated manually. Are you sure you want to delete it?",
-        confirmDeleteGeneral: pageDict.confirmDeleteGeneral || "Are you sure you want to delete the material \"{name}\"?",
-        confirmRenameTitle: pageDict.confirmRenameTitle || "Confirm Rename",
-        confirmRenameAttributeInUse: pageDict.confirmRenameAttributeInUse || "Renaming '{oldName}' to '{newName}'? Products currently using '{oldName}' will not be automatically updated with this new name and may need to be updated manually to reflect the change. Are you sure?",
-        cancelButton: pageDict.cancelButton || "Cancel",
-        deleteConfirmButton: pageDict.deleteConfirmButton || "Delete",
-        updateButton: pageDict.updateButton || "Update Material"
-      });
+      try {
+        const fullDict = await getAdminDictionary(localeToLoad);
+        setDict(fullDict.adminManageMaterialsPage);
+      } catch (error) {
+        console.error('Failed to load admin dictionary:', error);
+        // Set fallback dictionary
+        setDict({
+          pageTitle: 'Manage Materials',
+          pageDescription: 'Add, edit, and manage material attributes for your products.',
+          addMaterialButton: 'Add New Material',
+          editMaterialButton: 'Edit Material',
+          deleteMaterialButton: 'Delete Material',
+          materialNameEn: 'English Name',
+          materialNameRu: 'Russian Name',
+          materialNameUz: 'Uzbek Name',
+          activeStatus: 'Active',
+          inactiveStatus: 'Inactive',
+          saveButton: 'Save',
+          cancelButton: 'Cancel',
+          deleteConfirmTitle: 'Delete Material',
+          deleteConfirmDescription: 'Are you sure you want to delete this material?',
+          materialAddedToast: 'Material added successfully',
+          materialUpdatedToast: 'Material updated successfully',
+          materialDeletedToast: 'Material deleted successfully',
+          materialStatusUpdatedToast: 'Material status updated'
+        } as ManageMaterialsDict);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadDictionary();
-    
-    const fetchMaterials = async () => {
+
+    // Load materials from localStorage or use defaults
+    const storedMaterials = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIALS);
+    if (storedMaterials) {
       try {
-        setLoading(true);
-        const response = await fetch('/api/materials');
-        if (response.ok) {
-          const data = await response.json();
-          const materials = data.materials || [];
-          setAllMaterials(materials);
-          localStorage.setItem('materials', JSON.stringify(materials));
-        } else {
-          // Fallback to localStorage if API fails
-          let storedCustomMaterials = localStorage.getItem('materials');
-          if (storedCustomMaterials) {
-            const parsed = JSON.parse(storedCustomMaterials);
-            // Проверяем, если это старый формат (массив строк), конвертируем
-            if (parsed.length > 0 && typeof parsed[0] === 'string') {
-              const converted = parsed.map((name: string, index: number) => ({
-                id: `temp-${index}`,
-                name,
-                isActive: true
-              }));
-              setAllMaterials(converted);
-            } else {
-              setAllMaterials(parsed);
-            }
-          }
-        }
+        setMaterials(JSON.parse(storedMaterials));
       } catch (error) {
-        console.error('Error loading materials:', error);
-        // Fallback to localStorage if API fails
-        let storedCustomMaterials = localStorage.getItem('materials');
-        if (storedCustomMaterials) {
-          const parsed = JSON.parse(storedCustomMaterials);
-          // Проверяем, если это старый формат (массив строк), конвертируем
-          if (parsed.length > 0 && typeof parsed[0] === 'string') {
-            const converted = parsed.map((name: string, index: number) => ({
-              id: `temp-${index}`,
-              name,
-              isActive: true
-            }));
-            setAllMaterials(converted);
-          } else {
-            setAllMaterials(parsed);
-          }
-        }
-      } finally {
-        setLoading(false);
+        console.error('Error parsing stored materials:', error);
+        setMaterials(defaultMaterials);
       }
-    };
-    
-    fetchMaterials();
+    } else {
+      setMaterials(defaultMaterials);
+    }
   }, []);
 
-  const updateMaterialTranslation = (locale: 'en' | 'ru' | 'uz', value: string) => {
-    setNewMaterialTranslations(prev => 
-      prev.map(t => t.locale === locale ? { ...t, name: value } : t)
-    );
-  };
+  const saveMaterialsToStorage = useCallback((updatedMaterials: Material[]) => {
+    localStorage.setItem(LOCAL_STORAGE_KEY_MATERIALS, JSON.stringify(updatedMaterials));
+    setMaterials(updatedMaterials);
+  }, []);
 
-  const checkIfMaterialInUse = useCallback((materialName: string): boolean => {
-    const material = allMaterials.find(m => m.name === materialName);
-    return material ? (material.productsCount || 0) > 0 : false;
-  }, [allMaterials]);
+  const addMaterial = () => {
+    if (!dict || !newMaterialEn.trim() || !newMaterialRu.trim() || !newMaterialUz.trim()) return;
 
-  const handleOpenAddDialog = () => {
-    setNewMaterialName("");
-    setNewMaterialTranslations([
-      { locale: 'ru', name: '' },
-      { locale: 'en', name: '' },
-      { locale: 'uz', name: '' }
-    ]);
-    setEditingAttributeName(null);
-    setEditingMaterial(null);
-    setIsAddDialogOpen(true);
-  };
+    const newMaterial: Material = {
+      id: `material-${Date.now()}`,
+      translations: [
+        { locale: 'en', name: newMaterialEn.trim() },
+        { locale: 'ru', name: newMaterialRu.trim() },
+        { locale: 'uz', name: newMaterialUz.trim() }
+      ],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-  const handleCloseDialogs = () => {
+    const updatedMaterials = [...materials, newMaterial];
+    saveMaterialsToStorage(updatedMaterials);
+
+    // Reset form
+    setNewMaterialEn("");
+    setNewMaterialRu("");
+    setNewMaterialUz("");
     setIsAddDialogOpen(false);
-    setIsEditDialogOpen(false);
-    setNewMaterialName("");
-    setNewMaterialTranslations([
-      { locale: 'ru', name: '' },
-      { locale: 'en', name: '' },
-      { locale: 'uz', name: '' }
-    ]);
-    setEditingAttributeName(null);
-    setEditingMaterial(null);
+
+    toast({
+      title: dict.materialAddedToast,
+      description: `${newMaterialEn} has been added.`,
+    });
   };
 
-  const toggleMaterialStatus = async (material: Material) => {
-    try {
-      const response = await fetch(`/api/materials/${material.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+  const startEditMaterial = (material: Material) => {
+    setEditingMaterialId(material.id);
+    setEditMaterialEn(material.translations.find(t => t.locale === 'en')?.name || "");
+    setEditMaterialRu(material.translations.find(t => t.locale === 'ru')?.name || "");
+    setEditMaterialUz(material.translations.find(t => t.locale === 'uz')?.name || "");
+    setIsEditDialogOpen(true);
+  };
+
+  const saveEditMaterial = () => {
+    if (!dict || !editingMaterialId || !editMaterialEn.trim() || !editMaterialRu.trim() || !editMaterialUz.trim()) return;
+
+    const updatedMaterials = materials.map(material => {
+      if (material.id === editingMaterialId) {
+        return {
           ...material,
-          isActive: !material.isActive
-        }),
-      });
-
-      if (response.ok) {
-        const updatedMaterial = await response.json();
-        setAllMaterials(prev => 
-          prev.map(m => m.id === material.id ? updatedMaterial : m)
-        );
-        localStorage.setItem('materials', JSON.stringify(
-          allMaterials.map(m => m.id === material.id ? updatedMaterial : m)
-        ));
-        const materialName = material.name?.ru || material.name?.en || material.name?.uz || 'Material';
-        toast({
-          title: dictionary?.statusUpdated || "Status updated",
-          description: `${materialName} ${!material.isActive ? dictionary?.activated || 'activated' : dictionary?.deactivated || 'deactivated'}`,
-        });
-      } else {
-        throw new Error('Failed to update material status');
+          translations: [
+            { locale: 'en', name: editMaterialEn.trim() },
+            { locale: 'ru', name: editMaterialRu.trim() },
+            { locale: 'uz', name: editMaterialUz.trim() }
+          ],
+          updatedAt: new Date().toISOString()
+        };
       }
-    } catch (error) {
-      console.error('Error updating material status:', error);
-      toast({
-        title: dictionary?.error || "Error",
-        description: dictionary?.statusUpdateError || "Failed to update material status",
-        variant: "destructive",
-      });
-    }
+      return material;
+    });
+
+    saveMaterialsToStorage(updatedMaterials);
+
+    // Reset form
+    setEditingMaterialId(null);
+    setEditMaterialEn("");
+    setEditMaterialRu("");
+    setEditMaterialUz("");
+    setIsEditDialogOpen(false);
+
+    toast({
+      title: dict.materialUpdatedToast,
+      description: `${editMaterialEn} has been updated.`,
+    });
   };
 
-  const handleAddOrUpdateAttribute = async () => {
-    // Проверка заполненности переводов
-    const hasEmptyTranslations = newMaterialTranslations.some(t => !t.name.trim());
-    if (hasEmptyTranslations) {
-      toast({
-        title: "Заполните названия на всех языках",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Используем русское название как основное
-    const ruTranslation = newMaterialTranslations.find(t => t.locale === 'ru');
-    const trimmedNewName = ruTranslation?.name.trim() || '';
+  const toggleMaterialStatus = (materialId: string) => {
+    if (!dict) return;
     
-    if (!trimmedNewName) {
-      toast({ title: "Error", description: dictionary?.errorEmptyName || "Material name cannot be empty.", variant: "destructive" });
-      return;
-    }
-
-    const isDuplicate = allMaterials.some(
-      (material) => {
-        const materialName = material.name?.ru || material.name?.en || material.name?.uz || '';
-        return materialName.toLowerCase() === trimmedNewName.toLowerCase() && materialName !== editingAttributeName;
+    const updatedMaterials = materials.map(material => {
+      if (material.id === materialId) {
+        return {
+          ...material,
+          isActive: !material.isActive,
+          updatedAt: new Date().toISOString()
+        };
       }
-    );
+      return material;
+    });
 
-    if (isDuplicate) {
-      toast({ title: "Error", description: dictionary?.errorExists || "Material with this name already exists.", variant: "destructive" });
-      return;
-    }
+    saveMaterialsToStorage(updatedMaterials);
 
-    try {
-      const materialData = {
-        name: trimmedNewName,
-        translations: newMaterialTranslations.filter(t => t.name.trim())
-      };
-
-      if (editingAttributeName) {
-        // Обновление существующего материала
-        const response = await fetch(`/api/materials/${editingAttributeName}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(materialData),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update material');
-        }
-
-        const updatedMaterial = await response.json();
-        const updatedMaterials = allMaterials.map(mat => 
-          mat.id === editingAttributeName ? updatedMaterial : mat
-        );
-        setAllMaterials(updatedMaterials);
-        localStorage.setItem('materials', JSON.stringify(updatedMaterials));
-        
-        toast({
-          title: dictionary?.updateSuccessTitle || "Material Updated",
-        });
-      } else {
-        // Создание нового материала
-        const response = await fetch('/api/materials', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(materialData),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to create material');
-        }
-
-        const newMaterial = await response.json();
-        const updatedMaterials = [...allMaterials, newMaterial];
-        setAllMaterials(updatedMaterials);
-        localStorage.setItem('materials', JSON.stringify(updatedMaterials));
-        
-        toast({
-          title: dictionary?.addSuccessTitle || "Material Added",
-        });
-      }
-
-      // Закрытие модального окна и сброс формы
-      handleCloseDialogs();
-    } catch (error) {
-      console.error('Error saving material:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить материал",
-        variant: "destructive",
-      });
-    }
+    const material = materials.find(m => m.id === materialId);
+    const materialName = material?.translations.find(t => t.locale === 'en')?.name || 'Material';
+    
+    toast({
+      title: dict.materialStatusUpdatedToast,
+      description: `${materialName} is now ${material?.isActive ? 'inactive' : 'active'}.`,
+    });
   };
 
-  const handleInitiateEdit = async (material: Material) => {
-    try {
-      // Попытаться загрузить полные данные материала из API
-      const response = await fetch(`/api/materials/${material.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        
-        setNewMaterialName(data.name);
-        
-        // Установить переводы или создать пустые
-        const translations = data.translations || [];
-        const locales: ('ru' | 'en' | 'uz')[] = ['ru', 'en', 'uz'];
-        const formattedTranslations = locales.map(locale => {
-          const existing = translations.find((t: { locale: string }) => t.locale === locale);
-          return existing || { locale, name: '' };
-        });
-        
-        setNewMaterialTranslations(formattedTranslations);
-        setEditingAttributeName(data.id);
-        setEditingMaterial(material);
-        setIsEditDialogOpen(true);
-      }
-    } catch (error) {
-      console.error('Error loading material for edit:', error);
-      // Fallback к простому редактированию
-      const materialName = material.name?.ru || material.name?.en || material.name?.uz || '';
-      setNewMaterialName(materialName);
-      setNewMaterialTranslations([
-        { locale: 'ru', name: material.name?.ru || '' },
-        { locale: 'en', name: material.name?.en || '' },
-        { locale: 'uz', name: material.name?.uz || '' }
-      ]);
-      setEditingAttributeName(material.id);
-      setEditingMaterial(material);
-      setIsEditDialogOpen(true);
-    }
+  const deleteMaterial = (materialId: string) => {
+    if (!dict) return;
+    
+    const materialToDelete = materials.find(m => m.id === materialId);
+    const updatedMaterials = materials.filter(material => material.id !== materialId);
+    saveMaterialsToStorage(updatedMaterials);
+
+    const materialName = materialToDelete?.translations.find(t => t.locale === 'en')?.name || 'Material';
+    
+    toast({
+      title: dict.materialDeletedToast,
+      description: `${materialName} has been deleted.`,
+    });
+
+    setDeletingMaterialId(null);
   };
 
-
-
-  const handleDeleteAttribute = async (material: Material) => {
-    try {
-      const response = await fetch(`/api/materials/${material.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        const updatedMaterials = allMaterials.filter(m => m.id !== material.id);
-        setAllMaterials(updatedMaterials);
-        localStorage.setItem('materials', JSON.stringify(updatedMaterials));
-        toast({ 
-          title: dictionary?.deleteSuccessTitle || "Material Deleted", 
-          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', material.name?.ru || material.name?.en || material.name?.uz || 'Material') 
-        });
-      } else {
-        throw new Error('Failed to delete material');
-      }
-    } catch (error) {
-      console.error('Error deleting material:', error);
-      toast({
-        title: dictionary?.error || "Error",
-        description: dictionary?.deleteError || "Failed to delete material",
-        variant: "destructive",
-      });
-    }
+  const getMaterialUsageCount = (materialId: string) => {
+    return mockProducts.filter(product => 
+      product.materials?.some(material => material.id === materialId)
+    ).length;
   };
 
-  if (!isClient || !dictionary || !alertStrings || loading) {
-    return <AdminTableSkeleton rows={8} columns={3} showActions={true} title="Materials Management" />;
+  if (!isClient || isLoading || !dict) {
+    return <AdminTableSkeleton />;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">{dictionary.title}</h1>
-        <Button onClick={handleOpenAddDialog}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          {dictionary?.addButton || "Add Material"}
-        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{dict.pageTitle}</h1>
+          <p className="text-muted-foreground">{dict.pageDescription}</p>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              {dict.addMaterialButton}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{dict.addMaterialButton}</DialogTitle>
+              <DialogDescription>
+                Add a new material with translations in all supported languages.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-material-en">{dict.materialNameEn}</Label>
+                <Input
+                  id="new-material-en"
+                  value={newMaterialEn}
+                  onChange={(e) => setNewMaterialEn(e.target.value)}
+                  placeholder="Enter English name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-material-ru">{dict.materialNameRu}</Label>
+                <Input
+                  id="new-material-ru"
+                  value={newMaterialRu}
+                  onChange={(e) => setNewMaterialRu(e.target.value)}
+                  placeholder="Введите русское название"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-material-uz">{dict.materialNameUz}</Label>
+                <Input
+                  id="new-material-uz"
+                  value={newMaterialUz}
+                  onChange={(e) => setNewMaterialUz(e.target.value)}
+                  placeholder="O'zbek nomini kiriting"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                {dict.cancelButton}
+              </Button>
+              <Button 
+                onClick={addMaterial}
+                disabled={!newMaterialEn.trim() || !newMaterialRu.trim() || !newMaterialUz.trim()}
+              >
+                {dict.saveButton}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{dictionary.existingTitle}</CardTitle>
-          <CardDescription>{dictionary.existingDescription}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {allMaterials.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{dictionary.noCustomYet || "No materials added yet."}</p>
-          ) : (
-            <div className="space-y-2">
-              {allMaterials.map(material => (
-                <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={material.isActive}
-                        onCheckedChange={() => toggleMaterialStatus(material)}
-                        className="data-[state=checked]:bg-green-500"
-                      />
-                      {material.isActive ? (
-                        <Power className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <PowerOff className="h-4 w-4 text-gray-400" />
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-medium">{material.name?.ru || material.name?.en || material.name?.uz || 'Material'}</span>
-                      {material.productsCount !== undefined && (
-                        <Badge variant="secondary" className="ml-2">
-                          {material.productsCount} {dictionary?.productsUsing || 'products'}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleInitiateEdit(material)}>
-                      <Edit3 className="mr-1 h-3 w-3" /> {dictionary.editButton || "Edit"}
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
-                          disabled={checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '')}
-                        >
-                          <Trash2 className="mr-1 h-3 w-3" /> {dictionary.deleteButton || "Delete"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{alertStrings.confirmDeleteTitle}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '') 
-                              ? alertStrings.confirmDeleteMaterialInUse.replace('{attributeName}', material.name?.ru || material.name?.en || material.name?.uz || 'Material')
-                              : alertStrings.confirmDeleteGeneral.replace('{name}', material.name?.ru || material.name?.en || material.name?.uz || 'Material')
-                            }
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{alertStrings.cancelButton}</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDeleteAttribute(material)} 
-                            className="bg-destructive hover:bg-destructive/90"
-                            disabled={checkIfMaterialInUse(material.name?.ru || material.name?.en || material.name?.uz || '')}
-                          >
-                            {alertStrings.deleteConfirmButton}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add Material Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{dictionary?.addNewTitle || "Add New Material"}</DialogTitle>
-            <DialogDescription>
-              {dictionary?.addNewDescription || "Create a new material option for your products."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-4">
-              <Label>Переводы на языки</Label>
-              <Tabs defaultValue="ru" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="ru">Русский</TabsTrigger>
-                  <TabsTrigger value="en">English</TabsTrigger>
-                  <TabsTrigger value="uz">O'zbek</TabsTrigger>
-                </TabsList>
-                
-                {(['ru', 'en', 'uz'] as const).map((locale) => {
-                  const translation = newMaterialTranslations.find(t => t.locale === locale);
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Materials ({materials.length})</TabsTrigger>
+          <TabsTrigger value="active">Active ({materials.filter(m => m.isActive).length})</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive ({materials.filter(m => !m.isActive).length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Materials</CardTitle>
+              <CardDescription>Manage all material attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {materials.map((material) => {
+                  const usageCount = getMaterialUsageCount(material.id);
                   return (
-                    <TabsContent key={locale} value={locale} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Название на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
-                        <Input
-                          value={translation?.name || ''}
-                          onChange={(e) => updateMaterialTranslation(locale, e.target.value)}
-                          placeholder={`Название материала на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
-                        />
+                    <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">
+                            {material.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant={material.isActive ? "default" : "secondary"}>
+                            {material.isActive ? dict.activeStatus : dict.inactiveStatus}
+                          </Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {material.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {material.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
                       </div>
-                    </TabsContent>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={material.isActive}
+                          onCheckedChange={() => toggleMaterialStatus(material.id)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditMaterial(material)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeletingMaterialId(material.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{dict.deleteConfirmTitle}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {dict.deleteConfirmDescription}
+                                {usageCount > 0 && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Warning:</strong> This material is used in {usageCount} product{usageCount !== 1 ? 's' : ''}. Deleting it may affect those products.
+                                  </div>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{dict.cancelButton}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteMaterial(material.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {dict.deleteMaterialButton}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   );
                 })}
-              </Tabs>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialogs}>
-              {alertStrings?.cancelButton || "Cancel"}
-            </Button>
-            <Button onClick={handleAddOrUpdateAttribute}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              {dictionary?.addButton || "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Materials</CardTitle>
+              <CardDescription>Currently active material attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {materials.filter(m => m.isActive).map((material) => {
+                  const usageCount = getMaterialUsageCount(material.id);
+                  return (
+                    <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">
+                            {material.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant="default">{dict.activeStatus}</Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {material.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {material.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleMaterialStatus(material.id)}
+                        >
+                          <PowerOff className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditMaterial(material)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="inactive">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inactive Materials</CardTitle>
+              <CardDescription>Currently inactive material attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {materials.filter(m => !m.isActive).map((material) => {
+                  const usageCount = getMaterialUsageCount(material.id);
+                  return (
+                    <div key={material.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-muted-foreground">
+                            {material.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant="secondary">{dict.inactiveStatus}</Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {material.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {material.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleMaterialStatus(material.id)}
+                        >
+                          <Power className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditMaterial(material)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeletingMaterialId(material.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{dict.deleteConfirmTitle}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {dict.deleteConfirmDescription}
+                                {usageCount > 0 && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Warning:</strong> This material is used in {usageCount} product{usageCount !== 1 ? 's' : ''}. Deleting it may affect those products.
+                                  </div>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{dict.cancelButton}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteMaterial(material.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {dict.deleteMaterialButton}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Edit Material Dialog */}
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dictionary?.editExistingTitle || "Edit Material"}</DialogTitle>
+            <DialogTitle>{dict.editMaterialButton}</DialogTitle>
             <DialogDescription>
-              {dictionary?.editExistingDescription || "Modify the material details below."}
+              Edit the material translations in all supported languages.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-4">
-              <Label>Переводы на языки</Label>
-              <Tabs defaultValue="ru" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="ru">Русский</TabsTrigger>
-                  <TabsTrigger value="en">English</TabsTrigger>
-                  <TabsTrigger value="uz">O'zbek</TabsTrigger>
-                </TabsList>
-                
-                {(['ru', 'en', 'uz'] as const).map((locale) => {
-                  const translation = newMaterialTranslations.find(t => t.locale === locale);
-                  return (
-                    <TabsContent key={locale} value={locale} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Название на {locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}</Label>
-                        <Input
-                          value={translation?.name || ''}
-                          onChange={(e) => updateMaterialTranslation(locale, e.target.value)}
-                          placeholder={`Название материала на ${locale === 'ru' ? 'русском' : locale === 'en' ? 'английском' : 'узбекском'}`}
-                        />
-                      </div>
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
+            <div>
+              <Label htmlFor="edit-material-en">{dict.materialNameEn}</Label>
+              <Input
+                id="edit-material-en"
+                value={editMaterialEn}
+                onChange={(e) => setEditMaterialEn(e.target.value)}
+                placeholder="Enter English name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-material-ru">{dict.materialNameRu}</Label>
+              <Input
+                id="edit-material-ru"
+                value={editMaterialRu}
+                onChange={(e) => setEditMaterialRu(e.target.value)}
+                placeholder="Введите русское название"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-material-uz">{dict.materialNameUz}</Label>
+              <Input
+                id="edit-material-uz"
+                value={editMaterialUz}
+                onChange={(e) => setEditMaterialUz(e.target.value)}
+                placeholder="O'zbek nomini kiriting"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialogs}>
-              {alertStrings?.cancelButton || "Cancel"}
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              {dict.cancelButton}
             </Button>
-            <Button onClick={handleAddOrUpdateAttribute}>
-              <Edit3 className="mr-2 h-4 w-4" />
-              {alertStrings?.updateButton || "Update"}
+            <Button 
+              onClick={saveEditMaterial}
+              disabled={!editMaterialEn.trim() || !editMaterialRu.trim() || !editMaterialUz.trim()}
+            >
+              {dict.saveButton}
             </Button>
           </DialogFooter>
         </DialogContent>

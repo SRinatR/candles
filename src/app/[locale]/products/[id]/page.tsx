@@ -71,7 +71,7 @@ const getProductDetailPageDictionaryBundle = (locale: Locale) => {
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; locale: Locale }> }) {
   const routeParams = use(params);
   const clientParams = useParams();
-  const locale = routeParams.locale || clientParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale || clientParams?.locale as Locale) || 'uz';
   
   const dictionaryBundle = getProductDetailPageDictionaryBundle(locale);
   const dictionary = dictionaryBundle.page;
@@ -103,7 +103,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               setRelatedProducts(relatedData.products || []);
             }
           } catch (relatedError) {
-            console.error('Error loading related products:', relatedError);
+            // Handle related products error silently in production
           }
         } else if (productRes.status === 404) {
           setError('Product not found');
@@ -111,7 +111,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           setError('Failed to load product');
         }
       } catch (error) {
-        console.error('Error loading product:', error);
+        // Handle product loading error silently in production
         setError('Failed to load product');
       } finally {
         setLoading(false);

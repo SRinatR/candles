@@ -1,34 +1,29 @@
 
 import createMiddleware from 'next-intl/middleware';
-import { NextRequest } from 'next/server';
+import { i18n } from './lib/i1n-config';
 
-const intlMiddleware = createMiddleware({
+export default createMiddleware({
   // A list of all locales that are supported
-  locales: ['uz', 'ru', 'en'],
- 
-  // Used when no locale matches
-  defaultLocale: 'uz',
-  
-  // Always use locale prefix
-  localePrefix: 'always'
-});
+  locales: i18n.locales,
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  // Used when no locale matches
+  defaultLocale: i18n.defaultLocale,
 
   // Skip admin, API, static files, and Next.js specific paths
-  if (
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/') ||
-    pathname.includes('.') // Typically files like .png, .ico, .js, .css
-  ) {
-    return;
+  pathnames: {
+    // If all locales use the same pathname, a single
+    // external path can be used for all locales
+    '/': '/',
+    '/products': '/products',
+    '/about': '/about',
+    '/info': '/info',
+    '/cart': '/cart',
+    '/checkout': '/checkout',
+    '/login': '/login',
+    '/register': '/register',
+    '/account': '/account'
   }
-
-  // Handle internationalization for all other paths
-  return intlMiddleware(request);
-}
+});
 
 export const config = {
   // Matcher ignoring `/_next/` and `/api/` and static files.

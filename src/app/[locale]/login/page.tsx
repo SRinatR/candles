@@ -37,7 +37,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeParams = useParams(); 
-  const locale = routeParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale as Locale) || 'uz';
   const dictionary = getLoginDictionary(locale);
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();
@@ -77,7 +77,7 @@ export default function LoginPage() {
         });
       }
     } catch (error) {
-      console.error("Sign in error", error);
+      // Handle sign in error silently in production
       toast({
         title: dictionary.loginFailedTitle,
         description: dictionary.loginFailedDescGeneric,

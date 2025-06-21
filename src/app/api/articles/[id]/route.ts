@@ -22,14 +22,15 @@ const updateArticleSchema = z.object({
 // GET /api/articles/[id] - Получить статью по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { searchParams } = new URL(request.url);
     const locale = searchParams.get('locale');
     
     const article = await prisma.article.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         translations: locale ? {
           where: { locale }
@@ -57,9 +58,10 @@ export async function GET(
 // PUT /api/articles/[id] - Обновить статью
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Проверка авторизации
     const session = await getServerSession(authOptions);
     if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
@@ -74,7 +76,7 @@ export async function PUT(
     
     // Проверка существования статьи
     const existingArticle = await prisma.article.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     if (!existingArticle) {
@@ -113,7 +115,7 @@ export async function PUT(
     if (validatedData.translations) {
       // Удаляем старые переводы
       await prisma.articleTranslation.deleteMany({
-        where: { articleId: params.id }
+        where: { articleId: resolvedParams.id }
       });
       
       // Создаем новые переводы
@@ -124,7 +126,7 @@ export async function PUT(
     
     // Обновление статьи
     const article = await prisma.article.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: updateData,
       include: {
         translations: true
@@ -151,9 +153,10 @@ export async function PUT(
 // DELETE /api/articles/[id] - Удалить статью
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Проверка авторизации
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== 'ADMIN') {
@@ -165,7 +168,7 @@ export async function DELETE(
 
     // Проверка существования статьи
     const existingArticle = await prisma.article.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     if (!existingArticle) {
@@ -177,7 +180,7 @@ export async function DELETE(
     
     // Удаление статьи (переводы удалятся автоматически благодаря onDelete: Cascade)
     await prisma.article.delete({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     });
     
     return NextResponse.json(

@@ -18,7 +18,11 @@
     "langRu": "RU",
     "langEn": "EN",
     "soyWaxInfoTitle": "Soya mumi nima...",
-    "aromaSachetInfoTitle": "Aroma sacheti nima va uni qanday ishlatish kerak"
+    "aromaSachetInfoTitle": "Aroma sacheti nima va uni qanday ishlatish kerak",
+    "addToCart": "Savatchaga qo'shish",
+    "addedToCartTitle": "Savatchaga qo'shildi",
+    "addedToCartDesc": "{productName} savatchangizga qo'shildi.",
+    "outOfStock": "Sotuvda yo'q"
   },
   "homepage": {
     "heroTitle": {
@@ -29,6 +33,7 @@
     "shopAllButton": "Barcha mahsulotlar",
     "categoriesTitle": "Mahsulot Turkumlari",
     "featuredProductsTitle": "Ommabop mahsulotlar",
+    "featuredSubtitle": "Qo'lda tanlangan maxsus to'plamimizni kashf eting",
     "viewAllButton": "Hammasini ko'rish",
     "ctaTitle": "Mehr bilan Yaratilgan, Siz uchun Dizayn",
     "ctaSubtitle": "Askim candles'da biz ijod san'atiga ishonamiz. Har bir buyum sizning makoningizga iliqlik, go'zallik va osoyishtalik olib kelish uchun puxta o'ylangan va sinchkovlik bilan yaratilgan.",

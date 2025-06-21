@@ -7,7 +7,7 @@ import type { Locale } from '@/lib/i1n-config';
 export default function AccountPage() {
   const router = useRouter();
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
 
   useEffect(() => {
     router.replace(`/${locale}/account/dashboard`);

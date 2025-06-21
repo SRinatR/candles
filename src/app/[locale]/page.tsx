@@ -10,15 +10,17 @@ import type { ProductCardDictionary } from '@/components/products/ProductCard';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { Locale } from '@/i18n';
+import type { Locale } from '@/lib/i1n-config';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import type { Product, Category } from '@/lib/types';
 
 export default function HomePage() {
   const params = useParams();
-  const locale = (params?.locale as Locale) || 'uz'; // Added optional chaining and fallback
+  const locale = (params?.locale as Locale) || 'uz';
   const t = useTranslations('homepage');
+  const tNav = useTranslations('navigation');
+  const tCategories = useTranslations('categories');
   const [activeProducts, setActiveProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,22 +42,28 @@ export default function HomePage() {
           setCategories(categoriesData.categories || []);
         }
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+        // Handle error silently in production
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [locale]);
+
   const featuredProducts = activeProducts.slice(0, 4);
 
   // Get product card translations
   const productCardStrings: ProductCardDictionary = {
-    addToCart: t('productCard.addToCart'),
-    addedToCartTitle: t('productCard.addedToCartTitle'),
-    addedToCartDesc: t('productCard.addedToCartDesc'),
-    outOfStock: t('productCard.outOfStock')
+    addToCart: tNav('addToCart') || 'Add to Cart',
+    addedToCartTitle: tNav('addedToCartTitle') || 'Added to Cart',
+    addedToCartDesc: tNav('addedToCartDesc', { productName: '' }) || 'Product added successfully',
+    outOfStock: tNav('outOfStock') || 'Out of Stock'
+  };
+
+  // Create a function to get translated description with product name
+  const getAddedToCartDesc = (productName: string) => {
+    return tNav('addedToCartDesc', { productName }) || `${productName} has been added to your cart.`;
   };
 
   // Filter categories to a maximum of 5 for the homepage grid
@@ -105,9 +113,9 @@ export default function HomePage() {
   const heroSubtitle = t('heroSubtitle');
   const shopAllButton = t('shopAllButton');
   const categoriesTitle = t('categoriesTitle');
-  const featuredTitle = t('featuredTitle');
-  const featuredSubtitle = t('featuredSubtitle');
-  const viewAllProducts = t('viewAllProducts');
+  const featuredTitle = t('featuredProductsTitle');
+  const featuredSubtitle = t('featuredSubtitle') || 'Discover our handpicked selection';
+  const viewAllProducts = t('viewAllButton');
 
   return (
     <div className="space-y-12">
@@ -139,8 +147,8 @@ export default function HomePage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {displayedCategories.map((category, index) => {
             const categoryName = category.name?.[locale] || category.name?.en || category.name?.uz || category.slug || 'Category';
-            const dictionaryCategoryName = dictionary?.categories?.[category.slug];
-            const displayName = typeof dictionaryCategoryName === 'string' ? dictionaryCategoryName : categoryName;
+            const translatedCategoryName = tCategories(category.slug) || categoryName;
+            const displayName = translatedCategoryName;
             
             return (
             <Link
@@ -182,6 +190,7 @@ export default function HomePage() {
           products={featuredProducts} 
           locale={locale}
           dictionary={productCardStrings}
+          getAddedToCartDesc={getAddedToCartDesc}
         />
         
         <div className="text-center mt-8">

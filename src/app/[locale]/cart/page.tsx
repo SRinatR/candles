@@ -14,18 +14,39 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Slash } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import type { Locale } from '@/lib/i1n-config';
-import type { Product } from '@/lib/types'; // Ensure Product type is imported
+import type { Product } from '@/lib/types';
+import { useState, useEffect } from 'react';
 
-import { useTranslations } from 'next-intl';
+import { getDictionary } from '@/lib/getDictionary';
 
 
 export default function CartPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
-  const t = useTranslations('cartPage');
-
+  const locale = (params?.locale as Locale) || 'uz';
+  const [dictionary, setDictionary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadDictionary = async () => {
+      try {
+        const dict = await getDictionary(locale);
+        setDictionary(dict);
+      } catch (error) {
+        // Handle error silently in production
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDictionary();
+  }, [locale]);
+
+  if (!dictionary || loading) {
+    return <div>Loading...</div>;
+  }
+
+  const t = dictionary.cartPage;
 
   const handleRemove = (productId: string, productNameObj: Product['name']) => {
     const productName = productNameObj[locale] || productNameObj.en || "Product";

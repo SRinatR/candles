@@ -29,7 +29,7 @@ export function ProductSort({ dictionary }: ProductSortProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const routeParams = useParams();
-  const locale = routeParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale as Locale) || 'uz';
   const currentSort = searchParams.get("sort") || "relevance";
 
   const sortOptions = [

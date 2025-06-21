@@ -36,8 +36,12 @@ const ARTICLES_STORAGE_KEY = "askimAdminArticles";
 
 export default function ArticleSlugPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
-  const slug = params.slug as string;
+  const locale = (params?.locale as Locale) || 'uz';
+  const slug = params?.slug as string;
+
+  if (!slug) {
+    notFound();
+  }
 
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);

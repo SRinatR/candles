@@ -78,7 +78,7 @@ const getCombinedDictionary = (locale: Locale) => {
 export default function ProductsPage() {
   const searchParamsHook = useSearchParams();
   const routeParams = useParams();
-  const locale = routeParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale as Locale) || 'uz';
   
   const [combinedDict, setCombinedDict] = useState(() => getCombinedDictionary(locale));
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -121,7 +121,7 @@ export default function ProductsPage() {
           setCategories(categoriesData.categories || []);
         }
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+        // Handle error silently in production
       } finally {
         setLoading(false);
       }

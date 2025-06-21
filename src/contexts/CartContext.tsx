@@ -6,35 +6,34 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'next/navigation';
 import type { Locale } from '@/lib/i1n-config';
+import { getDictionary } from '@/lib/getDictionary';
 
-// Simulating dictionary loading for client component
-import enMessages from '@/dictionaries/en.json';
-import ruMessages from '@/dictionaries/ru.json';
-import uzMessages from '@/dictionaries/uz.json';
+// Dictionary state for translations
+let currentDictionary: any = null;
+let currentLocale: string = 'uz';
 
-type FullDictionary = typeof enMessages;
-type CartContextToastsDictionary = FullDictionary['cartContextToasts'];
-
-const dictionaries: Record<Locale, FullDictionary> = {
-  en: enMessages,
-  ru: ruMessages,
-  uz: uzMessages,
-};
-
-// Fallback dictionary for toasts if primary loading fails or keys are missing
-const fallbackCartContextToasts: CartContextToastsDictionary = {
-  errorTitle: "Error",
-  infoTitle: "Info",
-  productOutOfStockToast: "{productName} is out of stock.",
-  stockAvailableToast: "Not enough stock. Quantity updated to {availableStock}.",
-  addedToCartLimitedStockToast: "Not enough stock. Added {availableStock} to cart.",
-  genericError: "An unexpected error occurred."
-};
-
-const getCartContextToastsDictionary = (locale: Locale): CartContextToastsDictionary => {
-  const mainDict = dictionaries[locale] || dictionaries.en;
-  return mainDict?.cartContextToasts || fallbackCartContextToasts;
-};
+// Function to get translations with fallback
+function getTranslation(key: string, replacements?: Record<string, string>) {
+  const fallbackMessages: Record<string, string> = {
+    'errorTitle': 'Error',
+    'infoTitle': 'Info', 
+    'genericError': 'An error occurred',
+    'productOutOfStockToast': '{productName} is out of stock',
+    'stockAvailableToast': 'Only {availableStock} items available',
+    'addedToCartLimitedStockToast': 'Added {availableStock} items (maximum available)'
+  };
+  
+  let message = currentDictionary?.cartContextToasts?.[key] || fallbackMessages[key] || key;
+  
+  // Replace placeholders if provided
+  if (replacements) {
+    Object.entries(replacements).forEach(([placeholder, value]) => {
+      message = message.replace(`{${placeholder}}`, value);
+    });
+  }
+  
+  return message;
+}
 
 
 interface CartContextType {
@@ -54,8 +53,22 @@ const CART_STORAGE_KEY = 'askimCart';
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const params = useParams();
-  const locale = (params.locale as Locale) || 'uz';
-  const dictionary = getCartContextToastsDictionary(locale);
+  const locale = (params?.locale as Locale) || 'uz';
+
+  // Load dictionary when locale changes
+  useEffect(() => {
+    const loadDictionary = async () => {
+      if (locale !== currentLocale) {
+        try {
+          currentDictionary = await getDictionary(locale);
+          currentLocale = locale;
+        } catch (error) {
+        // Handle dictionary loading error silently in production
+        }
+      }
+    };
+    loadDictionary();
+  }, [locale]);
 
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
@@ -67,7 +80,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             return parsedCart;
           }
         } catch (error) {
-          console.error("Failed to parse cart from localStorage on init:", error);
+      // Handle localStorage parsing error silently in production
           localStorage.removeItem(CART_STORAGE_KEY);
         }
       }
@@ -84,19 +97,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (product: Product, quantityToAdd: number = 1) => {
     const productName = product.name[locale] || product.name.en;
     if (!product || product.stock === undefined) {
-      console.error("Product data is invalid or stock is undefined", product);
-      toast({
-        title: dictionary.errorTitle,
-        description: dictionary.genericError,
-        variant: "destructive",
-      });
-      return;
+       // Handle invalid product data silently in production
+       return;
     }
     
     if (product.stock <= 0 && !cartItems.find(item => item.id === product.id)) {
       toast({
-        title: dictionary.errorTitle,
-        description: (dictionary.productOutOfStockToast || fallbackCartContextToasts.productOutOfStockToast).replace('{productName}', productName),
+        title: getTranslation('errorTitle'),
+        description: getTranslation('productOutOfStockToast', { productName }),
         variant: "destructive",
       });
       return;
@@ -111,8 +119,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (potentialQuantity > product.stock) {
           finalQuantity = product.stock;
           toast({
-            title: dictionary.infoTitle,
-            description: (dictionary.stockAvailableToast || fallbackCartContextToasts.stockAvailableToast).replace('{availableStock}', String(product.stock)),
+            title: getTranslation('infoTitle'),
+            description: getTranslation('stockAvailableToast', { availableStock: String(product.stock) }),
           });
         } else {
           finalQuantity = potentialQuantity;
@@ -126,8 +134,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (quantityToAdd > product.stock) {
           finalQuantity = product.stock;
           toast({
-            title: dictionary.infoTitle,
-            description: (dictionary.addedToCartLimitedStockToast || fallbackCartContextToasts.addedToCartLimitedStockToast).replace('{availableStock}', String(product.stock)),
+            title: getTranslation('infoTitle'),
+            description: getTranslation('addedToCartLimitedStockToast', { availableStock: String(product.stock) }),
           });
         } else {
           finalQuantity = quantityToAdd;
@@ -156,8 +164,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (newQuantity > itemInCart.stock) {
       finalQuantity = itemInCart.stock;
       toast({
-        title: dictionary.infoTitle,
-        description: (dictionary.stockAvailableToast || fallbackCartContextToasts.stockAvailableToast).replace('{availableStock}', String(itemInCart.stock)),
+        title: getTranslation('infoTitle'),
+        description: getTranslation('stockAvailableToast', { availableStock: String(itemInCart.stock) }),
       });
     }
     

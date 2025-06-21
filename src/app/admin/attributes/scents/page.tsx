@@ -48,41 +48,88 @@ interface ScentTranslation {
 
 interface Scent {
   id: string;
-  name: { en: string; ru: string; uz: string };
+  translations: ScentTranslation[];
   isActive: boolean;
-  productsCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-type AlertDialogStrings = {
-  confirmDeleteTitle: string;
-  confirmDeleteScentInUse: string;
-  confirmDeleteGeneral: string;
-  confirmRenameTitle: string;
-  confirmRenameAttributeInUse: string;
-  cancelButton: string;
-  deleteConfirmButton: string;
-  updateButton: string;
-};
+const defaultScents: Scent[] = [
+  {
+    id: "vanilla",
+    translations: [
+      { locale: 'en', name: 'Vanilla' },
+      { locale: 'ru', name: 'Ваниль' },
+      { locale: 'uz', name: 'Vanil' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "lavender",
+    translations: [
+      { locale: 'en', name: 'Lavender' },
+      { locale: 'ru', name: 'Лаванда' },
+      { locale: 'uz', name: 'Lavanda' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "rose",
+    translations: [
+      { locale: 'en', name: 'Rose' },
+      { locale: 'ru', name: 'Роза' },
+      { locale: 'uz', name: 'Atirgul' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "citrus",
+    translations: [
+      { locale: 'en', name: 'Citrus' },
+      { locale: 'ru', name: 'Цитрус' },
+      { locale: 'uz', name: 'Sitrus' }
+    ],
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "sandalwood",
+    translations: [
+      { locale: 'en', name: 'Sandalwood' },
+      { locale: 'ru', name: 'Сандаловое дерево' },
+      { locale: 'uz', name: 'Sandal yog\'ochi' }
+    ],
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  }
+];
 
 export default function AdminManageScentsPage() {
-  const [allScents, setAllScents] = useState<Scent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newScentName, setNewScentName] = useState("");
-  const [newScentTranslations, setNewScentTranslations] = useState<ScentTranslation[]>([
-    { locale: 'ru', name: '' },
-    { locale: 'en', name: '' },
-    { locale: 'uz', name: '' }
-  ]);
-  const [editingAttributeName, setEditingAttributeName] = useState<string | null>(null);
+  const [scents, setScents] = useState<Scent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dict, setDict] = useState<ManageScentsDict | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const { toast } = useToast();
+
+  // Form states
+  const [newScentEn, setNewScentEn] = useState("");
+  const [newScentRu, setNewScentRu] = useState("");
+  const [newScentUz, setNewScentUz] = useState("");
+  const [editingScentId, setEditingScentId] = useState<string | null>(null);
+  const [editScentEn, setEditScentEn] = useState("");
+  const [editScentRu, setEditScentRu] = useState("");
+  const [editScentUz, setEditScentUz] = useState("");
+  const [deletingScentId, setDeletingScentId] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingScent, setEditingScent] = useState<Scent | null>(null);
-  const { toast } = useToast();
-  const [dictionary, setDictionary] = useState<ManageScentsDict | null>(null);
-  const [alertStrings, setAlertStrings] = useState<AlertDialogStrings | null>(null);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -90,559 +137,528 @@ export default function AdminManageScentsPage() {
     const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
     
     async function loadDictionary() {
-      const fullDict = await getAdminDictionary(localeToLoad);
-      const pageDict = fullDict.adminManageScentsPage;
-      setDictionary(pageDict);
-      setAlertStrings({
-        confirmDeleteTitle: pageDict.confirmDeleteTitle || "Confirm Deletion",
-        confirmDeleteScentInUse: pageDict.confirmDeleteScentInUse || "The scent '{attributeName}' is currently used by one or more products. Deleting it means these products will no longer be associated with this scent and may need to be updated manually. Are you sure you want to delete it?",
-        confirmDeleteGeneral: pageDict.confirmDeleteGeneral || "Are you sure you want to delete the scent \"{name}\"?",
-        confirmRenameTitle: pageDict.confirmRenameTitle || "Confirm Rename",
-        confirmRenameAttributeInUse: pageDict.confirmRenameAttributeInUse || "Renaming '{oldName}' to '{newName}'? Products currently using '{oldName}' will not be automatically updated with this new name and may need to be updated manually to reflect the change. Are you sure?",
-        cancelButton: pageDict.cancelButton || "Cancel",
-        deleteConfirmButton: pageDict.deleteConfirmButton || "Delete",
-        updateButton: pageDict.updateButton || "Update Scent"
-      });
+      try {
+        const fullDict = await getAdminDictionary(localeToLoad);
+        setDict(fullDict.adminManageScentsPage);
+      } catch (error) {
+        console.error('Failed to load admin dictionary:', error);
+        // Set fallback dictionary
+        setDict({
+          pageTitle: 'Manage Scents',
+          pageDescription: 'Add, edit, and manage scent attributes for your products.',
+          addScentButton: 'Add New Scent',
+          editScentButton: 'Edit Scent',
+          deleteScentButton: 'Delete Scent',
+          scentNameEn: 'English Name',
+          scentNameRu: 'Russian Name',
+          scentNameUz: 'Uzbek Name',
+          activeStatus: 'Active',
+          inactiveStatus: 'Inactive',
+          saveButton: 'Save',
+          cancelButton: 'Cancel',
+          deleteConfirmTitle: 'Delete Scent',
+          deleteConfirmDescription: 'Are you sure you want to delete this scent?',
+          scentAddedToast: 'Scent added successfully',
+          scentUpdatedToast: 'Scent updated successfully',
+          scentDeletedToast: 'Scent deleted successfully',
+          scentStatusUpdatedToast: 'Scent status updated'
+        } as ManageScentsDict);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadDictionary();
 
-    const fetchScents = async () => {
+    // Load scents from localStorage or use defaults
+    const storedScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
+    if (storedScents) {
       try {
-        setLoading(true);
-        const response = await fetch('/api/scents');
-        if (response.ok) {
-          const data = await response.json();
-          const scents = data.scents || [];
-          setAllScents(scents);
-          localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(scents));
-        } else {
-          // Fallback to localStorage if API fails
-          let storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
-          if (storedCustomScents) {
-            const parsed = JSON.parse(storedCustomScents);
-            // Проверяем, если это старый формат (массив строк), конвертируем
-            if (parsed.length > 0 && typeof parsed[0] === 'string') {
-              const converted = parsed.map((name: string, index: number) => ({
-                id: `temp-${index}`,
-                name,
-                isActive: true
-              }));
-              setAllScents(converted);
-            } else {
-              setAllScents(parsed);
-            }
-          }
-        }
+        setScents(JSON.parse(storedScents));
       } catch (error) {
-        console.error('Error loading scents:', error);
-        // Fallback to localStorage if API fails
-        let storedCustomScents = localStorage.getItem(LOCAL_STORAGE_KEY_SCENTS);
-        if (storedCustomScents) {
-          const parsed = JSON.parse(storedCustomScents);
-          // Проверяем, если это старый формат (массив строк), конвертируем
-          if (parsed.length > 0 && typeof parsed[0] === 'string') {
-            const converted = parsed.map((name: string, index: number) => ({
-              id: `temp-${index}`,
-              name,
-              isActive: true
-            }));
-            setAllScents(converted);
-          } else {
-            setAllScents(parsed);
-          }
-        }
-      } finally {
-        setLoading(false);
+        console.error('Error parsing stored scents:', error);
+        setScents(defaultScents);
       }
+    } else {
+      setScents(defaultScents);
+    }
+  }, []);
+
+  const saveScentsToStorage = useCallback((updatedScents: Scent[]) => {
+    localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
+    setScents(updatedScents);
+  }, []);
+
+  const addScent = () => {
+    if (!dict || !newScentEn.trim() || !newScentRu.trim() || !newScentUz.trim()) return;
+
+    const newScent: Scent = {
+      id: `scent-${Date.now()}`,
+      translations: [
+        { locale: 'en', name: newScentEn.trim() },
+        { locale: 'ru', name: newScentRu.trim() },
+        { locale: 'uz', name: newScentUz.trim() }
+      ],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    
-    fetchScents();
-  }, []);
-  
-  const updateScentTranslation = (locale: 'en' | 'ru' | 'uz', value: string) => {
-    setNewScentTranslations(prev => 
-      prev.map((t: ScentTranslation) => t.locale === locale ? { ...t, name: value } : t)
-    );
-  };
 
-  const isAttributeInUse = useCallback((scent: Scent): boolean => {
-    // Проверяем количество продуктов, связанных с ароматом
-    return (scent.productsCount || 0) > 0;
-  }, []);
+    const updatedScents = [...scents, newScent];
+    saveScentsToStorage(updatedScents);
 
-  const toggleScentStatus = async (scent: Scent) => {
-    try {
-      const response = await fetch(`/api/scents/${scent.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isActive: !scent.isActive
-        }),
-      });
-
-      if (response.ok) {
-        const updatedScent = await response.json();
-        const updatedScents = allScents.map(s => 
-          s.id === scent.id ? { ...s, isActive: !s.isActive } : s
-        );
-        setAllScents(updatedScents);
-        localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
-        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || 'Scent';
-        toast({ 
-          title: scent.isActive ? "Аромат деактивирован" : "Аромат активирован", 
-          description: `${scentName} ${scent.isActive ? 'деактивирован' : 'активирован'}` 
-        });
-      } else {
-        const errorData = await response.json();
-        toast({ title: "Error", description: errorData.error || "Failed to update scent status", variant: "destructive" });
-      }
-    } catch (error) {
-      console.error('Error toggling scent status:', error);
-      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
-    }
-  };
-
-  const handleOpenAddDialog = () => {
-    setNewScentTranslations([
-      { locale: 'ru', name: '' },
-      { locale: 'en', name: '' },
-      { locale: 'uz', name: '' }
-    ]);
-    setEditingScent(null);
-    setEditingAttributeName(null);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleCloseDialogs = () => {
+    // Reset form
+    setNewScentEn("");
+    setNewScentRu("");
+    setNewScentUz("");
     setIsAddDialogOpen(false);
-    setIsEditDialogOpen(false);
-    setEditingScent(null);
-    setEditingAttributeName(null);
-    setNewScentTranslations([
-      { locale: 'ru', name: '' },
-      { locale: 'en', name: '' },
-      { locale: 'uz', name: '' }
-    ]);
+
+    toast({
+      title: dict.scentAddedToast,
+      description: `${newScentEn} has been added.`,
+    });
   };
 
-  const handleAddOrUpdateAttribute = async () => {
-    // Проверка заполненности переводов
-    const hasEmptyTranslations = newScentTranslations.some(t => !t.name.trim());
-    if (hasEmptyTranslations) {
-      toast({
-        title: "Заполните названия на всех языках",
-        variant: "destructive",
-      });
-      return;
-    }
+  const startEditScent = (scent: Scent) => {
+    setEditingScentId(scent.id);
+    setEditScentEn(scent.translations.find(t => t.locale === 'en')?.name || "");
+    setEditScentRu(scent.translations.find(t => t.locale === 'ru')?.name || "");
+    setEditScentUz(scent.translations.find(t => t.locale === 'uz')?.name || "");
+    setIsEditDialogOpen(true);
+  };
 
-    // Используем русское название как основное
-    const ruTranslation = newScentTranslations.find(t => t.locale === 'ru');
-    const trimmedNewName = ruTranslation?.name.trim() || '';
-    
-    if (!trimmedNewName) {
-      toast({ title: "Error", description: dictionary?.errorEmptyName || "Scent name cannot be empty.", variant: "destructive" });
-      return;
-    }
+  const saveEditScent = () => {
+    if (!dict || !editingScentId || !editScentEn.trim() || !editScentRu.trim() || !editScentUz.trim()) return;
 
-    const isDuplicate = allScents.some(
-      (scent) => {
-        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
-        return scentName.toLowerCase() === trimmedNewName.toLowerCase() && scentName !== editingAttributeName;
-      }
-    );
-
-    if (isDuplicate) {
-      toast({ title: "Error", description: dictionary?.errorExists || "Scent with this name already exists.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const scentData = {
-        name: trimmedNewName,
-        translations: newScentTranslations.filter(t => t.name.trim())
-      };
-
-      if (editingAttributeName) {
-        // Обновление существующего аромата
-        const editingScent = allScents.find(s => s.name === editingAttributeName);
-        if (!editingScent) return;
-        
-        const response = await fetch(`/api/scents/${editingScent.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(scentData),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update scent');
-        }
-
-        const updatedScent = await response.json();
-        
-        // Create proper name object from translations
-        const nameObject = {
-          ru: newScentTranslations.find(t => t.locale === 'ru')?.name || '',
-          en: newScentTranslations.find(t => t.locale === 'en')?.name || '',
-          uz: newScentTranslations.find(t => t.locale === 'uz')?.name || ''
+    const updatedScents = scents.map(scent => {
+      if (scent.id === editingScentId) {
+        return {
+          ...scent,
+          translations: [
+            { locale: 'en', name: editScentEn.trim() },
+            { locale: 'ru', name: editScentRu.trim() },
+            { locale: 'uz', name: editScentUz.trim() }
+          ],
+          updatedAt: new Date().toISOString()
         };
-        
-        const updatedScents = allScents.map(scent => 
-          scent.id === editingScent.id ? { ...scent, name: nameObject } : scent
-        );
-        setAllScents(updatedScents);
-        localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
-        
-        toast({
-          title: dictionary?.updateSuccessTitle || "Scent Updated",
-        });
-      } else {
-        // Создание нового аромата
-        const response = await fetch('/api/scents', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...scentData, isActive: true }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to create scent');
-        }
-
-        const newScent = await response.json();
-        const updatedScents = [...allScents, newScent];
-        setAllScents(updatedScents);
-        localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedScents));
-        
-        toast({
-          title: dictionary?.addSuccessTitle || "Scent Added",
-        });
       }
+      return scent;
+    });
 
-      // Сброс формы и закрытие диалогов
-      handleCloseDialogs();
-    } catch (error) {
-      console.error('Error saving scent:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить аромат",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleInitiateEdit = async (scent: Scent) => {
-    try {
-      // Попытка загрузить переводы с сервера
-      const response = await fetch(`/api/scents/${scent.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.translations) {
-          // Устанавливаем переводы из базы данных
-          const translations = data.translations.reduce((acc: ScentTranslation[], t: { locale: string; name: string }) => {
-            acc.push({ locale: t.locale as 'en' | 'ru' | 'uz', name: t.name });
-            return acc;
-          }, []);
-          
-          // Дополняем недостающие локали
-          ['ru', 'en', 'uz'].forEach(locale => {
-            if (!translations.find((t: ScentTranslation) => t.locale === locale)) {
-              translations.push({ locale: locale as 'en' | 'ru' | 'uz', name: '' });
-            }
-          });
-          
-          setNewScentTranslations(translations);
-          setEditingAttributeName(scent.name?.ru || scent.name?.en || scent.name?.uz || '');
-          setEditingScent(scent);
-          setIsEditDialogOpen(true);
-        } else {
-          // Fallback к простому редактированию
-          const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
-          setNewScentName(scentName);
-          setNewScentTranslations([
-            { locale: 'ru', name: scent.name?.ru || '' },
-            { locale: 'en', name: scent.name?.en || '' },
-            { locale: 'uz', name: scent.name?.uz || '' }
-          ]);
-          setEditingAttributeName(scentName);
-          setEditingScent(scent);
-          setIsEditDialogOpen(true);
-        }
-      } else {
-        // Fallback к простому редактированию
-        const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
-        setNewScentName(scentName);
-        setNewScentTranslations([
-          { locale: 'ru', name: scent.name?.ru || '' },
-          { locale: 'en', name: scent.name?.en || '' },
-          { locale: 'uz', name: scent.name?.uz || '' }
-        ]);
-        setEditingAttributeName(scentName);
-        setEditingScent(scent);
-        setIsEditDialogOpen(true);
-      }
-    } catch (error) {
-      console.error('Error loading scent for edit:', error);
-      // Fallback к простому редактированию
-      const scentName = scent.name?.ru || scent.name?.en || scent.name?.uz || '';
-      setNewScentName(scentName);
-      setNewScentTranslations([
-        { locale: 'ru', name: scent.name?.ru || '' },
-        { locale: 'en', name: '' },
-        { locale: 'uz', name: '' }
-      ]);
-      setEditingAttributeName(scent.name?.ru || scent.name?.en || scent.name?.uz || '');
-      setEditingScent(scent);
-      setIsEditDialogOpen(true);
-    }
+    saveScentsToStorage(updatedScents);
+
+    // Reset form
+    setEditingScentId(null);
+    setEditScentEn("");
+    setEditScentRu("");
+    setEditScentUz("");
+    setIsEditDialogOpen(false);
+
+    toast({
+      title: dict.scentUpdatedToast,
+      description: `${editScentEn} has been updated.`,
+    });
   };
 
-  const handleCancelEdit = () => {
-    setNewScentName("");
-    setNewScentTranslations([
-      { locale: 'ru', name: '' },
-      { locale: 'en', name: '' },
-      { locale: 'uz', name: '' }
-    ]);
-    setEditingAttributeName(null);
-  };
-
-  const handleDeleteAttribute = async (scent: Scent) => {
-    if (!dictionary) return;
+  const toggleScentStatus = (scentId: string) => {
+    if (!dict) return;
     
-    try {
-      const response = await fetch(`/api/scents/${scent.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        const updatedAttributes = allScents.filter(attr => attr.id !== scent.id);
-        setAllScents(updatedAttributes);
-        localStorage.setItem(LOCAL_STORAGE_KEY_SCENTS, JSON.stringify(updatedAttributes));
-        toast({ 
-          title: dictionary?.deleteSuccessTitle || "Scent Deleted", 
-          description: (dictionary?.deleteSuccess || "'{name}' has been deleted.").replace('{name}', scent.name?.ru || scent.name?.en || scent.name?.uz || 'Scent') 
-        });
-      } else {
-        const errorData = await response.json();
-        toast({ 
-          title: "Error", 
-          description: errorData.error || "Failed to delete scent", 
-          variant: "destructive" 
-        });
+    const updatedScents = scents.map(scent => {
+      if (scent.id === scentId) {
+        return {
+          ...scent,
+          isActive: !scent.isActive,
+          updatedAt: new Date().toISOString()
+        };
       }
-    } catch (error) {
-      console.error('Error deleting scent:', error);
-      toast({ 
-        title: "Error", 
-        description: "An unexpected error occurred", 
-        variant: "destructive" 
-      });
-    }
+      return scent;
+    });
+
+    saveScentsToStorage(updatedScents);
+
+    const scent = scents.find(s => s.id === scentId);
+    const scentName = scent?.translations.find(t => t.locale === 'en')?.name || 'Scent';
+    
+    toast({
+      title: dict.scentStatusUpdatedToast,
+      description: `${scentName} is now ${scent?.isActive ? 'inactive' : 'active'}.`,
+    });
   };
-  
-  if (!isClient || !dictionary || !alertStrings || loading) {
-    return <AdminTableSkeleton rows={8} columns={3} showActions={true} title="Scents Management" />;
+
+  const deleteScent = (scentId: string) => {
+    if (!dict) return;
+    
+    const scentToDelete = scents.find(s => s.id === scentId);
+    const updatedScents = scents.filter(scent => scent.id !== scentId);
+    saveScentsToStorage(updatedScents);
+
+    const scentName = scentToDelete?.translations.find(t => t.locale === 'en')?.name || 'Scent';
+    
+    toast({
+      title: dict.scentDeletedToast,
+      description: `${scentName} has been deleted.`,
+    });
+
+    setDeletingScentId(null);
+  };
+
+  const getScentUsageCount = (scentId: string) => {
+    return mockProducts.filter(product => 
+      product.scents?.some(scent => scent.id === scentId)
+    ).length;
+  };
+
+  if (!isClient || isLoading || !dict) {
+    return <AdminTableSkeleton />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">{dictionary.title}</h1>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{dict.pageTitle}</h1>
+          <p className="text-muted-foreground">{dict.pageDescription}</p>
+        </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleOpenAddDialog}>
+            <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Добавить аромат
+              {dict.addScentButton}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Добавить новый аромат</DialogTitle>
+              <DialogTitle>{dict.addScentButton}</DialogTitle>
               <DialogDescription>
-                Создайте новый вариант аромата для ваших товаров.
+                Add a new scent with translations in all supported languages.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Название аромата</Label>
-                <Tabs defaultValue="ru" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="ru">Русский</TabsTrigger>
-                    <TabsTrigger value="en">English</TabsTrigger>
-                    <TabsTrigger value="uz">O'zbek</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="ru">
-                    <Input
-                      type="text"
-                      value={newScentTranslations.find(t => t.locale === 'ru')?.name || ''}
-                      onChange={(e) => updateScentTranslation('ru', e.target.value)}
-                      placeholder="Введите название аромата на русском"
-                    />
-                  </TabsContent>
-                  <TabsContent value="en">
-                    <Input
-                      type="text"
-                      value={newScentTranslations.find(t => t.locale === 'en')?.name || ''}
-                      onChange={(e) => updateScentTranslation('en', e.target.value)}
-                      placeholder="Enter scent name in English"
-                    />
-                  </TabsContent>
-                  <TabsContent value="uz">
-                    <Input
-                      type="text"
-                      value={newScentTranslations.find(t => t.locale === 'uz')?.name || ''}
-                      onChange={(e) => updateScentTranslation('uz', e.target.value)}
-                      placeholder="O'zbek tilida hid nomini kiriting"
-                    />
-                  </TabsContent>
-                </Tabs>
+                <Label htmlFor="new-scent-en">{dict.scentNameEn}</Label>
+                <Input
+                  id="new-scent-en"
+                  value={newScentEn}
+                  onChange={(e) => setNewScentEn(e.target.value)}
+                  placeholder="Enter English name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-scent-ru">{dict.scentNameRu}</Label>
+                <Input
+                  id="new-scent-ru"
+                  value={newScentRu}
+                  onChange={(e) => setNewScentRu(e.target.value)}
+                  placeholder="Введите русское название"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-scent-uz">{dict.scentNameUz}</Label>
+                <Input
+                  id="new-scent-uz"
+                  value={newScentUz}
+                  onChange={(e) => setNewScentUz(e.target.value)}
+                  placeholder="O'zbek nomini kiriting"
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDialogs}>
-                Отмена
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                {dict.cancelButton}
               </Button>
-              <Button onClick={handleAddOrUpdateAttribute}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Добавить
+              <Button 
+                onClick={addScent}
+                disabled={!newScentEn.trim() || !newScentRu.trim() || !newScentUz.trim()}
+              >
+                {dict.saveButton}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Scents ({scents.length})</TabsTrigger>
+          <TabsTrigger value="active">Active ({scents.filter(s => s.isActive).length})</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive ({scents.filter(s => !s.isActive).length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Scents</CardTitle>
+              <CardDescription>Manage all scent attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {scents.map((scent) => {
+                  const usageCount = getScentUsageCount(scent.id);
+                  return (
+                    <div key={scent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">
+                            {scent.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant={scent.isActive ? "default" : "secondary"}>
+                            {scent.isActive ? dict.activeStatus : dict.inactiveStatus}
+                          </Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {scent.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {scent.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={scent.isActive}
+                          onCheckedChange={() => toggleScentStatus(scent.id)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditScent(scent)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeletingScentId(scent.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{dict.deleteConfirmTitle}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {dict.deleteConfirmDescription}
+                                {usageCount > 0 && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Warning:</strong> This scent is used in {usageCount} product{usageCount !== 1 ? 's' : ''}. Deleting it may affect those products.
+                                  </div>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{dict.cancelButton}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteScent(scent.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {dict.deleteScentButton}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Scents</CardTitle>
+              <CardDescription>Currently active scent attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {scents.filter(s => s.isActive).map((scent) => {
+                  const usageCount = getScentUsageCount(scent.id);
+                  return (
+                    <div key={scent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium">
+                            {scent.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant="default">{dict.activeStatus}</Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {scent.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {scent.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleScentStatus(scent.id)}
+                        >
+                          <PowerOff className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditScent(scent)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="inactive">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inactive Scents</CardTitle>
+              <CardDescription>Currently inactive scent attributes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {scents.filter(s => !s.isActive).map((scent) => {
+                  const usageCount = getScentUsageCount(scent.id);
+                  return (
+                    <div key={scent.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-muted-foreground">
+                            {scent.translations.find(t => t.locale === 'en')?.name}
+                          </h3>
+                          <Badge variant="secondary">{dict.inactiveStatus}</Badge>
+                          {usageCount > 0 && (
+                            <Badge variant="outline">
+                              Used in {usageCount} product{usageCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div><strong>RU:</strong> {scent.translations.find(t => t.locale === 'ru')?.name}</div>
+                          <div><strong>UZ:</strong> {scent.translations.find(t => t.locale === 'uz')?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleScentStatus(scent.id)}
+                        >
+                          <Power className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditScent(scent)}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeletingScentId(scent.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{dict.deleteConfirmTitle}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {dict.deleteConfirmDescription}
+                                {usageCount > 0 && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Warning:</strong> This scent is used in {usageCount} product{usageCount !== 1 ? 's' : ''}. Deleting it may affect those products.
+                                  </div>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{dict.cancelButton}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteScent(scent.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {dict.deleteScentButton}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Редактировать аромат</DialogTitle>
+            <DialogTitle>{dict.editScentButton}</DialogTitle>
             <DialogDescription>
-              Измените название аромата ниже.
+              Edit the scent translations in all supported languages.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Название аромата</Label>
-              <Tabs defaultValue="ru" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="ru">Русский</TabsTrigger>
-                  <TabsTrigger value="en">English</TabsTrigger>
-                  <TabsTrigger value="uz">O'zbek</TabsTrigger>
-                </TabsList>
-                <TabsContent value="ru">
-                  <Input
-                    type="text"
-                    value={newScentTranslations.find(t => t.locale === 'ru')?.name || ''}
-                    onChange={(e) => updateScentTranslation('ru', e.target.value)}
-                    placeholder="Введите название аромата на русском"
-                  />
-                </TabsContent>
-                <TabsContent value="en">
-                  <Input
-                    type="text"
-                    value={newScentTranslations.find(t => t.locale === 'en')?.name || ''}
-                    onChange={(e) => updateScentTranslation('en', e.target.value)}
-                    placeholder="Enter scent name in English"
-                  />
-                </TabsContent>
-                <TabsContent value="uz">
-                  <Input
-                    type="text"
-                    value={newScentTranslations.find(t => t.locale === 'uz')?.name || ''}
-                    onChange={(e) => updateScentTranslation('uz', e.target.value)}
-                    placeholder="O'zbek tilida hid nomini kiriting"
-                  />
-                </TabsContent>
-              </Tabs>
+              <Label htmlFor="edit-scent-en">{dict.scentNameEn}</Label>
+              <Input
+                id="edit-scent-en"
+                value={editScentEn}
+                onChange={(e) => setEditScentEn(e.target.value)}
+                placeholder="Enter English name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-scent-ru">{dict.scentNameRu}</Label>
+              <Input
+                id="edit-scent-ru"
+                value={editScentRu}
+                onChange={(e) => setEditScentRu(e.target.value)}
+                placeholder="Введите русское название"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-scent-uz">{dict.scentNameUz}</Label>
+              <Input
+                id="edit-scent-uz"
+                value={editScentUz}
+                onChange={(e) => setEditScentUz(e.target.value)}
+                placeholder="O'zbek nomini kiriting"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialogs}>
-              Отмена
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              {dict.cancelButton}
             </Button>
-            <Button onClick={handleAddOrUpdateAttribute}>
-              <Edit3 className="mr-2 h-4 w-4" />
-              Обновить
+            <Button 
+              onClick={saveEditScent}
+              disabled={!editScentEn.trim() || !editScentRu.trim() || !editScentUz.trim()}
+            >
+              {dict.saveButton}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{dictionary.existingTitle}</CardTitle>
-          <CardDescription>{dictionary.existingDescription}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {allScents.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{dictionary.noCustomYet || "No scents added yet."}</p>
-          ) : (
-            <ul className="space-y-2">
-              {allScents.map(attr => (
-                <li key={attr.id || (attr.name?.ru || attr.name?.en || attr.name?.uz || 'scent')} className="flex items-center justify-between p-3 border rounded-md text-sm hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <span>{attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent'}</span>
-                    <div className="flex items-center gap-1">
-                      <Switch
-                        checked={attr.isActive}
-                        onCheckedChange={() => toggleScentStatus(attr)}
-                        className="h-4 w-6"
-                      />
-                      {attr.isActive ? (
-                        <Power className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <PowerOff className="h-3 w-3 text-gray-400" />
-                      )}
-                      <Badge variant={attr.isActive ? "default" : "secondary"} className="text-xs">
-                        {attr.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                      {(attr.productsCount || 0) > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {attr.productsCount} products
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={() => handleInitiateEdit(attr)} className="h-7 px-2 py-1 text-xs">
-                      <Edit3 className="mr-1 h-3 w-3" /> {dictionary.editButton || "Edit"}
-                    </Button>
-                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive h-7 px-2 py-1 text-xs">
-                          <Trash2 className="mr-1 h-3 w-3" /> {dictionary.deleteButton || "Delete"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{alertStrings.confirmDeleteTitle}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {isAttributeInUse(attr) 
-                              ? alertStrings.confirmDeleteScentInUse.replace('{attributeName}', attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent')
-                              : alertStrings.confirmDeleteGeneral.replace('{name}', attr.name?.ru || attr.name?.en || attr.name?.uz || 'Scent')
-                            }
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{alertStrings.cancelButton}</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteAttribute(attr)} className="bg-destructive hover:bg-destructive/90">{alertStrings.deleteConfirmButton}</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
     </div>
   );
 }

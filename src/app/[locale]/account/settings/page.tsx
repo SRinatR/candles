@@ -40,7 +40,7 @@ import {
 
 export default function SettingsPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const { toast } = useToast();
   
   // Settings state

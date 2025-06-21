@@ -4,10 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // GET /api/products/drafts/[id] - Получить черновик по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const draftId = parseInt(params.id, 10);
+    const resolvedParams = await params;
+    const draftId = parseInt(resolvedParams.id, 10);
     
     if (isNaN(draftId)) {
       return NextResponse.json(
@@ -43,10 +44,11 @@ export async function GET(
 // PUT /api/products/drafts/[id] - Обновить черновик
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const draftId = parseInt(params.id, 10);
+    const resolvedParams = await params;
+    const draftId = parseInt(resolvedParams.id, 10);
     
     if (isNaN(draftId)) {
       return NextResponse.json(
@@ -97,10 +99,11 @@ export async function PUT(
 // DELETE /api/products/drafts/[id] - Удалить черновик
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const draftId = parseInt(params.id, 10);
+    const resolvedParams = await params;
+    const draftId = parseInt(resolvedParams.id, 10);
     
     if (isNaN(draftId)) {
       return NextResponse.json(

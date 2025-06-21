@@ -35,7 +35,7 @@ export default function RegisterPage() {
   const { toast } = useToast(); // Keep for potential non-auth related toasts
   const router = useRouter();
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getRegisterDictionary(locale);
 
   const { registerStep1, registerStep2, confirmAccount, isLoading, registrationData } = useUnifiedAuth();

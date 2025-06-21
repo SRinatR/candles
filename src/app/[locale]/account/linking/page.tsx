@@ -139,7 +139,7 @@ function AccountLinkingPageComponent() {
   // Безопасное получение locale из params
   useEffect(() => {
     if (params?.locale) {
-      setLocale(params.locale as Locale);
+      setLocale((params?.locale as Locale) || 'uz');
     }
   }, [params?.locale]);
 

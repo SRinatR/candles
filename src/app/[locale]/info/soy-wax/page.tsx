@@ -26,7 +26,7 @@ const getSoyWaxPageDictionary = (locale: Locale) => {
 
 export default function SoyWaxInfoPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getSoyWaxPageDictionary(locale);
 
   return (

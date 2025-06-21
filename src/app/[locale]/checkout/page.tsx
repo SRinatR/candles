@@ -65,7 +65,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getCheckoutDictionary(locale);
 
   const { data: nextAuthSession } = useSession();

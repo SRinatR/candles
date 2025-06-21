@@ -124,7 +124,7 @@ const getStatusColor = (status: string) => {
 export default function OrdersPage() {
   const { toast } = useToast();
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getOrdersPageDictionary(locale);
   
   const [searchTerm, setSearchTerm] = useState("");

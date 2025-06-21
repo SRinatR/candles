@@ -72,7 +72,7 @@ interface ProductDraft {
   updatedAt: string;
 }
 
-export default function EditDraftPage({ params }: { params: { id: string } }) {
+export default function EditDraftPage({ params }: { params: Promise<{ id: string }> }) {
   const { toast } = useToast();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -81,6 +81,11 @@ export default function EditDraftPage({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
 
   const form = useForm<DraftProductFormData>({
     resolver: zodResolver(draftProductSchema),
@@ -105,12 +110,14 @@ export default function EditDraftPage({ params }: { params: { id: string } }) {
   });
 
   useEffect(() => {
+    if (!resolvedParams) return;
+    
     const loadData = async () => {
       try {
         setIsLoading(true);
         
         // Загружаем черновик
-        const draftResponse = await fetch(`/api/products/drafts/${params.id}`);
+        const draftResponse = await fetch(`/api/products/drafts/${resolvedParams.id}`);
         if (!draftResponse.ok) {
           throw new Error('Черновик не найден');
         }
@@ -173,13 +180,15 @@ export default function EditDraftPage({ params }: { params: { id: string } }) {
     };
 
     loadData();
-  }, [params.id, form, toast, router]);
+  }, [resolvedParams, form, toast, router]);
 
   const onSubmit = async (data: DraftProductFormData) => {
     try {
       setIsSaving(true);
       
-      const response = await fetch(`/api/products/drafts/${params.id}`, {
+      if (!resolvedParams) return;
+      
+      const response = await fetch(`/api/products/drafts/${resolvedParams.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

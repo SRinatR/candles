@@ -26,7 +26,7 @@ const getAromaSachetPageDictionary = (locale: Locale) => {
 
 export default function AromaSachetInfoPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   const dictionary = getAromaSachetPageDictionary(locale);
 
   return (

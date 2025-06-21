@@ -35,7 +35,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const routeParams = useParams();
-  const locale = routeParams.locale as Locale || 'uz';
+  const locale = (routeParams?.locale as Locale) || 'uz';
   const dictionary = getAccountLayoutDictionary(locale);
 
   const { data: nextAuthSession, status: nextAuthStatus } = useSession();

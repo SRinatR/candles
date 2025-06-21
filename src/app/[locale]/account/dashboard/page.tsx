@@ -62,7 +62,7 @@ interface DashboardPageProps {
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   
   const { data: nextAuthSession } = useSession();
   const { currentUser: simulatedUser } = useUnifiedAuth();

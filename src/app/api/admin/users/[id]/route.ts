@@ -108,13 +108,14 @@ function getClientIP(req: NextRequest): string {
 // GET - получить информацию о пользователе
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const accessCheck = await checkAdminAccess(req);
   if ('error' in accessCheck) return accessCheck;
   
   const { user: currentUser } = accessCheck;
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   try {
     const user = await prisma.user.findUnique({
@@ -200,13 +201,14 @@ export async function GET(
 // PUT - обновить пользователя
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const accessCheck = await checkAdminAccess(req);
   if ('error' in accessCheck) return accessCheck;
   
   const { user: currentUser } = accessCheck;
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   try {
     const body = await req.json();
@@ -340,13 +342,14 @@ export async function PUT(
 // DELETE - удалить пользователя
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const accessCheck = await checkAdminAccess(req);
   if ('error' in accessCheck) return accessCheck;
   
   const { user: currentUser } = accessCheck;
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   // Только администраторы могут удалять пользователей
   if (currentUser.role !== 'ADMIN') {
@@ -412,13 +415,14 @@ export async function DELETE(
 // PATCH - специальные действия (сброс пароля, блокировка и т.д.)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const accessCheck = await checkAdminAccess(req);
   if ('error' in accessCheck) return accessCheck;
   
   const { user: currentUser } = accessCheck;
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   try {
     const { action, ...data } = await req.json();

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -19,14 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Locale } from '../../../i18n';
-import { locales } from '../../../i18n';
+import type { Locale } from '@/lib/i1n-config';
+import { i18n } from '@/lib/i1n-config';
 
-interface HeaderProps {
-  locale: Locale;
-}
-
-export function Header({ locale }: HeaderProps) {
+export function Header() {
   const t = useTranslations('navigation');
   const pathname = usePathname();
   const { cartCount } = useCart();
@@ -40,6 +37,8 @@ export function Header({ locale }: HeaderProps) {
   const [isClientMounted, setIsClientMounted] = useState(false);
   const router = useRouter();
 
+  // Get current locale from pathname
+  const locale = pathname.split('/')[1] as Locale || 'uz';
   // Define currentPathWithoutLocale at the top level of the Header component
   const currentPathWithoutLocale = pathname.startsWith(`/${locale}`) ? pathname.substring(`/${locale}`.length) || '/' : pathname;
 
@@ -95,12 +94,13 @@ export function Header({ locale }: HeaderProps) {
     userName = simulatedUser.email;
   }
 
+  const getLanguageLabel = (loc: Locale) => {
+    if (loc === 'uz') return t('langUz');
+    if (loc === 'ru') return t('langRu');
+    return t('langEn');
+  };
+
   const LanguageSwitcher = () => {
-    const getLanguageLabel = (loc: Locale) => {
-      if (loc === 'uz') return t('langUz');
-      if (loc === 'ru') return t('langRu');
-      return t('langEn');
-    };
 
     return (
       <DropdownMenu>
@@ -136,7 +136,7 @@ export function Header({ locale }: HeaderProps) {
         </Link>
 
         <nav className="hidden items-center space-x-1 md:space-x-2 lg:space-x-4 md:flex">
-          {navLinks.map(link => (
+          {navigationItems.map(link => (
             <Link
               key={link.href}
               href={`/${locale}${link.href}`}
@@ -228,7 +228,7 @@ export function Header({ locale }: HeaderProps) {
                   </form>
 
                   <nav className="flex flex-col space-y-1">
-                    {navLinks.map(link => (
+                    {navigationItems.map(link => (
                       <Link
                         key={link.href}
                         href={`/${locale}${link.href}`}

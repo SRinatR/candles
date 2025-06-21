@@ -39,7 +39,7 @@ const ARTICLES_STORAGE_KEY = "askimAdminArticles";
 
 export default function UsefulInfoPage() {
   const params = useParams();
-  const locale = params.locale as Locale || 'uz';
+  const locale = (params?.locale as Locale) || 'uz';
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);

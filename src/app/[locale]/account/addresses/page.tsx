@@ -26,10 +26,10 @@ import { useParams } from "next/navigation";
 import type { Locale } from '@/lib/i1n-config';
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useTranslations } from 'next-intl';
+import { getDictionary } from '@/lib/getDictionary';
 import { Separator } from "@/components/ui/separator";
 
-// Type removed - using next-intl useTranslations hook instead
+// Using old dictionary system
 
 // Enhanced address validation schema
 const addressSchema = z.object({
@@ -92,7 +92,8 @@ export default function AccountAddressesPage() {
   const { toast } = useToast();
   const params = useParams();
   const locale = (params?.locale as Locale) || 'uz';
-  const t = useTranslations('accountAddressesPage');
+  const [dictionary, setDictionary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock addresses data - в реальном приложении будет загружаться из API
@@ -126,7 +127,20 @@ export default function AccountAddressesPage() {
     },
   });
 
-  // Remove dictionary loading as it's handled by next-intl
+  // Load dictionary
+  useEffect(() => {
+    const loadDictionary = async () => {
+      try {
+        const dict = await getDictionary(locale);
+        setDictionary(dict);
+      } catch (error) {
+        // Handle error silently in production
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDictionary();
+  }, [locale]);
 
   // Memoized computed values
   const defaultAddress = useMemo(() => 
@@ -176,10 +190,10 @@ export default function AccountAddressesPage() {
     );
     
     toast({
-      title: t('defaultAddressSetToast'),
-      description: t('defaultAddressDescToast'),
+      title: dictionary?.accountAddressesPage?.defaultAddressSetToast || 'Default address set',
+      description: dictionary?.accountAddressesPage?.defaultAddressDescToast || 'This address is now your default',
     });
-  }, [toast, t]);
+  }, [toast, dictionary]);
 
   const handleDelete = useCallback((addressId: string) => {
     const addressToDelete = addresses.find(addr => addr.id === addressId);
@@ -206,10 +220,10 @@ export default function AccountAddressesPage() {
     });
 
     toast({
-      title: t('addressDeletedToast'),
-      description: t('addressDeletedDescToast'),
-    });
-  }, [addresses, toast, t]);
+        title: dictionary?.accountAddressesPage?.addressDeletedToast || 'Address deleted',
+        description: dictionary?.accountAddressesPage?.addressDeletedDescToast || 'The address has been removed',
+      });
+  }, [addresses, toast, dictionary]);
 
   const onSubmit: SubmitHandler<AddressFormData> = useCallback(async (data) => {
     
@@ -242,8 +256,8 @@ export default function AccountAddressesPage() {
         );
         
         toast({
-          title: t('addressUpdatedToast'),
-          description: t('addressUpdatedDescToast'),
+          title: dictionary?.accountAddressesPage?.addressUpdatedToast || 'Address updated',
+          description: dictionary?.accountAddressesPage?.addressUpdatedDescToast || 'Your address has been updated successfully',
         });
       } else {
         // Add new address
@@ -261,8 +275,8 @@ export default function AccountAddressesPage() {
         });
         
         toast({
-          title: t('addressAddedToast'),
-          description: t('addressAddedDescToast'),
+          title: dictionary?.accountAddressesPage?.addressAddedToast || 'Address added',
+          description: dictionary?.accountAddressesPage?.addressAddedDescToast || 'Your new address has been added successfully',
         });
       }
       
@@ -276,7 +290,7 @@ export default function AccountAddressesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isEditing, editingAddress, toast, handleCancel, t]);
+  }, [isEditing, editingAddress, toast, handleCancel, dictionary]);
 
   // Loading state
   if (isLoading) {
@@ -305,7 +319,7 @@ export default function AccountAddressesPage() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  {isEditing ? t('editAddressTitle') : t('addAddressTitle')}
+                  {isEditing ? (dictionary?.accountAddressesPage?.editAddressTitle || 'Edit Address') : (dictionary?.accountAddressesPage?.addAddressTitle || 'Add New Address')}
                 </CardTitle>
               </CardHeader>
               
@@ -316,7 +330,7 @@ export default function AccountAddressesPage() {
                   name="street"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">{t('streetAddressLabel')}</FormLabel>
+                      <FormLabel className="text-sm font-medium">{dictionary?.accountAddressesPage?.streetAddressLabel || 'Street Address'}</FormLabel>
                       <FormControl>
                         <Input 
                           {...field} 
@@ -336,7 +350,7 @@ export default function AccountAddressesPage() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('cityLabel')}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{dictionary?.accountAddressesPage?.cityLabel || 'City'}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -354,7 +368,7 @@ export default function AccountAddressesPage() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('stateProvinceLabel')}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{dictionary?.accountAddressesPage?.stateProvinceLabel || 'State/Province'}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -375,7 +389,7 @@ export default function AccountAddressesPage() {
                     name="zipCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('zipPostalCodeLabel')}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{dictionary?.accountAddressesPage?.zipPostalCodeLabel || 'ZIP/Postal Code'}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -393,7 +407,7 @@ export default function AccountAddressesPage() {
                     name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('countryLabel')}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{dictionary?.accountAddressesPage?.countryLabel || 'Country'}</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -426,7 +440,7 @@ export default function AccountAddressesPage() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium cursor-pointer">
-                          {t('setDefaultAddressLabel')}
+                          {dictionary?.accountAddressesPage?.setDefaultAddressLabel || 'Set as default address'}
                         </FormLabel>
                         <p className="text-xs text-muted-foreground">
                           This address will be used as your default shipping address.
@@ -445,7 +459,7 @@ export default function AccountAddressesPage() {
                   disabled={isSubmitting}
                   className="transition-colors duration-200"
                 >
-                  {t('cancelButton')}
+                  {dictionary?.accountAddressesPage?.cancelButton || 'Cancel'}
                 </Button>
                 <Button 
                   type="submit" 
@@ -458,7 +472,7 @@ export default function AccountAddressesPage() {
                       Saving...
                     </div>
                   ) : (
-                    isEditing ? t('saveChangesButton') : t('addAddressFormButton')
+                    isEditing ? (dictionary?.accountAddressesPage?.saveChangesButton || 'Save Changes') : (dictionary?.accountAddressesPage?.addAddressFormButton || 'Add Address')
                   )}
                 </Button>
               </CardFooter>
@@ -475,15 +489,15 @@ export default function AccountAddressesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{t('manageAddressesTitle')}</h2>
-          <p className="text-muted-foreground leading-relaxed">{t('manageAddressesDesc')}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">{dictionary?.accountAddressesPage?.manageAddressesTitle || 'Manage Addresses'}</h2>
+        <p className="text-muted-foreground leading-relaxed">{dictionary?.accountAddressesPage?.manageAddressesDesc || 'Add, edit, or remove your delivery addresses'}</p>
         </div>
         <Button 
           onClick={handleAddNew} 
           className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors duration-200 shadow-sm"
         >
           <PlusCircle className="mr-2 h-4 w-4" /> 
-          {t('addNewAddressButton')}
+          {dictionary?.accountAddressesPage?.addNewAddressButton || 'Add New Address'}
         </Button>
       </div>
       
@@ -494,13 +508,13 @@ export default function AccountAddressesPage() {
             <div className="flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
               <Home className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">{t('noAddressesYet')}</h3>
+            <h3 className="text-lg font-semibold mb-2">{dictionary?.accountAddressesPage?.noAddressesYet || 'No addresses yet'}</h3>
             <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
               Add your first address to enable faster checkout and delivery.
             </p>
             <Button onClick={handleAddNew} size="lg" className="shadow-sm">
               <PlusCircle className="mr-2 h-4 w-4" /> 
-              {t('addNewAddressButton')}
+              {dictionary?.accountAddressesPage?.addNewAddressButton || 'Add New Address'}
             </Button>
           </CardContent>
         </Card>
@@ -521,7 +535,7 @@ export default function AccountAddressesPage() {
                       {address.isDefault && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
-                          {t('defaultBadge')}
+                          {dictionary?.accountAddressesPage?.defaultBadge || 'Default'}
                         </Badge>
                       )}
                     </div>
@@ -540,7 +554,7 @@ export default function AccountAddressesPage() {
                         onClick={() => handleSetDefault(address.id)}
                         className="text-xs transition-colors duration-200 hover:bg-accent/50"
                       >
-                        {t('setDefaultButton')}
+                        {dictionary?.accountAddressesPage?.setDefaultButton || 'Set Default'}
                       </Button>
                     )}
                     
@@ -548,7 +562,7 @@ export default function AccountAddressesPage() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEdit(address)}
-                      aria-label={t('editButtonLabel')}
+                      aria-label={dictionary?.accountAddressesPage?.editButtonLabel || 'Edit address'}
                       className="transition-colors duration-200 hover:bg-accent/50"
                     >
                       <Edit className="h-4 w-4" />
@@ -559,7 +573,7 @@ export default function AccountAddressesPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          aria-label={t('deleteButtonLabel')}
+                          aria-label={dictionary?.accountAddressesPage?.deleteButtonLabel || 'Delete address'}
                           disabled={addresses.length === 1}
                           className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors duration-200 disabled:opacity-50"
                         >
@@ -570,19 +584,19 @@ export default function AccountAddressesPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            {t('confirmDeleteTitle')}
+                            {dictionary?.accountAddressesPage?.confirmDeleteTitle || 'Delete Address'}
                           </AlertDialogTitle>
                           <AlertDialogDescription className="leading-relaxed">
-                            {t('confirmDeleteDesc')}
+                            {dictionary?.accountAddressesPage?.confirmDeleteDesc || 'Are you sure you want to delete this address? This action cannot be undone.'}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>{t('cancelButton')}</AlertDialogCancel>
+                          <AlertDialogCancel>{dictionary?.accountAddressesPage?.cancelButton || 'Cancel'}</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleDelete(address.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {t('deleteConfirmButton')}
+                            {dictionary?.accountAddressesPage?.deleteConfirmButton || 'Delete'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

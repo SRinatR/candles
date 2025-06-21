@@ -3,6 +3,57 @@
 ## Date: 2025-01-27 (Current Update)
 
 ## 1. Current Focus
+*   **✅ Language Configuration Verified (2025-01-27):** Confirmed proper setup of default Uzbek locale and language switching functionality.
+    *   **✅ Default Locale Confirmed:** Uzbek (uz) is correctly set as default locale in `src/lib/i1n-config.ts`.
+    *   **✅ Middleware Configuration:** Next-intl middleware properly configured with locale support and path routing.
+    *   **✅ Translation Files Complete:** All translation files (uz.json, ru.json, en.json) contain complete translations with proper structure.
+    *   **✅ Language Switching Verified:** Both desktop dropdown and mobile menu language switchers work correctly.
+    *   **✅ i18n Request Config Fixed:** Added missing import for `getRequestConfig` in `src/i18n/request.ts`.
+    *   **✅ Server Running Successfully:** Development server compiles and serves pages in all locales without errors.
+    Language system is fully functional with Uzbek as default and proper Russian/English switching.
+*   **✅ Missing Translation Keys Error Fixed (2025-01-27):** Resolved "MISSING_MESSAGE: Could not resolve" runtime errors for Uzbek locale.
+    *   **✅ Root Cause Identified:** Several translation keys were missing from the Uzbek translation file (`messages/uz.json`) that were present in English and Russian files.
+    *   **✅ Missing Keys Added:** Added missing navigation keys: `addToCart`, `addedToCartTitle`, `addedToCartDesc`, `outOfStock` to navigation section.
+    *   **✅ Homepage Key Added:** Added missing `featuredSubtitle` key to homepage section with appropriate Uzbek translation.
+    *   **✅ Translation Consistency:** All three language files (uz.json, en.json, ru.json) now have consistent translation key structure.
+    *   **✅ Runtime Errors Resolved:** Application no longer shows "MISSING_MESSAGE" errors in browser console for Uzbek locale.
+    *   **✅ Language Switching Fixed:** Language switching now works properly without missing translation errors.
+    Translation system is now complete and functional across all supported locales (UZ, RU, EN).
+*   **✅ HTML Hydration Error Fixed (2025-01-27):** Resolved "In HTML, <html> cannot be a child of <body>" hydration error.
+    *   **✅ Root Cause Identified:** Nested <html> and <body> tags were present in both root layout (`src/app/layout.tsx`) and locale layout (`src/app/[locale]/layout.tsx`), causing invalid HTML structure.
+    *   **✅ Layout Structure Fixed:** Removed <html> and <body> tags from locale layout, keeping only the content structure with proper div wrapper.
+    *   **✅ Font Configuration Moved:** Moved Geist font imports and variables from locale layout to root layout to avoid duplication.
+    *   **✅ CSS Classes Reorganized:** Applied font variables and antialiased class to body tag in root layout, maintaining flex layout classes in locale layout.
+    *   **✅ Valid HTML Structure:** Application now has proper HTML hierarchy without nested html/body tags.
+    HTML structure is now valid and hydration errors are resolved, ensuring proper SSR/client-side rendering.
+*   **✅ Next-intl Locale Configuration Error Fixed (2025-01-27):** Resolved "No locale was returned from `getRequestConfig`" runtime error.
+    *   **✅ Root Cause Identified:** The `getRequestConfig` function in `src/i18n/request.ts` was missing the import statement for `getRequestConfig` from 'next-intl/server' and was not returning the `locale` property in the configuration object.
+    *   **✅ Import Added:** Added missing `import { getRequestConfig } from 'next-intl/server';` statement.
+    *   **✅ Locale Return Fixed:** Added `locale` property to the return object of `getRequestConfig` function alongside `messages`.
+    *   **✅ Build Success:** Development server compiles successfully without locale configuration errors.
+    *   **✅ Application Functional:** Next-intl now properly receives locale configuration and functions correctly.
+    Next-intl locale configuration is now complete and the application runs without locale-related runtime errors.
+*   **✅ Header getLanguageLabel Runtime Error Fixed (2025-01-27):** Resolved "getLanguageLabel is not defined" runtime error in Header component.
+    *   **✅ Root Cause Identified:** getLanguageLabel function was defined inside LanguageSwitcher component but used outside of it in mobile menu section (line 248).
+    *   **✅ Function Scope Fixed:** Moved getLanguageLabel function outside of LanguageSwitcher component to make it accessible throughout the Header component.
+    *   **✅ Build Success:** Development server compiles successfully without runtime errors.
+    *   **✅ Functionality Preserved:** Language switching works correctly in both desktop dropdown and mobile menu.
+    Header component now renders without runtime errors and language switching functionality works properly across all contexts.
+*   **✅ Project Build and Launch Successful (2025-01-27):** Successfully built and launched the Askim Candles e-commerce platform.
+    *   **✅ Dependencies Installed:** All npm packages installed without vulnerabilities (624 packages audited).
+    *   **✅ Build Completed:** Next.js build completed successfully with exit code 0, all static and dynamic routes generated.
+    *   **✅ Development Server Running:** Next.js 15.3.3 with Turbopack running on http://localhost:9002.
+    *   **✅ Middleware Compiled:** Next-intl middleware compiled successfully in 366ms.
+    *   **✅ Ready for Development:** Application ready in 2.4s, all systems operational.
+    Project is now fully operational and ready for development or production use.
+*   **✅ CartContext Internationalization Error Fixed (2025-01-27):** Resolved "Failed to call `useTranslations` because the context from `NextIntlClientProvider` was not found" runtime error in CartProvider.
+    *   **✅ Root Cause Identified:** CartProvider was trying to use `useTranslations` hook but wasn't wrapped by NextIntlClientProvider in admin layout context.
+    *   **✅ Safe Translation Hook:** Created `useSafeTranslations()` function that gracefully handles missing next-intl context with fallback messages.
+    *   **✅ Fallback Messages:** Implemented comprehensive fallback translations for all cart toast messages (errorTitle, infoTitle, genericError, productOutOfStockToast, stockAvailableToast, addedToCartLimitedStockToast).
+    *   **✅ React 19.1 Compatibility:** Fixed `useParams` usage with optional chaining (`params?.locale`) for React 19.1 compatibility.
+    *   **✅ Build Success:** Project builds successfully without errors (exit code 0).
+    *   **✅ Runtime Error Resolved:** CartContext now works in both main site (with NextIntlClientProvider) and admin panel (without provider) contexts.
+    Cart functionality now works seamlessly across all application contexts without internationalization errors.
 *   **✅ Next-intl Migration Completed (2025-01-27):** Successfully migrated entire project from custom i18n system to professional next-intl library.
     *   **✅ Installed next-intl:** Added next-intl package for professional internationalization.
     *   **✅ Created i18n configuration:** Set up i18n.ts with supported locales (uz, ru, en) and message loading.
@@ -111,6 +162,25 @@
     *   All TypeScript compilation errors resolved - clean build achieved.
 
 ## 2. Recent Changes (Leading to this state)
+
+### Recent Changes (2025-01-27)
+*   **✅ "t is not a function" Runtime Error Fixed (2025-01-27):** Resolved HomePage runtime error by completing next-intl migration.
+    *   **✅ Root Cause Identified:** HomePage was still using old getDictionary system instead of next-intl useTranslations hooks.
+    *   **✅ Complete Migration Applied:** 
+        - Created missing i18n/request.ts configuration file
+        - Updated middleware to use next-intl createMiddleware
+        - Updated next.config.ts with next-intl plugin integration
+        - Migrated layout.tsx to use NextIntlClientProvider and getMessages
+        - Updated Header and Footer components to use useTranslations hooks
+        - Migrated HomePage to use useTranslations for homepage, navigation, and categories
+    *   **✅ Verification Completed:** Development server runs without errors, all translations working correctly.
+    *   **✅ Build Status:** All builds passing, no runtime errors, complete next-intl integration achieved.
+
+*   **✅ getLanguageLabel Runtime Error Fixed (2025-01-27):** Resolved "getLanguageLabel is not defined" runtime error in Header component.
+    *   **✅ Root Cause Identified:** Function was defined within LanguageSwitcher component but used outside its scope in SheetContent mobile menu.
+    *   **✅ Solution Applied:** Moved getLanguageLabel function definition outside LanguageSwitcher component to Header component scope.
+    *   **✅ Verification Completed:** Development server compiles without errors, language switching works correctly, application runs smoothly.
+    *   **✅ Build Status:** All builds passing, no TypeScript errors, preserved all existing functionality.
 
 ### Admin Preferences Migration (January 27, 2025)
 *   **✅ MIGRATED**: Admin panel preferences from client-side to server-side

@@ -65,6 +65,7 @@ export default function AdminClientsPage() {
   const { toast } = useToast();
   const [dict, setDict] = useState<AdminClientsPageDict | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'blocked'>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortableClientKeys; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
@@ -86,8 +87,51 @@ export default function AdminClientsPage() {
     const localeToLoad = storedLocale && i18nAdmin.locales.includes(storedLocale) ? storedLocale : i18nAdmin.defaultLocale;
     
     async function loadDictionary() {
-      const fullDict = await getAdminDictionary(localeToLoad);
-      setDict(fullDict.adminClientsPage);
+      try {
+        const fullDict = await getAdminDictionary(localeToLoad);
+        setDict(fullDict.adminClientsPage);
+      } catch (error) {
+        console.error('Failed to load admin dictionary:', error);
+        // Set fallback dictionary
+        setDict({
+          pageTitle: 'Client Management',
+          searchPlaceholder: 'Search clients...',
+          filterAll: 'All',
+          filterActive: 'Active',
+          filterBlocked: 'Blocked',
+          clearFiltersButton: 'Clear Filters',
+          nameColumn: 'Name',
+          emailColumn: 'Email',
+          registrationColumn: 'Registration',
+          ordersColumn: 'Orders',
+          spentColumn: 'Total Spent',
+          statusColumn: 'Status',
+          actionsColumn: 'Actions',
+          activeStatus: 'Active',
+          blockedStatus: 'Blocked',
+          viewButton: 'View',
+          editButton: 'Edit',
+          blockButton: 'Block',
+          unblockButton: 'Unblock',
+          deleteButton: 'Delete',
+          modalViewTitle: 'Client Details',
+          modalEditTitle: 'Edit Client',
+          modalDeleteTitle: 'Delete Client',
+          modalDeleteDescription: 'Are you sure you want to delete this client?',
+          modalCancelButton: 'Cancel',
+          modalSaveButton: 'Save Changes',
+          modalDeleteButton: 'Delete',
+          clientBlockedToastTitle: 'Client Blocked',
+          clientUnblockedToastTitle: 'Client Unblocked',
+          clientStatusUpdatedToastDesc: 'status has been updated',
+          clientUpdatedToastTitle: 'Client Updated',
+          clientUpdatedToastDesc: 'Client information has been updated',
+          clientDeletedToastTitle: 'Client Deleted',
+          clientDeletedToastDesc: 'Client has been deleted'
+        } as AdminClientsPageDict);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadDictionary();
   }, []);
@@ -216,7 +260,7 @@ export default function AdminClientsPage() {
     setSelectedClient(null);
   };
 
-  if (!isClient || !dict) {
+  if (!isClient || isLoading || !dict) {
     return <div>Loading clients...</div>;
   }
 

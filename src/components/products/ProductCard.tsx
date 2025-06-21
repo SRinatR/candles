@@ -14,8 +14,9 @@ import type { Locale } from '@/lib/i1n-config';
 export interface ProductCardDictionary {
   addToCart: string;
   addedToCartTitle: string;
-  addedToCartDesc: string; // Expects a string with {productName} placeholder
+  addedToCartDesc: string; // Fallback string
   outOfStock?: string;
+  getAddedToCartDesc?: (productName: string) => string; // Function for proper translation
 }
 
 const defaultProductCardDictionary: ProductCardDictionary = {
@@ -29,9 +30,10 @@ interface ProductCardProps {
   product: Product;
   locale: Locale;
   dictionary: ProductCardDictionary;
+  getAddedToCartDesc?: (productName: string) => string;
 }
 
-export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
+export function ProductCard({ product, locale, dictionary, getAddedToCartDesc }: ProductCardProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -52,9 +54,15 @@ export function ProductCard({ product, locale, dictionary }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+    
+    // Use the translation function if provided, otherwise fallback to string replacement
+    const description = getAddedToCartDesc 
+      ? getAddedToCartDesc(productName)
+      : currentDictionary.addedToCartDesc.replace('{productName}', productName);
+    
     toast({
       title: currentDictionary.addedToCartTitle,
-      description: currentDictionary.addedToCartDesc.replace('{productName}', productName),
+      description,
     });
   };
 

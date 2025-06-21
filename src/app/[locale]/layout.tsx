@@ -1,44 +1,38 @@
 // src/app/[locale]/layout.tsx
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import '../globals.css';
+import { notFound } from 'next/navigation';
+import { getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Providers } from '../providers';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import { locales } from '../../../i18n';
-import type { Locale } from '../../../i18n';
+import { Providers } from '@/app/providers';
+import { i18n, type Locale } from '@/lib/i1n-config';
+import '@/app/globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+export async function generateStaticParams() {
+  return i18n.locales.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  // Ensure locale is valid
+  const resolvedParams = await params;
+  const locale = (resolvedParams?.locale as Locale) || 'uz';
   
   // Validate locale
-  if (!locales.includes(locale as any)) {
+  if (!i18n.locales.includes(locale as any)) {
     notFound();
   }
   
   const messages = await getMessages();
-  const metadata = messages.metadata as any;
   
   return {
-    title: metadata.title,
-    description: metadata.description,
+    title: (messages as any)?.metadata?.title || 'Candles Shop',
+    description: (messages as any)?.metadata?.description || 'Premium candles for your home',
   };
 }
 
@@ -47,33 +41,30 @@ export default async function LocaleLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  // Ensure locale is valid
+  const resolvedParams = await params;
+  const locale = (resolvedParams?.locale as Locale) || 'uz';
   
   // Validate locale
-  if (!locales.includes(locale as any)) {
+  if (!i18n.locales.includes(locale as any)) {
     notFound();
   }
   
   const messages = await getMessages();
   
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
-        suppressHydrationWarning={true}
-      >
-        <Providers>
-          <NextIntlClientProvider messages={messages}>
-            <Header locale={locale} />
-            <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-              {children}
-            </main>
-            <Footer locale={locale} />
-          </NextIntlClientProvider>
-        </Providers>
-      </body>
-    </html>
+    <div className="flex flex-col min-h-screen">
+      <Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            {children}
+          </main>
+          <Footer />
+        </NextIntlClientProvider>
+      </Providers>
+    </div>
   );
 }

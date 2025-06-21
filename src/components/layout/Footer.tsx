@@ -4,18 +4,17 @@
 import { usePathname } from 'next/navigation';
 import { getAppVersion } from '@/lib/version';
 import { useTranslations } from 'next-intl';
-import type { Locale } from '@/i18n';
+
+import type { Locale } from '@/lib/i1n-config';
 import Link from 'next/link';
 
-interface FooterProps {
-  locale: Locale;
-}
-
-export function Footer({ locale }: FooterProps) {
+export function Footer() {
   const t = useTranslations('footer');
   const pathname = usePathname();
   const currentYear = new Date().getFullYear();
 
+  // Get current locale from pathname
+  const locale = pathname.split('/')[1] as Locale || 'uz';
   // Admin path check should be robust for localized admin paths if they exist in future
   const isAdminPath = pathname.startsWith('/admin') || (pathname.startsWith(`/${locale}/admin`));
 
